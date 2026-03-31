@@ -47,7 +47,8 @@ async function doLogin() {
   btn.disabled = false;
 
   if (error) {
-    showLoginError('Email o contraseña incorrectos.');
+    console.error('Supabase login error:', error);
+    showLoginError(error.message || 'Error al iniciar sesión.');
     return;
   }
 
