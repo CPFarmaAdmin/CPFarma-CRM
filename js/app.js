@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// APP.JS — Lógica principal: estado, tabla, filtros, sidebar
+// APP.JS — Lógica principal: estado, tabla dual, filtros, sidebar
 // ═══════════════════════════════════════════════════════════════
 
 // ── STATE ─────────────────────────────────────────────────────
@@ -7,27 +7,25 @@ let records   = [];
 let folders   = [];
 let templates = [];
 
-let activeFolder = 'all';
-let cFilter      = 'all';
-let cSort        = 'date';
-let cSortDir     = 'desc';
-let selectedIds  = new Set();
+let activeFolder  = 'all';
+let activeView    = 'prospects'; // 'prospects' | 'clients'
+let cFilter       = 'all';
+let cSort         = 'date';
+let cSortDir      = 'desc';
+let selectedIds   = new Set();
 
 // ── INIT ──────────────────────────────────────────────────────
 async function initApp() {
   showLoading(true);
   try {
-    await Promise.all([
-      loadFolders(),
-      loadTemplates(),
-    ]);
+    await Promise.all([ loadFolders(), loadTemplates() ]);
     await loadContacts();
+    setView('prospects');           // start on prospects tab
     renderSidebar();
-    renderTable();
     renderFollowupBanner();
     populateCountryFilter();
     setupRealtimeSync();
-  } catch (err) {
+  } catch(err) {
     console.error('Init error:', err);
     toast('Error al cargar los datos. Comprueba la conexión.', 'er');
   }
@@ -35,92 +33,92 @@ async function initApp() {
 }
 
 async function loadContacts() {
-  try {
-    records = await dbGetContacts();
-  } catch(err) {
-    console.error('loadContacts:', err);
-    records = [];
-  }
+  try { records = await dbGetContacts(); }
+  catch(err) { console.error('loadContacts:', err); records = []; }
 }
 
 async function loadFolders() {
-  try {
-    folders = await dbGetFolders();
-  } catch(err) {
-    console.error('loadFolders:', err);
-    folders = [];
-  }
-  // Refresh all folder selects in the UI
-  const folderOpts = '<option value="">— Sin carpeta —</option>' +
-    folders.map(f => `<option value="${f.id}">${f.icon || '📁'} ${f.name}</option>`).join('');
+  try { folders = await dbGetFolders(); }
+  catch(err) { console.error('loadFolders:', err); folders = []; }
+  const opts = '<option value="">— Sin carpeta —</option>' +
+    folders.map(f => `<option value="${f.id}">${f.icon||'📁'} ${f.name}</option>`).join('');
   ['f-folder','impFolder'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) { const prev = el.value; el.innerHTML = folderOpts; if (prev) el.value = prev; }
+    if (el) { const prev = el.value; el.innerHTML = opts; if (prev) el.value = prev; }
   });
 }
 
 async function loadTemplates() {
-  try {
-    templates = await dbGetTemplates();
-  } catch(err) {
-    console.error('loadTemplates:', err);
-    templates = [];
-  }
+  try { templates = await dbGetTemplates(); }
+  catch(err) { console.error('loadTemplates:', err); templates = []; }
 }
 
 function showLoading(on) {
   const loading = document.getElementById('loadingState');
-  const table   = document.getElementById('contactsTable');
+  const tables  = document.getElementById('tablesWrap');
   const empty   = document.getElementById('emptyState');
   if (loading) loading.style.display = on ? '' : 'none';
-  if (table)   table.style.display   = on ? 'none' : '';
+  if (tables)  tables.style.display  = on ? 'none' : '';
   if (on && empty) empty.style.display = 'none';
 }
 
 // ── REALTIME ──────────────────────────────────────────────────
 function setupRealtimeSync() {
-  subscribeToContacts(async (payload) => {
-    // Re-fetch contacts when any change happens from another user
+  subscribeToContacts(async () => {
     await loadContacts();
     renderSidebar();
-    renderTable();
+    renderBothTables();
     renderFollowupBanner();
     populateCountryFilter();
   });
 }
 
+// ── VIEW SWITCHER (Prospectos / Clientes) ─────────────────────
+function setView(v) {
+  activeView = v;
+  document.querySelectorAll('.view-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.view === v);
+  });
+  renderBothTables();
+  // Update topbar title
+  document.getElementById('viewTitle').textContent =
+    activeFolder === 'all'
+      ? (v === 'prospects' ? 'Prospectos' : 'Clientes')
+      : (folders.find(f=>f.id===activeFolder)?.name || '');
+}
+
 // ── SIDEBAR ───────────────────────────────────────────────────
 function renderSidebar() {
   const today = new Date(); today.setHours(0,0,0,0);
-
-  const total    = records.length;
-  const replied  = records.filter(r => r.status === 'replied' || r.status === 'won').length;
-  const waiting  = records.filter(r => r.status === 'waiting').length;
-  const fuToday  = records.filter(r => {
+  const prospects = records.filter(r => r.type !== 'client');
+  const clients   = records.filter(r => r.type === 'client');
+  const fuToday   = records.filter(r => {
     if (!r.next_followup) return false;
     const d = new Date(r.next_followup); d.setHours(0,0,0,0);
     return d <= today;
   }).length;
 
   document.getElementById('sbStats').innerHTML = `
-    <div class="sb-stat"><div class="sb-stat-n">${total}</div><div class="sb-stat-l">Total</div></div>
-    <div class="sb-stat"><div class="sb-stat-n green">${replied}</div><div class="sb-stat-l">Respondidos</div></div>
-    <div class="sb-stat"><div class="sb-stat-n yellow">${waiting}</div><div class="sb-stat-l">Sin resp.</div></div>
-    <div class="sb-stat"><div class="sb-stat-n ${fuToday > 0 ? 'red' : ''}">${fuToday}</div><div class="sb-stat-l">Follow-up</div></div>
+    <div class="sb-stat"><div class="sb-stat-n">${prospects.length}</div><div class="sb-stat-l">Prospectos</div></div>
+    <div class="sb-stat"><div class="sb-stat-n green">${clients.length}</div><div class="sb-stat-l">Clientes</div></div>
+    <div class="sb-stat"><div class="sb-stat-n yellow">${records.filter(r=>r.status==='replied').length}</div><div class="sb-stat-l">Respondidos</div></div>
+    <div class="sb-stat"><div class="sb-stat-n ${fuToday>0?'red':''}">${fuToday}</div><div class="sb-stat-l">Follow-up</div></div>
   `;
 
-  const folderCounts = {};
-  records.forEach(r => {
-    if (r.folder_id) folderCounts[r.folder_id] = (folderCounts[r.folder_id] || 0) + 1;
-  });
+  const fc = {};
+  records.forEach(r => { if (r.folder_id) fc[r.folder_id] = (fc[r.folder_id]||0)+1; });
 
   document.getElementById('sbNav').innerHTML = `
     <div class="sb-section">Vistas</div>
-    <button class="nb ${activeFolder === 'all' ? 'active' : ''}" onclick="setFolder('all')">
-      <span class="ni">📬</span><span class="nt">Todos los contactos</span><span class="nk">${total}</span>
+    <button class="nb ${activeFolder==='all'&&activeView==='prospects'?'active':''}" onclick="setFolder('all');setView('prospects')">
+      <span class="ni">🎯</span><span class="nt">Prospectos</span><span class="nk">${prospects.length}</span>
     </button>
-    <button class="nb" onclick="setFilter('followup', document.querySelector('[data-filter=followup]'))">
-      <span class="ni">🔔</span><span class="nt">Follow-up hoy</span><span class="nk ${fuToday > 0 ? 'style=color:#fca5a5' : ''}">${fuToday}</span>
+    <button class="nb ${activeFolder==='all'&&activeView==='clients'?'active':''}" onclick="setFolder('all');setView('clients')">
+      <span class="ni">💼</span><span class="nt">Clientes</span><span class="nk">${clients.length}</span>
+    </button>
+    <button class="nb" onclick="showFollowups()">
+      <span class="ni">🔔</span><span class="nt">Follow-up hoy</span>
+      <span class="nk" style="${fuToday>0?'color:#fca5a5':''}">${fuToday}</span>
     </button>
 
     <div class="sb-section" style="margin-top:8px">
@@ -128,16 +126,15 @@ function renderSidebar() {
       <button onclick="openFolderModal()" style="float:right;background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);border-radius:3px;padding:1px 6px;cursor:pointer;font-size:.62rem">+ Nueva</button>
     </div>
     ${folders.map(f => `
-      <button class="nb ${activeFolder === f.id ? 'active' : ''}" onclick="setFolder('${f.id}')">
-        <span class="ni">${f.icon || '📁'}</span>
+      <button class="nb ${activeFolder===f.id?'active':''}" onclick="setFolder('${f.id}')">
+        <span class="ni">${f.icon||'📁'}</span>
         <span class="nt">${f.name}</span>
-        <span class="nk">${folderCounts[f.id] || 0}</span>
+        <span class="nk">${fc[f.id]||0}</span>
         <span class="folder-actions">
-          <span class="folder-btn" onclick="event.stopPropagation();editFolder('${f.id}')" title="Editar">✏️</span>
-          <span class="folder-btn" onclick="event.stopPropagation();deleteFolder('${f.id}')" title="Eliminar">🗑</span>
+          <span class="folder-btn" onclick="event.stopPropagation();editFolder('${f.id}')">✏️</span>
+          <span class="folder-btn" onclick="event.stopPropagation();deleteFolder('${f.id}')">🗑</span>
         </span>
-      </button>
-    `).join('')}
+      </button>`).join('')}
 
     <div class="sb-section" style="margin-top:8px">Herramientas</div>
     <button class="nb" onclick="openSendModal()"><span class="ni">✉️</span><span class="nt">Enviar emails</span></button>
@@ -149,11 +146,18 @@ function renderSidebar() {
 
 function setFolder(id) {
   activeFolder = id;
-  const folderName = id === 'all' ? 'Todos los contactos' :
-    (folders.find(f => f.id === id)?.name || id);
-  document.getElementById('viewTitle').textContent = folderName;
+  const name = id === 'all' ? (activeView==='prospects'?'Prospectos':'Clientes')
+    : (folders.find(f=>f.id===id)?.name || id);
+  document.getElementById('viewTitle').textContent = name;
   renderSidebar();
-  renderTable();
+  renderBothTables();
+}
+
+function showFollowups() {
+  cFilter = 'followup';
+  document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-filter="followup"]')?.classList.add('active');
+  renderBothTables();
 }
 
 // ── FILTERS ───────────────────────────────────────────────────
@@ -161,143 +165,182 @@ function setFilter(f, btn) {
   cFilter = f;
   document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  renderTable();
+  renderBothTables();
 }
 
 function populateCountryFilter() {
-  const countries = [...new Set(records.map(r => r.country).filter(Boolean))].sort();
-  const sel = document.getElementById('filterCountry');
-  const prev = sel.value;
-  sel.innerHTML = '<option value="">País</option>' +
-    countries.map(c => `<option value="${c}">${c}</option>`).join('');
-  if (prev) sel.value = prev;
+  const countries = [...new Set(records.map(r=>r.country).filter(Boolean))].sort();
+  ['filterCountry','filterCountryC'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">País</option>' +
+      countries.map(c=>`<option value="${c}">${c}</option>`).join('');
+    if (prev) sel.value = prev;
+  });
 }
 
 // ── SORTING ───────────────────────────────────────────────────
 function setSort(col) {
-  if (cSort === col) {
-    cSortDir = cSortDir === 'asc' ? 'desc' : 'asc';
-  } else {
-    cSort = col;
-    cSortDir = 'asc';
-  }
+  cSortDir = cSort === col ? (cSortDir==='asc'?'desc':'asc') : 'asc';
+  cSort = col;
   updateSortIcons();
-  renderTable();
+  renderBothTables();
 }
 
 function updateSortIcons() {
-  ['company', 'country', 'date', 'prio', 'followup'].forEach(col => {
-    const el = document.getElementById(`si-${col}`);
+  ['name','country','date','prio','followup','program','status-c'].forEach(col => {
+    const el = document.getElementById('si-'+col);
     if (!el) return;
-    el.textContent = cSort === col ? (cSortDir === 'asc' ? '↑' : '↓') : '';
-    el.style.opacity = cSort === col ? '1' : '0.3';
+    el.textContent = cSort===col ? (cSortDir==='asc'?'↑':'↓') : '';
+    el.style.opacity = cSort===col ? '1' : '0.3';
   });
 }
 
-// ── TABLE ─────────────────────────────────────────────────────
-function getFiltered() {
-  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
-  const prio = document.getElementById('filterPriority')?.value || '';
-  const country = document.getElementById('filterCountry')?.value || '';
-  const today = new Date(); today.setHours(0,0,0,0);
+// ── GET FILTERED DATA ─────────────────────────────────────────
+function getFilteredFor(viewType) {
+  const q       = (document.getElementById('searchInput')?.value||'').toLowerCase();
+  const prio    = viewType==='prospects' ? (document.getElementById('filterPriority')?.value||'') : '';
+  const country = viewType==='prospects'
+    ? (document.getElementById('filterCountry')?.value||'')
+    : (document.getElementById('filterCountryC')?.value||'');
+  const today   = new Date(); today.setHours(0,0,0,0);
+
+  const isClient = viewType === 'clients';
 
   return records.filter(r => {
-    // Folder filter
+    // Type split
+    if (isClient  && r.type !== 'client')  return false;
+    if (!isClient && r.type === 'client')  return false;
+
+    // Folder
     if (activeFolder !== 'all' && r.folder_id !== activeFolder) return false;
 
     // Search
     if (q) {
-      const searchable = [r.company, r.contact, r.email, r.city, r.country,
-        r.subject, r.sector, (r.tags || []).join(' ')].join(' ').toLowerCase();
-      if (!searchable.includes(q)) return false;
+      const s = [r.company, r.contact, r.email, r.city, r.country, r.program, r.version]
+        .join(' ').toLowerCase();
+      if (!s.includes(q)) return false;
     }
 
-    // Priority filter
-    if (prio && r.priority !== prio) return false;
+    if (prio    && r.priority !== prio)    return false;
+    if (country && r.country !== country)  return false;
 
-    // Country filter
-    if (country && r.country !== country) return false;
-
-    // Type filter
-    const typeFilter = document.getElementById('filterType')?.value || '';
-    if (typeFilter && r.type !== typeFilter) return false;
-
-    // Status filter
-    if (cFilter === 'new')     return r.status === 'new' || !r.status;
-    if (cFilter === 'sent')    return r.status === 'sent';
-    if (cFilter === 'replied') return r.status === 'replied';
-    if (cFilter === 'waiting') return r.status === 'waiting';
+    // Status tabs
+    if (cFilter === 'new')      return !r.status || r.status === 'new';
+    if (cFilter === 'sent')     return r.status === 'sent';
+    if (cFilter === 'replied')  return r.status === 'replied';
+    if (cFilter === 'waiting')  return r.status === 'waiting';
     if (cFilter === 'followup') {
       if (!r.next_followup) return false;
       const d = new Date(r.next_followup); d.setHours(0,0,0,0);
       return d <= today;
     }
-
     return true;
-  }).sort((a, b) => {
-    let valA, valB;
-    const prioMap = { Alta: 0, Media: 1, Baja: 2 };
-
-    if (cSort === 'company')  { valA = a.company || ''; valB = b.company || ''; }
-    if (cSort === 'prio')     { valA = prioMap[a.priority] ?? 1; valB = prioMap[b.priority] ?? 1; }
-    if (cSort === 'followup') { valA = a.next_followup || '9999'; valB = b.next_followup || '9999'; }
-    if (cSort === 'country')  { valA = a.country || ''; valB = b.country || ''; }
-    if (cSort === 'date')     { valA = a.sent_date || a.created_at || ''; valB = b.sent_date || b.created_at || ''; }
-
-    if (typeof valA === 'number') {
-      return cSortDir === 'asc' ? valA - valB : valB - valA;
-    }
-    return cSortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+  }).sort((a,b) => {
+    let vA, vB;
+    const pm = {Alta:0,Media:1,Baja:2};
+    if (cSort==='name')     { vA=a.company||''; vB=b.company||''; }
+    if (cSort==='prio')     { vA=pm[a.priority]??1; vB=pm[b.priority]??1; }
+    if (cSort==='followup') { vA=a.next_followup||'9999'; vB=b.next_followup||'9999'; }
+    if (cSort==='country')  { vA=a.country||''; vB=b.country||''; }
+    if (cSort==='program')  { vA=a.program||''; vB=b.program||''; }
+    if (cSort==='date')     { vA=a.sent_date||a.created_at||''; vB=b.sent_date||b.created_at||''; }
+    if (typeof vA === 'number') return cSortDir==='asc' ? vA-vB : vB-vA;
+    return cSortDir==='asc' ? (vA||'').localeCompare(vB||'') : (vB||'').localeCompare(vA||'');
   });
 }
 
-function renderTable() {
-  const rows = getFiltered();
-  const tbody = document.getElementById('tableBody');
+// ── RENDER BOTH TABLES ────────────────────────────────────────
+function renderBothTables() {
+  const prospects = getFilteredFor('prospects');
+  const clients   = getFilteredFor('clients');
 
-  document.getElementById('rcount').textContent = `${rows.length} contacto${rows.length !== 1 ? 's' : ''}`;
-  document.getElementById('topbarBadge').textContent = '';
+  const totalShown = activeView==='prospects' ? prospects.length : clients.length;
+  document.getElementById('rcount').textContent =
+    `${totalShown} ${activeView==='prospects'?'prospecto':'cliente'}${totalShown!==1?'s':''}`;
 
-  if (!rows.length) {
-    tbody.innerHTML = '';
-    document.getElementById('emptyState').style.display = '';
-    return;
-  }
-  document.getElementById('emptyState').style.display = 'none';
+  renderProspectsTable(prospects);
+  renderClientsTable(clients);
 
+  // Show/hide sections based on activeView
+  const pSec = document.getElementById('prospectsSection');
+  const cSec = document.getElementById('clientsSection');
+  if (pSec) pSec.style.display = activeView==='prospects' ? '' : 'none';
+  if (cSec) cSec.style.display = activeView==='clients'   ? '' : 'none';
+
+  const empty = document.getElementById('emptyState');
+  empty.style.display = totalShown === 0 ? '' : 'none';
+}
+
+// Alias for old callers
+function renderTable() { renderBothTables(); }
+
+// ── PROSPECTS TABLE ───────────────────────────────────────────
+function renderProspectsTable(rows) {
+  const tbody = document.getElementById('tbodyProspects');
+  if (!tbody) return;
   tbody.innerHTML = rows.map(r => {
-    const noteCount = r._noteCount || r.interactions?.[0]?.count || 0;
-    const isSelected = selectedIds.has(r.id);
+    const n = r._noteCount || 0;
+    const sel = selectedIds.has(r.id);
+    const loc = [r.city, r.country].filter(Boolean).join(', ') || '—';
     return `
-    <tr onclick="openEdit('${r.id}')" class="${isSelected ? 'selected-row' : ''}">
-      <td onclick="event.stopPropagation()">
-        <input type="checkbox" class="chk rchk" data-id="${r.id}"
-          ${isSelected ? 'checked' : ''} onchange="toggleRowSel(this)">
-      </td>
+    <tr onclick="openEdit('${r.id}')" class="${sel?'selected-row':''}">
+      <td onclick="event.stopPropagation()"><input type="checkbox" class="chk rchk" data-id="${r.id}" ${sel?'checked':''} onchange="toggleRowSel(this)"></td>
       <td>
         <div class="tc-company">${escH(r.company)}</div>
-        ${r.email_type ? `<div class="tc-sub">${r.email_type}</div>` : ''}
-        ${noteCount > 0 ? `<div class="tc-notes">💬 ${noteCount}</div>` : ''}
+        ${n>0?`<div class="tc-notes">💬 ${n}</div>`:''}
       </td>
       <td>
-        <div style="font-size:.82rem;color:var(--ink2)">${r.contact || '<span style="color:var(--ink3);font-style:italic">—</span>'}</div>
-        <div class="tc-email">${r.email || ''}</div>
+        <div style="font-size:.82rem;color:var(--ink2)">${r.contact||'<span style="color:var(--ink3);font-style:italic">—</span>'}</div>
+        <div class="tc-email">${r.email||''}</div>
       </td>
-      <td>
-        <div style="font-size:.82rem">${r.country || '—'}</div>
-        ${r.city ? `<div class="tc-sub">${r.city}</div>` : ''}
-      </td>
-      <td class="tc-date">${r.sent_date ? fmtDate(r.sent_date) : '<span style="font-style:italic">—</span>'}</td>
+      <td><div style="font-size:.82rem">${escH(loc)}</div></td>
+      <td style="font-size:.82rem;color:var(--ink2)">${escH(r.program||'—')}</td>
+      <td class="tc-date">${r.sent_date?fmtDate(r.sent_date):'<span style="font-style:italic;color:var(--ink3)">—</span>'}</td>
       <td>${renderBadge(r.status)}</td>
       <td>${renderPrio(r.priority)}</td>
       <td>${renderFollowup(r.next_followup)}</td>
+      <td><div class="row-actions">
+        <button class="row-btn" onclick="event.stopPropagation();quickSend('${r.id}')" title="Enviar email">✉️</button>
+        <button class="row-btn" onclick="event.stopPropagation();openEdit('${r.id}')">✏️</button>
+        <button class="row-btn danger" onclick="event.stopPropagation();deleteRecord('${r.id}')">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── CLIENTS TABLE ─────────────────────────────────────────────
+function renderClientsTable(rows) {
+  const tbody = document.getElementById('tbodyClients');
+  if (!tbody) return;
+  tbody.innerHTML = rows.map(r => {
+    const n = r._noteCount || 0;
+    const sel = selectedIds.has(r.id);
+    const loc = [r.city, r.country].filter(Boolean).join(', ') || '—';
+    const clientStatus = r.client_status || 'ok'; // 'ok' | 'incident'
+    return `
+    <tr onclick="openEdit('${r.id}')" class="${sel?'selected-row':''}">
+      <td onclick="event.stopPropagation()"><input type="checkbox" class="chk rchk" data-id="${r.id}" ${sel?'checked':''} onchange="toggleRowSel(this)"></td>
       <td>
-        <div class="row-actions">
-          <button class="row-btn" onclick="event.stopPropagation();quickSend('${r.id}')" title="Enviar email">✉️</button>
-          <button class="row-btn" onclick="event.stopPropagation();openEdit('${r.id}')">✏️</button>
-          <button class="row-btn danger" onclick="event.stopPropagation();deleteRecord('${r.id}')" title="Eliminar">🗑</button>
-        </div>
+        <div class="tc-company">${escH(r.company)}</div>
+        ${n>0?`<div class="tc-notes">💬 ${n}</div>`:''}
       </td>
+      <td>
+        <div style="font-size:.82rem;color:var(--ink2)">${r.contact||'<span style="color:var(--ink3);font-style:italic">—</span>'}</div>
+        <div class="tc-email">${r.email||''}</div>
+      </td>
+      <td><div style="font-size:.82rem">${escH(loc)}</div></td>
+      <td style="font-size:.82rem;color:var(--ink2)">${escH(r.program||'—')}</td>
+      <td style="font-size:.82rem;color:var(--ink3);font-family:var(--fm)">${escH(r.version||'—')}</td>
+      <td>${renderClientStatusBadge(clientStatus)}</td>
+      <td class="tc-date">${r.sent_date?fmtDate(r.sent_date):'<span style="font-style:italic;color:var(--ink3)">—</span>'}</td>
+      <td>${renderFollowup(r.next_followup)}</td>
+      <td><div class="row-actions">
+        <button class="row-btn" onclick="event.stopPropagation();quickSend('${r.id}')" title="Enviar email">✉️</button>
+        <button class="row-btn" onclick="event.stopPropagation();openEdit('${r.id}')">✏️</button>
+        <button class="row-btn danger" onclick="event.stopPropagation();deleteRecord('${r.id}')">🗑</button>
+      </div></td>
     </tr>`;
   }).join('');
 }
@@ -305,31 +348,16 @@ function renderTable() {
 // ── FOLLOW-UP BANNER ──────────────────────────────────────────
 function renderFollowupBanner() {
   const today = new Date(); today.setHours(0,0,0,0);
-  const overdue = records.filter(r => {
-    if (!r.next_followup) return false;
-    const d = new Date(r.next_followup); d.setHours(0,0,0,0);
-    return d < today;
-  });
-  const todayItems = records.filter(r => {
-    if (!r.next_followup) return false;
-    const d = new Date(r.next_followup); d.setHours(0,0,0,0);
-    return d.getTime() === today.getTime();
-  });
-
-  const banner = document.getElementById('followupBanner');
-  const total = overdue.length + todayItems.length;
-
-  if (total === 0) {
-    banner.style.display = 'none';
-    return;
-  }
-
+  const overdue  = records.filter(r => { if (!r.next_followup) return false; const d=new Date(r.next_followup);d.setHours(0,0,0,0);return d<today; });
+  const todayFu  = records.filter(r => { if (!r.next_followup) return false; const d=new Date(r.next_followup);d.setHours(0,0,0,0);return d.getTime()===today.getTime(); });
+  const banner   = document.getElementById('followupBanner');
+  const total    = overdue.length + todayFu.length;
+  if (total === 0) { banner.style.display='none'; return; }
   let msg = '🔔 ';
-  if (overdue.length > 0) msg += `<strong>${overdue.length} follow-up${overdue.length > 1 ? 's' : ''} vencido${overdue.length > 1 ? 's' : ''}</strong>`;
-  if (overdue.length > 0 && todayItems.length > 0) msg += ' · ';
-  if (todayItems.length > 0) msg += `<strong>${todayItems.length} para hoy</strong>`;
-  msg += ` — <a href="#" onclick="setFilter('followup', document.querySelector('[data-filter=followup]'));return false;" style="color:#92400e;font-weight:700;text-decoration:underline">Ver todos →</a>`;
-
+  if (overdue.length) msg += `<strong>${overdue.length} follow-up${overdue.length>1?'s':''} vencido${overdue.length>1?'s':''}</strong>`;
+  if (overdue.length && todayFu.length) msg += ' · ';
+  if (todayFu.length) msg += `<strong>${todayFu.length} para hoy</strong>`;
+  msg += ` — <a href="#" onclick="showFollowups();return false;" style="color:#92400e;font-weight:700;text-decoration:underline">Ver todos →</a>`;
   banner.innerHTML = msg;
   banner.style.display = '';
 }
@@ -337,242 +365,172 @@ function renderFollowupBanner() {
 // ── HELPERS ───────────────────────────────────────────────────
 function fmtDate(s) {
   if (!s) return '—';
-  const [y, m, d] = s.split('T')[0].split('-');
+  const [y,m,d] = s.split('T')[0].split('-');
   return `${d}/${m}/${y}`;
 }
-
 function escH(s) {
-  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 const STATUS_LABELS = {
-  new: '🆕 Sin contactar',
-  sent: '📤 Enviado',
-  replied: '✅ Respondido',
-  waiting: '⏳ Sin respuesta',
-  negotiation: '🤝 Negociando',
-  won: '🏆 Ganado',
-  lost: '❌ Perdido',
+  new:'🆕 Sin contactar', sent:'📤 Enviado', replied:'✅ Respondido',
+  waiting:'⏳ Sin respuesta', negotiation:'🤝 Negociando', won:'🏆 Ganado', lost:'❌ Perdido',
 };
 
 function renderBadge(status) {
-  const s = status || 'new';
-  const label = STATUS_LABELS[s] || s;
-  return `<span class="badge badge-${s}">${label}</span>`;
+  const s = status||'new';
+  return `<span class="badge badge-${s}">${STATUS_LABELS[s]||s}</span>`;
+}
+
+function renderClientStatusBadge(s) {
+  if (s === 'incident') return `<span class="badge badge-incident">⚠️ Incidencia activa</span>`;
+  return `<span class="badge badge-ok">✅ Sin incidencias</span>`;
 }
 
 function renderPrio(p) {
-  const cls = p === 'Alta' ? 'alta' : p === 'Baja' ? 'baja' : 'media';
-  const dot = `<span class="prio-dot"></span>`;
-  return `<span class="prio prio-${cls}">${dot}${p || 'Media'}</span>`;
+  const cls = p==='Alta'?'alta':p==='Baja'?'baja':'media';
+  return `<span class="prio prio-${cls}"><span class="prio-dot"></span>${p||'Media'}</span>`;
 }
 
 function renderFollowup(dateStr) {
   if (!dateStr) return '<span style="color:var(--ink3);font-size:.72rem">—</span>';
   const today = new Date(); today.setHours(0,0,0,0);
   const d = new Date(dateStr); d.setHours(0,0,0,0);
-  const diff = Math.round((d - today) / 86400000);
-  let cls = 'fu-ok', note = `en ${diff}d`;
-  if (diff < 0)     { cls = 'fu-overdue'; note = `vencido (${-diff}d)`; }
-  else if (diff === 0) { cls = 'fu-soon'; note = 'HOY'; }
-  else if (diff <= 3)  { cls = 'fu-soon'; }
+  const diff = Math.round((d-today)/86400000);
+  let cls='fu-ok', note=`en ${diff}d`;
+  if (diff<0)      { cls='fu-overdue'; note=`vencido (${-diff}d)`; }
+  else if (diff===0) { cls='fu-soon'; note='HOY'; }
+  else if (diff<=3)  { cls='fu-soon'; }
   return `<div class="fu-cell ${cls}"><span class="fu-date">${fmtDate(dateStr)}</span><br><small style="font-size:.65rem">(${note})</small></div>`;
 }
 
-function toast(msg, type = '') {
+function toast(msg, type='') {
   const c = document.getElementById('toasts');
   const t = document.createElement('div');
   t.className = `toast ${type}`;
   t.textContent = msg;
   c.appendChild(t);
-  setTimeout(() => {
-    t.style.opacity = '0';
-    t.style.transform = 'translateY(8px)';
-    t.style.transition = 'all 300ms';
-    setTimeout(() => t.remove(), 300);
-  }, 3500);
+  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateY(8px)'; t.style.transition='all 300ms'; setTimeout(()=>t.remove(),300); }, 3500);
 }
 
 // ── SELECTION ─────────────────────────────────────────────────
 function toggleRowSel(chk) {
-  const id = chk.dataset.id;
-  if (chk.checked) selectedIds.add(id);
-  else selectedIds.delete(id);
+  if (chk.checked) selectedIds.add(chk.dataset.id);
+  else selectedIds.delete(chk.dataset.id);
   updateBulkBar();
 }
-
 function toggleSelAll(chk) {
-  const rows = getFiltered();
-  rows.forEach(r => {
-    if (chk.checked) selectedIds.add(r.id);
-    else selectedIds.delete(r.id);
-  });
-  renderTable();
+  const rows = getFilteredFor(activeView);
+  rows.forEach(r => { if (chk.checked) selectedIds.add(r.id); else selectedIds.delete(r.id); });
+  renderBothTables();
   updateBulkBar();
 }
-
-function clearSelection() {
-  selectedIds.clear();
-  renderTable();
-  updateBulkBar();
-}
-
+function clearSelection() { selectedIds.clear(); renderBothTables(); updateBulkBar(); }
 function updateBulkBar() {
   const bar = document.getElementById('bulkBar');
-  const count = selectedIds.size;
-  if (count > 0) {
-    bar.style.display = '';
-    document.getElementById('bulkCount').textContent = `${count} seleccionado${count > 1 ? 's' : ''}`;
-  } else {
-    bar.style.display = 'none';
-  }
+  const n = selectedIds.size;
+  bar.style.display = n>0 ? '' : 'none';
+  document.getElementById('bulkCount').textContent = `${n} seleccionado${n!==1?'s':''}`;
 }
-
 async function bulkDelete() {
   if (!selectedIds.size) return;
-  if (!confirm(`¿Eliminar ${selectedIds.size} contactos? Esta acción no se puede deshacer.`)) return;
+  if (!confirm(`¿Eliminar ${selectedIds.size} contactos?`)) return;
   try {
     await dbDeleteContacts([...selectedIds]);
     await loadContacts();
     selectedIds.clear();
-    renderSidebar();
-    renderTable();
-    renderFollowupBanner();
-    toast(`🗑 ${selectedIds.size} contactos eliminados`, 'er');
-  } catch (err) {
-    toast('Error al eliminar: ' + err.message, 'er');
-  }
+    renderSidebar(); renderBothTables(); renderFollowupBanner();
+    toast('🗑 Eliminados', 'er');
+  } catch(err) { toast('Error: '+err.message,'er'); }
 }
-
-function bulkSend() {
-  openSendModal([...selectedIds]);
-}
+function bulkSend() { openSendModal([...selectedIds]); }
 
 // ── FOLDERS ───────────────────────────────────────────────────
 let editingFolderId = null;
 let pickedIcon = '📁';
 
 function openFolderModal(id) {
-  editingFolderId = id || null;
-  pickedIcon = '📁';
-  document.getElementById('folderModalTitle').textContent = id ? 'Editar carpeta' : 'Nueva carpeta';
-  const f = id ? folders.find(x => x.id === id) : null;
-  document.getElementById('folderName').value = f?.name || '';
-  if (f?.icon) pickedIcon = f.icon;
+  editingFolderId = id||null;
+  document.getElementById('folderModalTitle').textContent = id?'Editar carpeta':'Nueva carpeta';
+  const f = id ? folders.find(x=>x.id===id) : null;
+  document.getElementById('folderName').value = f?.name||'';
+  pickedIcon = f?.icon||'📁';
   renderIconPicker();
   document.getElementById('folderModal').classList.add('open');
 }
-
-function closeFolderModal() {
-  document.getElementById('folderModal').classList.remove('open');
-}
-
+function closeFolderModal() { document.getElementById('folderModal').classList.remove('open'); }
 function renderIconPicker() {
   const icons = '📁 🌎 🇺🇸 🇲🇽 🇪🇸 🇩🇪 🇫🇷 🇬🇧 🇮🇹 🇸🇪 🇳🇴 🇵🇹 ⭐ 🔥 💼 🏗️ 💊 🎯 📌 🏥 🔬 🤝 💰'.split(' ');
   document.getElementById('iconPicker').innerHTML = icons.map(ic =>
-    `<span class="icon-opt ${ic === pickedIcon ? 'selected' : ''}" onclick="pickIcon('${ic}')">${ic}</span>`
+    `<span class="icon-opt ${ic===pickedIcon?'selected':''}" onclick="pickIcon('${ic}')">${ic}</span>`
   ).join('');
 }
-
-function pickIcon(ic) {
-  pickedIcon = ic;
-  renderIconPicker();
-}
-
+function pickIcon(ic) { pickedIcon=ic; renderIconPicker(); }
 async function saveFolderModal() {
   const name = document.getElementById('folderName').value.trim();
-  if (!name) { toast('Escribe un nombre', 'er'); return; }
+  if (!name) { toast('Escribe un nombre','er'); return; }
   try {
-    const maxPos = folders.length ? Math.max(...folders.map(f => f.position || 0)) : 0;
-    await dbSaveFolder({
-      id: editingFolderId || undefined,
-      name,
-      icon: pickedIcon,
-      position: editingFolderId ? undefined : maxPos + 1,
-    });
+    const maxPos = folders.length ? Math.max(...folders.map(f=>f.position||0)) : 0;
+    await dbSaveFolder({ id:editingFolderId||undefined, name, icon:pickedIcon, position:editingFolderId?undefined:maxPos+1 });
     await loadFolders();
     closeFolderModal();
     renderSidebar();
-    toast(`✅ Carpeta "${name}" guardada`, 'ok');
-  } catch (err) {
-    toast('Error: ' + err.message, 'er');
-  }
+    toast(`✅ Carpeta "${name}" guardada`,'ok');
+  } catch(err) { toast('Error: '+err.message,'er'); }
 }
-
 function editFolder(id) { openFolderModal(id); }
-
 async function deleteFolder(id) {
-  const f = folders.find(x => x.id === id);
-  if (!confirm(`¿Eliminar la carpeta "${f?.name}"?\nLos contactos no se borran.`)) return;
+  const f = folders.find(x=>x.id===id);
+  if (!confirm(`¿Eliminar la carpeta "${f?.name}"?\nLos contactos NO se borran.`)) return;
   try {
     await dbDeleteFolder(id);
-    if (activeFolder === id) activeFolder = 'all';
+    if (activeFolder===id) activeFolder='all';
     await loadFolders();
-    renderSidebar();
-    renderTable();
-    toast('🗑 Carpeta eliminada', 'er');
-  } catch (err) {
-    toast('Error: ' + err.message, 'er');
-  }
+    renderSidebar(); renderBothTables();
+    toast('🗑 Carpeta eliminada','er');
+  } catch(err) { toast('Error: '+err.message,'er'); }
 }
 
 // ── MOVE MODAL ────────────────────────────────────────────────
 function openMoveModal() {
-  const movingIds = selectedIds.size > 0 ? [...selectedIds] : [];
+  const ids = [...selectedIds];
   const list = document.getElementById('moveFolderList');
   list.innerHTML = folders.map(f =>
-    `<button class="nb" style="color:var(--ink2);background:var(--paper);border:1.5px solid var(--border);margin-bottom:4px"
-      onclick="doMove('${f.id}',${JSON.stringify(movingIds)})">
-      <span>${f.icon || '📁'}</span>
-      <span style="flex:1;color:var(--ink)">${f.name}</span>
+    `<button class="nb" style="color:var(--ink2);background:var(--paper);border:1.5px solid var(--border);margin-bottom:4px" onclick="doMove('${f.id}',${JSON.stringify(ids)})">
+      <span>${f.icon||'📁'}</span><span style="flex:1;color:var(--ink)">${f.name}</span>
       <span style="font-size:.72rem;color:var(--acc)">→ mover aquí</span>
     </button>`
   ).join('');
   document.getElementById('moveModal').classList.add('open');
 }
-
-function closeMoveModal() {
-  document.getElementById('moveModal').classList.remove('open');
-}
-
+function closeMoveModal() { document.getElementById('moveModal').classList.remove('open'); }
 async function doMove(folderId, ids) {
   try {
     await dbMoveContacts(ids, folderId);
     await loadContacts();
     clearSelection();
-    renderSidebar();
-    renderTable();
-    closeMoveModal();
-    const folderName = folders.find(f => f.id === folderId)?.name || folderId;
-    toast(`📁 ${ids.length} contacto${ids.length > 1 ? 's' : ''} → ${folderName}`, 'ok');
-  } catch (err) {
-    toast('Error: ' + err.message, 'er');
-  }
+    renderSidebar(); renderBothTables(); closeMoveModal();
+    toast(`📁 ${ids.length} → ${folders.find(f=>f.id===folderId)?.name}`,'ok');
+  } catch(err) { toast('Error: '+err.message,'er'); }
 }
 
 // ── EXPORT CSV ────────────────────────────────────────────────
 function exportCSV() {
-  const rows = getFiltered();
-  const headers = ['ID','Empresa','Contacto','Email','Cargo','País','Ciudad','Sector',
-    'Prioridad','Tipo','Estado','Fecha Envío','Asunto','Próx. Follow-up','Producto','Valor','Carpeta'];
-  const esc = v => `"${String(v || '').replace(/"/g, '""')}"`;
-  const folderName = id => folders.find(f => f.id === id)?.name || '';
-
-  const csv = [
-    headers.join(','),
-    ...rows.map(r => [
-      r.id, r.company, r.contact, r.email, r.role, r.country, r.city, r.sector,
-      r.priority, r.type, r.status, r.sent_date, r.subject,
-      r.next_followup, r.deal_product, r.deal_value, folderName(r.folder_id)
-    ].map(esc).join(','))
-  ].join('\n');
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const rows = getFilteredFor(activeView);
+  const H = ['ID','Nombre','Contacto','Email','Cargo','País','Ciudad','Programa','Versión',
+    'Tipo','Tipo cliente','Prioridad','Estado','Fecha Envío','Asunto','Próx. Follow-up','Carpeta'];
+  const esc = v => `"${String(v||'').replace(/"/g,'""')}"`;
+  const fn  = id => folders.find(f=>f.id===id)?.name||'';
+  const csv = [H.join(','), ...rows.map(r=>[
+    r.id,r.company,r.contact,r.email,r.role,r.country,r.city,
+    r.program,r.version,r.type,r.client_type,r.priority,r.status,
+    r.sent_date,r.subject,r.next_followup,fn(r.folder_id)
+  ].map(esc).join(','))].join('\n');
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `cpfarma_crm_${new Date().toISOString().slice(0,10)}.csv`;
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = `cpfarma_${activeView}_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
-  toast('📥 CSV exportado', 'info');
+  toast('📥 CSV exportado','info');
 }
 
 // ── START ──────────────────────────────────────────────────────

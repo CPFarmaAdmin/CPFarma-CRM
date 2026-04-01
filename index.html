@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>CP Farma — CRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=Lato:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Lato:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- ══════════════ LOGIN ══════════════ -->
 <div id="loginScreen" class="login-screen">
   <div class="login-card">
     <div class="login-logo">
@@ -27,10 +27,9 @@
   </div>
 </div>
 
-<!-- APP -->
+<!-- ══════════════ APP ══════════════ -->
 <div id="app" class="app" style="display:none">
 
-  <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sb-header">
       <div class="sb-brand">
@@ -44,27 +43,33 @@
     <div class="sb-footer"><button class="sb-logout" onclick="doLogout()">⎋ Cerrar sesión</button></div>
   </aside>
 
-  <!-- MAIN -->
   <main class="main-content">
+    <!-- TOPBAR -->
     <div class="topbar">
       <div class="topbar-left">
-        <h1 class="topbar-title" id="viewTitle">Todos los contactos</h1>
+        <div class="view-tabs">
+          <button class="view-tab active" data-view="prospects" onclick="setView('prospects')">🎯 Prospectos</button>
+          <button class="view-tab" data-view="clients" onclick="setView('clients')">💼 Clientes</button>
+        </div>
+        <h1 class="topbar-title" id="viewTitle">Prospectos</h1>
         <div class="topbar-badge" id="topbarBadge"></div>
       </div>
       <div class="topbar-right">
         <div class="search-wrap">
           <span class="search-icon">⌕</span>
-          <input type="text" id="searchInput" class="search-input" placeholder="Buscar empresa, email, país…" oninput="renderTable()">
+          <input type="text" id="searchInput" class="search-input" placeholder="Buscar nombre, email, país…" oninput="renderBothTables()">
         </div>
         <button class="btn btn-ghost btn-sm" onclick="openImport()">📥 Importar</button>
         <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇️ CSV</button>
         <button class="btn btn-send btn-sm" onclick="openSendModal()">✉️ Enviar emails</button>
-        <button class="btn btn-primary btn-sm" onclick="openPanel()">+ Nuevo</button>
+        <button class="btn btn-primary btn-sm" id="btnNew" onclick="openPanel()">+ Nuevo</button>
       </div>
     </div>
 
+    <!-- FILTER BAR -->
     <div class="filterbar">
-      <div class="filter-tabs" id="filterTabs">
+      <!-- Prospect filters -->
+      <div id="filtersProspects" class="filter-tabs">
         <button class="ftab active" data-filter="all" onclick="setFilter('all',this)">Todos</button>
         <button class="ftab" data-filter="new" onclick="setFilter('new',this)">🆕 Sin contactar</button>
         <button class="ftab" data-filter="sent" onclick="setFilter('sent',this)">📤 Enviados</button>
@@ -72,56 +77,92 @@
         <button class="ftab" data-filter="waiting" onclick="setFilter('waiting',this)">⏳ Sin respuesta</button>
         <button class="ftab ftab-alert" data-filter="followup" onclick="setFilter('followup',this)">🔔 Follow-up hoy</button>
       </div>
+      <!-- Client filters -->
+      <div id="filtersClients" class="filter-tabs" style="display:none">
+        <button class="ftab active" data-filter="all" onclick="setFilter('all',this)">Todos</button>
+        <button class="ftab" data-filter="ok" onclick="setFilter('ok',this)">✅ Sin incidencias</button>
+        <button class="ftab" data-filter="incident" onclick="setFilter('incident',this)">⚠️ Con incidencia</button>
+        <button class="ftab ftab-alert" data-filter="followup" onclick="setFilter('followup',this)">🔔 Follow-up hoy</button>
+      </div>
       <div class="filter-right">
-        <select class="filter-select" id="filterPriority" onchange="renderTable()">
-          <option value="">Prioridad</option>
-          <option value="Alta">🔴 Alta</option>
-          <option value="Media">🟡 Media</option>
-          <option value="Baja">🟢 Baja</option>
-        </select>
-        <select class="filter-select" id="filterCountry" onchange="renderTable()"><option value="">País</option></select>
-        <select class="filter-select" id="filterType" onchange="renderTable()">
-          <option value="">Tipo</option>
-          <option value="prospect">🎯 Prospectos</option>
-          <option value="client">💼 Clientes</option>
-          <option value="partner">🤝 Partners</option>
-        </select>
+        <!-- Prospect extra filters -->
+        <div id="extraFiltersP">
+          <select class="filter-select" id="filterPriority" onchange="renderBothTables()">
+            <option value="">Prioridad</option>
+            <option value="Alta">🔴 Alta</option>
+            <option value="Media">🟡 Media</option>
+            <option value="Baja">🟢 Baja</option>
+          </select>
+          <select class="filter-select" id="filterCountry" onchange="renderBothTables()"><option value="">País</option></select>
+        </div>
+        <!-- Client extra filters -->
+        <div id="extraFiltersC" style="display:none">
+          <select class="filter-select" id="filterCountryC" onchange="renderBothTables()"><option value="">País</option></select>
+        </div>
         <span class="rcount" id="rcount"></span>
       </div>
     </div>
 
     <div id="followupBanner" class="followup-banner" style="display:none"></div>
 
-    <div class="table-wrap">
-      <table class="contacts-table" id="contactsTable" style="display:none">
-        <thead><tr>
-          <th style="width:36px"><input type="checkbox" id="selAll" onchange="toggleSelAll(this)" class="chk"></th>
-          <th class="sortable" onclick="setSort('company')"><span>Empresa</span><span class="sort-icon" id="si-company"></span></th>
-          <th>Contacto · Email</th>
-          <th class="sortable" onclick="setSort('country')"><span>País</span><span class="sort-icon" id="si-country"></span></th>
-          <th class="sortable" onclick="setSort('date')"><span>Últ. contacto</span><span class="sort-icon" id="si-date"></span></th>
-          <th>Estado</th>
-          <th class="sortable" onclick="setSort('prio')"><span>Prioridad</span><span class="sort-icon" id="si-prio"></span></th>
-          <th class="sortable" onclick="setSort('followup')"><span>Próx. follow-up</span><span class="sort-icon" id="si-followup"></span></th>
-          <th style="width:90px">Acciones</th>
-        </tr></thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-      <div id="emptyState" class="empty-state" style="display:none">
-        <div class="empty-icon">📭</div>
-        <h3>Sin contactos</h3>
-        <p>Crea el primero o importa un Excel.</p>
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="openPanel()">+ Crear contacto</button>
-          <button class="btn btn-ghost" onclick="openImport()">📥 Importar Excel</button>
-        </div>
+    <!-- TABLES WRAP -->
+    <div class="table-wrap" id="tablesWrap" style="display:none">
+
+      <!-- PROSPECTS TABLE -->
+      <div id="prospectsSection">
+        <table class="contacts-table">
+          <thead><tr>
+            <th style="width:36px"><input type="checkbox" id="selAllP" onchange="toggleSelAll(this)" class="chk"></th>
+            <th class="sortable" onclick="setSort('name')"><span>Prospecto</span><span class="sort-icon" id="si-name"></span></th>
+            <th>Contacto · Email</th>
+            <th class="sortable" onclick="setSort('country')"><span>Ubicación</span><span class="sort-icon" id="si-country"></span></th>
+            <th class="sortable" onclick="setSort('program')"><span>Programa</span><span class="sort-icon" id="si-program"></span></th>
+            <th class="sortable" onclick="setSort('date')"><span>Últ. contacto</span><span class="sort-icon" id="si-date"></span></th>
+            <th>Estado</th>
+            <th class="sortable" onclick="setSort('prio')"><span>Prioridad</span><span class="sort-icon" id="si-prio"></span></th>
+            <th class="sortable" onclick="setSort('followup')"><span>Próx. follow-up</span><span class="sort-icon" id="si-followup"></span></th>
+            <th style="width:90px">Acciones</th>
+          </tr></thead>
+          <tbody id="tbodyProspects"></tbody>
+        </table>
       </div>
-      <div id="loadingState" class="empty-state">
-        <div class="loading-spinner"></div>
-        <p>Cargando…</p>
+
+      <!-- CLIENTS TABLE -->
+      <div id="clientsSection" style="display:none">
+        <table class="contacts-table">
+          <thead><tr>
+            <th style="width:36px"><input type="checkbox" id="selAllC" onchange="toggleSelAll(this)" class="chk"></th>
+            <th class="sortable" onclick="setSort('name')"><span>Cliente</span><span class="sort-icon"></span></th>
+            <th>Contacto · Email</th>
+            <th class="sortable" onclick="setSort('country')"><span>Ubicación</span></th>
+            <th class="sortable" onclick="setSort('program')"><span>Programa</span></th>
+            <th>Versión</th>
+            <th>Estado</th>
+            <th class="sortable" onclick="setSort('date')"><span>Últ. contacto</span></th>
+            <th class="sortable" onclick="setSort('followup')"><span>Próx. follow-up</span></th>
+            <th style="width:90px">Acciones</th>
+          </tr></thead>
+          <tbody id="tbodyClients"></tbody>
+        </table>
       </div>
+
     </div>
 
+    <!-- EMPTY / LOADING -->
+    <div id="emptyState" class="empty-state" style="display:none">
+      <div class="empty-icon" id="emptyIcon">📭</div>
+      <h3 id="emptyTitle">Sin registros</h3>
+      <p id="emptyMsg">Crea el primero o importa un Excel.</p>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="openPanel()">+ Crear</button>
+        <button class="btn btn-ghost" onclick="openImport()">📥 Importar Excel</button>
+      </div>
+    </div>
+    <div id="loadingState" class="empty-state">
+      <div class="loading-spinner"></div><p>Cargando…</p>
+    </div>
+
+    <!-- BULK BAR -->
     <div class="bulk-bar" id="bulkBar" style="display:none">
       <span id="bulkCount"></span>
       <button class="btn btn-ghost btn-sm" onclick="openMoveModal()">📁 Mover</button>
@@ -132,33 +173,36 @@
   </main>
 </div>
 
-<!-- CONTACT PANEL -->
+<!-- ══════════════ SIDE PANEL ══════════════ -->
 <div class="overlay" id="overlay" onclick="closePanel()"></div>
 <div class="side-panel" id="sidePanel">
   <div class="panel-header">
     <div class="panel-header-info">
-      <h2 id="panelTitle">Nuevo contacto</h2>
+      <h2 id="panelTitle">Nuevo prospecto</h2>
       <div class="panel-sub" id="panelSub"></div>
     </div>
     <button class="close-btn" onclick="closePanel()">✕</button>
   </div>
   <div class="panel-tabs">
-    <button class="ptab active" data-tab="info" onclick="switchPanelTab('info',this)">📋 Info</button>
+    <button class="ptab active" data-tab="info" onclick="switchPanelTab('info',this)">📋 Datos</button>
     <button class="ptab" data-tab="email" onclick="switchPanelTab('email',this)">📤 Email</button>
     <button class="ptab" data-tab="followup" onclick="switchPanelTab('followup',this)">🔔 Seguimiento</button>
     <button class="ptab" data-tab="history" onclick="switchPanelTab('history',this)">💬 Historial</button>
   </div>
   <div class="panel-body">
 
-    <!-- TAB INFO -->
+    <!-- TAB: DATOS -->
     <div class="ptab-content active" id="tab-info">
       <div class="form-section">
-        <div class="form-section-title">🏢 Datos del contacto</div>
+        <div class="form-section-title" id="infoSectionTitle">🎯 Datos del prospecto</div>
         <div class="form-grid">
-          <div class="fg-full"><label>Empresa <span class="req">*</span></label><input type="text" id="f-company" placeholder="Nombre de la empresa"></div>
-          <div><label>Contacto</label><input type="text" id="f-contact" placeholder="Nombre y apellidos"></div>
-          <div><label>Cargo</label><input type="text" id="f-role" placeholder="CEO, Director…"></div>
-          <div><label>Email <span class="req">*</span></label><input type="email" id="f-email" placeholder="contacto@empresa.com"></div>
+          <div class="fg-full">
+            <label id="labelCompany">Nombre del prospecto <span class="req">*</span></label>
+            <input type="text" id="f-company" placeholder="Nombre del cliente o empresa…">
+          </div>
+          <div><label>Persona de contacto</label><input type="text" id="f-contact" placeholder="Nombre y apellidos"></div>
+          <div><label>Cargo</label><input type="text" id="f-role" placeholder="CEO, Director de Compras…"></div>
+          <div><label>Correo electrónico <span class="req">*</span></label><input type="email" id="f-email" placeholder="contacto@empresa.com"></div>
           <div><label>Teléfono</label><input type="text" id="f-phone" placeholder="+34 600 000 000"></div>
           <div><label>País</label>
             <select id="f-country">
@@ -171,23 +215,38 @@
             </select>
           </div>
           <div><label>Ciudad</label><input type="text" id="f-city" placeholder="Madrid, Miami…"></div>
-          <div><label>Sector</label>
-            <select id="f-sector">
-              <option value="">— Seleccionar —</option>
-              <option>Distribución / Importación</option><option>Farmacia hospitalaria</option>
-              <option>Retail farmacéutico</option><option>Construcción / Reformas</option>
-              <option>Diseño de interiores</option><option>Suministros industriales</option><option>Otro</option>
+          <div><label>Programa</label><input type="text" id="f-program" placeholder="Producto / programa de interés…"></div>
+          <!-- Client-only fields -->
+          <div class="client-only" style="display:none">
+            <label>Versión instalada</label>
+            <input type="text" id="f-version" placeholder="v2.1, 2024…">
+          </div>
+          <div class="client-only" style="display:none">
+            <label>Estado del cliente</label>
+            <select id="f-client-status">
+              <option value="ok">✅ Sin incidencias</option>
+              <option value="incident">⚠️ Incidencia activa</option>
             </select>
           </div>
-          <div><label>Tipo</label>
-            <select id="f-type">
+          <!-- Shared -->
+          <div>
+            <label>Tipo de cliente</label>
+            <select id="f-client-type">
+              <option value="public">🏛️ Público</option>
+              <option value="private">🏢 Privado</option>
+            </select>
+          </div>
+          <div>
+            <label>Tipo de registro</label>
+            <select id="f-type" onchange="onTypeChange(this)">
               <option value="prospect">🎯 Prospecto</option>
               <option value="client">💼 Cliente</option>
-              <option value="partner">🤝 Partner</option>
-              <option value="lost">❌ Perdido</option>
+              <option value="lost">❌ Perdido / Inactivo</option>
             </select>
           </div>
-          <div><label>Prioridad</label>
+          <!-- Prospect-only -->
+          <div class="prospect-only">
+            <label>Prioridad</label>
             <select id="f-priority">
               <option value="Alta">🔴 Alta</option>
               <option value="Media" selected>🟡 Media</option>
@@ -195,18 +254,11 @@
             </select>
           </div>
           <div><label>Carpeta</label><select id="f-folder"></select></div>
-          <div><label>LinkedIn</label><input type="url" id="f-linkedin" placeholder="linkedin.com/in/…"></div>
-          <div><label>Web</label><input type="url" id="f-url" placeholder="https://…"></div>
-          <div class="fg-full"><label>Etiquetas</label>
-            <div class="tag-input-wrap" id="tagWrap" onclick="document.getElementById('tagInput').focus()">
-              <input type="text" class="tag-input" id="tagInput" placeholder="Escribe y pulsa Enter" onkeydown="addTag(event)">
-            </div>
-          </div>
         </div>
       </div>
     </div>
 
-    <!-- TAB EMAIL -->
+    <!-- TAB: EMAIL -->
     <div class="ptab-content" id="tab-email">
       <div class="form-section">
         <div class="form-section-title">📤 Último email enviado</div>
@@ -215,22 +267,28 @@
           <div><label>Tipo de email</label>
             <select id="f-emailType">
               <option>Primer contacto</option><option>Follow-up 1</option><option>Follow-up 2</option>
-              <option>Follow-up 3</option><option>Propuesta enviada</option><option>Negociación</option><option>Cierre</option>
+              <option>Follow-up 3</option><option>Propuesta enviada</option><option>Negociación</option>
+              <option>Soporte / Incidencia</option><option>Actualización</option>
             </select>
           </div>
           <div class="fg-full"><label>Asunto</label><input type="text" id="f-subject" placeholder="Asunto del email…"></div>
           <div class="fg-full">
             <div class="label-row">
-              <label>Cuerpo del email</label>
+              <label>Cuerpo del email enviado</label>
               <button class="btn-link" onclick="pasteStdText()">📋 Pegar plantilla</button>
             </div>
-            <textarea id="f-sentText" rows="7" placeholder="Pega o escribe el email enviado…"></textarea>
+            <textarea id="f-sentText" rows="7" placeholder="Pega o escribe el email que enviaste…"></textarea>
+          </div>
+          <div class="fg-full">
+            <label>📎 Adjuntos enviados (nombres de archivos)</label>
+            <input type="text" id="f-attachments" placeholder="catalogo.pdf, ficha_producto.pdf…">
+            <div style="font-size:.69rem;color:var(--ink3);margin-top:3px">Escribe los nombres separados por comas para tener registro de qué enviaste</div>
           </div>
         </div>
       </div>
       <div class="form-section">
-        <div class="form-section-title">📊 Estado del contacto</div>
-        <div class="status-selector" id="statusSel">
+        <div class="form-section-title">📊 Estado del proceso</div>
+        <div id="statusSelProspect" class="status-selector">
           <div class="status-opt" data-v="new" onclick="selStatus('new')">🆕<span>Sin contactar</span></div>
           <div class="status-opt" data-v="sent" onclick="selStatus('sent')">📤<span>Enviado</span></div>
           <div class="status-opt" data-v="replied" onclick="selStatus('replied')">✅<span>Respondido</span></div>
@@ -239,25 +297,33 @@
           <div class="status-opt" data-v="won" onclick="selStatus('won')">🏆<span>Ganado</span></div>
           <div class="status-opt" data-v="lost" onclick="selStatus('lost')">❌<span>Perdido</span></div>
         </div>
+        <div id="statusSelClient" class="status-selector" style="display:none">
+          <div class="status-opt" data-v="ok" onclick="selStatus('ok')">✅<span>Sin incidencias</span></div>
+          <div class="status-opt" data-v="incident" onclick="selStatus('incident')">⚠️<span>Incidencia activa</span></div>
+          <div class="status-opt" data-v="renewal" onclick="selStatus('renewal')">🔄<span>Renovación</span></div>
+          <div class="status-opt" data-v="churned" onclick="selStatus('churned')">❌<span>Baja</span></div>
+        </div>
       </div>
       <div class="form-section">
         <div class="form-section-title">📥 Respuesta recibida</div>
         <div class="form-grid">
           <div><label>Fecha respuesta</label><input type="date" id="f-replyDate"></div>
-          <div><label>Respondido por</label><input type="text" id="f-replyFrom" placeholder="Nombre"></div>
-          <div class="fg-full"><label>Texto de la respuesta</label><textarea id="f-replyText" rows="4" placeholder="Copia aquí la respuesta recibida…"></textarea></div>
+          <div><label>Respondido por</label><input type="text" id="f-replyFrom" placeholder="Nombre de quien respondió"></div>
+          <div class="fg-full"><label>Texto de la respuesta</label>
+            <textarea id="f-replyText" rows="4" placeholder="Copia aquí la respuesta recibida…"></textarea>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- TAB FOLLOWUP -->
+    <!-- TAB: SEGUIMIENTO -->
     <div class="ptab-content" id="tab-followup">
       <div class="form-section">
         <div class="form-section-title">🔔 Programar seguimiento</div>
         <div class="form-grid">
           <div><label>Follow-up nº</label><input type="text" id="f-followupNum" placeholder="1, 2, 3…"></div>
           <div><label>Próximo follow-up</label><input type="date" id="f-nextFollowup"></div>
-          <div><label>Reunión agendada</label><input type="date" id="f-meetingDate"></div>
+          <div><label>Reunión / Llamada</label><input type="date" id="f-meetingDate"></div>
           <div><label>Plataforma</label>
             <select id="f-meetingPlatform">
               <option value="">— Ninguna —</option>
@@ -265,13 +331,15 @@
               <option>Presencial</option><option>Llamada</option>
             </select>
           </div>
-          <div class="fg-full"><label>Notas del seguimiento</label><textarea id="f-followupNotes" rows="4" placeholder="Qué tratar, contexto, objetivos…"></textarea></div>
+          <div class="fg-full"><label>Notas del seguimiento</label>
+            <textarea id="f-followupNotes" rows="4" placeholder="Qué tratar, contexto, objetivos de la llamada…"></textarea>
+          </div>
         </div>
       </div>
-      <div class="form-section">
+      <div class="form-section prospect-only">
         <div class="form-section-title">💰 Oportunidad comercial</div>
         <div class="form-grid">
-          <div><label>Producto / Servicio</label><input type="text" id="f-product" placeholder="Qué producto le interesa…"></div>
+          <div><label>Producto / Propuesta</label><input type="text" id="f-product" placeholder="Qué le hemos ofertado…"></div>
           <div><label>Valor estimado (€)</label><input type="number" id="f-dealValue" placeholder="0.00"></div>
           <div><label>Probabilidad (%)</label><input type="number" id="f-dealProb" placeholder="50" min="0" max="100"></div>
           <div><label>Cierre estimado</label><input type="date" id="f-dealClose"></div>
@@ -279,7 +347,7 @@
       </div>
     </div>
 
-    <!-- TAB HISTORY -->
+    <!-- TAB: HISTORIAL -->
     <div class="ptab-content" id="tab-history">
       <div class="history-add">
         <div class="history-add-header">
@@ -290,14 +358,15 @@
             <option value="sent">📤 Email enviado</option>
             <option value="call">📞 Llamada</option>
             <option value="meeting">🤝 Reunión</option>
+            <option value="incident">⚠️ Incidencia</option>
           </select>
           <input type="date" id="noteDate" class="note-date">
         </div>
-        <textarea id="noteText" placeholder="Escribe tu nota: qué ocurrió, qué respondieron, resultado de la llamada…" rows="4"></textarea>
+        <textarea id="noteText" placeholder="Escribe tu nota: qué ocurrió, qué respondieron, resultado de la llamada, detalles de la incidencia…" rows="4"></textarea>
         <button class="btn btn-primary btn-sm" onclick="addNote()">➕ Añadir</button>
       </div>
       <div class="history-thread" id="historyThread">
-        <div style="color:var(--ink3);font-size:.82rem;font-style:italic;padding:12px 0">Abre un contacto para ver su historial.</div>
+        <div style="color:var(--ink3);font-size:.82rem;font-style:italic;padding:12px 0">Abre un contacto para ver su historial completo.</div>
       </div>
     </div>
 
@@ -311,32 +380,41 @@
   </div>
 </div>
 
-<!-- SEND MODAL -->
+<!-- ══════════════ SEND MODAL ══════════════ -->
 <div class="modal-wrap" id="sendModal">
   <div class="modal modal-xl">
     <div class="modal-header">
-      <div class="modal-icon">✉️</div>
-      <h3>Enviar emails</h3>
+      <div class="modal-icon">✉️</div><h3>Enviar emails</h3>
       <div class="modal-steps">
         <div class="mstep active" id="mstep1">1 · Plantilla</div>
         <div class="mstep" id="mstep2">2 · Destinatarios</div>
-        <div class="mstep" id="mstep3">3 · Vista previa</div>
+        <div class="mstep" id="mstep3">3 · Previsualizar</div>
         <div class="mstep" id="mstep4">4 · Envío</div>
       </div>
       <button class="close-btn" onclick="closeSendModal()">✕</button>
     </div>
     <div class="modal-body">
 
-      <!-- Step 1 -->
+      <!-- Step 1: Plantilla -->
       <div id="sendStep1">
         <div class="template-tabs" id="sendStdTabs"></div>
         <div class="form-group"><label>Asunto</label><input type="text" id="sendSubject" placeholder="Asunto del email…"></div>
         <div class="form-group">
           <div class="label-row">
             <label>Cuerpo del email</label>
-            <span class="hint">Usa <code>[Name]</code> para personalizar con el nombre de la empresa</span>
+            <span class="hint">Usa <code>[Name]</code> para el nombre del cliente/prospecto</span>
           </div>
-          <textarea id="sendBody" rows="11" placeholder="Escribe el email. [Name] se sustituirá por cada empresa."></textarea>
+          <textarea id="sendBody" rows="10" placeholder="Escribe el email. [Name] se reemplaza por el nombre de cada destinatario."></textarea>
+        </div>
+        <!-- Adjuntos guardados -->
+        <div class="form-section" style="margin-top:12px">
+          <div class="form-section-title">📎 Adjuntos guardados <span style="font-weight:400;color:var(--ink3)">— activa los que quieres enviar esta vez</span></div>
+          <div id="savedAttachList" class="saved-attach-grid"></div>
+          <label class="add-attach-btn">
+            <input type="file" id="savedAttachInput" multiple style="display:none" onchange="saveFavAttach(this.files)">
+            + Guardar nuevo adjunto
+          </label>
+          <div style="font-size:.7rem;color:var(--ink3);margin-top:6px">Los adjuntos guardados son referencia para ti — recuerda adjuntarlos manualmente en Roundcube al confirmar el envío.</div>
         </div>
         <div class="sig-section">
           <div class="label-row">
@@ -355,11 +433,16 @@
         </div>
       </div>
 
-      <!-- Step 2 -->
+      <!-- Step 2: Destinatarios -->
       <div id="sendStep2" style="display:none">
         <div class="recip-filters-grid">
-          <input type="text" id="recipSearch" placeholder="🔍 Buscar empresa, email, ciudad…" oninput="filterRecip()">
+          <input type="text" id="recipSearch" placeholder="🔍 Buscar…" oninput="filterRecip()">
           <select id="recipFolderFilter" onchange="filterRecip()"><option value="">📬 Todas las carpetas</option></select>
+          <select id="recipTypeFilter" onchange="filterRecip()">
+            <option value="">Prospectos y clientes</option>
+            <option value="prospect">🎯 Solo prospectos</option>
+            <option value="client">💼 Solo clientes</option>
+          </select>
           <select id="recipStatusFilter" onchange="filterRecip()">
             <option value="">Todos los estados</option>
             <option value="new">🆕 Sin contactar</option>
@@ -375,7 +458,6 @@
           </select>
           <select id="recipCountryFilter" onchange="filterRecip()"><option value="">Todos los países</option></select>
         </div>
-        <!-- Quick folder buttons -->
         <div class="folder-quick-select" id="folderQuickSelect"></div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <div class="recip-info" id="recipCount"></div>
@@ -395,7 +477,7 @@
         </div>
       </div>
 
-      <!-- Step 3 -->
+      <!-- Step 3: Preview -->
       <div id="sendStep3" style="display:none">
         <div class="preview-nav">
           <button class="btn btn-ghost btn-sm" onclick="prevPrev()">← Anterior</button>
@@ -405,20 +487,24 @@
         <div class="preview-card">
           <div class="preview-meta">
             <div><span class="meta-label">PARA</span> <span id="prevTo" class="meta-email"></span></div>
-            <div><span class="meta-label">EMPRESA</span> <span id="prevCo" class="meta-company"></span></div>
+            <div><span class="meta-label">CLIENTE/PROSPECTO</span> <span id="prevCo" class="meta-company"></span></div>
             <div><span class="meta-label">ASUNTO</span> <span id="prevSubj" class="meta-subject"></span></div>
           </div>
           <div class="preview-body" id="prevBody"></div>
         </div>
-        <div class="info-box">ℹ️ Se abrirá Roundcube en nueva pestaña por cada destinatario. Asegúrate de estar logueado en <a href="https://webmail.cpfarma.es" target="_blank">webmail.cpfarma.es</a></div>
+        <div class="info-box">
+          ℹ️ Al hacer clic en "Enviar" se abrirá Roundcube en una nueva pestaña por cada destinatario con el email ya redactado.<br>
+          <strong>Recuerda adjuntar manualmente los archivos en Roundcube.</strong><br>
+          Asegúrate de estar logueado en <a href="https://webmail.cpfarma.es" target="_blank">webmail.cpfarma.es</a>
+        </div>
       </div>
 
-      <!-- Step 4 -->
+      <!-- Step 4: Sending -->
       <div id="sendStep4" style="display:none">
         <div class="progress-header"><span id="sProgLabel">Preparando…</span><span id="sProgPct">0%</span></div>
         <div class="progress-bar-wrap"><div class="progress-bar" id="sProgBar" style="width:0%"></div></div>
         <div class="send-log" id="sLog"></div>
-        <div id="sDoneMsg" class="done-msg" style="display:none">✅ Completado. Revisa Roundcube para confirmar los envíos.</div>
+        <div id="sDoneMsg" class="done-msg" style="display:none">✅ Completado. Revisa Roundcube para confirmar y adjuntar archivos.</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -483,33 +569,29 @@
     </div>
     <div class="modal-body">
       <div id="impWizard">
-        <!-- Guide -->
         <div id="impGuide" class="imp-guide">
           <div class="imp-guide-title">📋 Cómo preparar tu Excel</div>
           <div class="imp-guide-body">
-            <p>Tu archivo debe tener <strong>cabeceras en la primera fila</strong>. Las columnas pueden llamarse de cualquier forma — el sistema las detecta automáticamente. Las únicas columnas necesarias son <strong>Empresa</strong> y <strong>Email</strong>.</p>
+            <p>Primera fila = cabeceras. El sistema detecta las columnas automáticamente. Sólo son obligatorias <strong>Nombre</strong> (empresa/cliente) y <strong>Email</strong>.</p>
             <div class="imp-guide-cols">
-              <div class="imp-guide-col"><strong>Columnas detectadas automáticamente:</strong>
+              <div class="imp-guide-col"><strong>Columnas detectadas:</strong>
                 <ul>
-                  <li>Empresa / Company</li><li>Email / Correo</li><li>Contacto / Contact</li>
-                  <li>Cargo / Rol / Role</li><li>País / Country</li><li>Ciudad / City</li>
-                  <li>Teléfono / Phone</li><li>Sector / Industry</li><li>Notas / Comments</li>
-                  <li>Prioridad (Alta/Media/Baja)</li><li>Estado (nuevo/enviado/respondido…)</li>
-                  <li>LinkedIn, Web, Etiquetas</li>
+                  <li>Empresa / Nombre / Company</li><li>Email / Correo</li>
+                  <li>Contacto / Persona de contacto</li><li>Cargo / Rol</li>
+                  <li>País / Country</li><li>Ciudad / City</li>
+                  <li>Teléfono / Phone</li><li>Programa</li>
+                  <li>Versión</li><li>Tipo (prospect/client)</li>
+                  <li>Prioridad (Alta/Media/Baja)</li><li>Notas / Comentarios</li>
                 </ul>
               </div>
-              <div class="imp-guide-col"><strong>Formatos aceptados:</strong>
-                <ul>
-                  <li>📊 Excel (.xlsx, .xls)</li>
-                  <li>📄 CSV (.csv)</li>
-                </ul>
-                <strong>Ejemplo de cabeceras válidas:</strong>
-                <div class="imp-guide-example">Empresa | Email | Contacto | País | Teléfono | Notas</div>
-                <p style="margin-top:8px"><strong>Modos de importación:</strong></p>
+              <div class="imp-guide-col">
+                <strong>Formatos aceptados:</strong>
+                <ul><li>📊 Excel (.xlsx, .xls)</li><li>📄 CSV (.csv)</li></ul>
+                <strong>Modos:</strong>
                 <ul>
                   <li><strong>Añadir</strong> — agrega sin borrar nada</li>
                   <li><strong>Fusionar</strong> — actualiza si el email ya existe</li>
-                  <li><strong>Reemplazar</strong> — borra la carpeta e importa de nuevo</li>
+                  <li><strong>Reemplazar</strong> — borra carpeta e importa</li>
                 </ul>
               </div>
             </div>
@@ -523,15 +605,14 @@
         </div>
         <div id="impPrev" style="display:none"></div>
         <div id="impMap" style="display:none">
-          <div class="section-label" style="margin-top:14px">Mapeo de columnas — revisa que cada columna va al campo correcto:</div>
+          <div class="section-label" style="margin-top:14px">Mapeo de columnas:</div>
           <div id="mapRows" class="map-rows"></div>
         </div>
         <div id="impFolderWrap" style="display:none;margin-top:12px">
           <div class="form-group"><label>Importar a carpeta</label><select id="impFolder"></select></div>
         </div>
         <div id="impModeWrap" style="display:none">
-          <div class="form-group">
-            <label>Modo de importación</label>
+          <div class="form-group"><label>Modo de importación</label>
             <div class="import-modes">
               <div class="imode active" id="m-add" onclick="setIMode('add')">➕ Añadir<small>Sin borrar existentes</small></div>
               <div class="imode" id="m-merge" onclick="setIMode('merge')">🔄 Fusionar<small>Actualiza si email coincide</small></div>
@@ -540,7 +621,6 @@
           </div>
         </div>
       </div>
-      <!-- Result -->
       <div id="impResult" style="display:none">
         <div id="impResultMsg"></div>
         <button class="btn btn-primary" onclick="closeImport()" style="margin-top:16px">✅ Cerrar</button>

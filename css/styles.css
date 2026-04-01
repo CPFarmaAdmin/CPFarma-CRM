@@ -1100,3 +1100,138 @@ tr.selected-row { background: #f0f7ff !important; }
   .recip-filters-grid { grid-template-columns: 1fr 1fr; }
   .status-selector { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   v3 — View tabs, client status badge, dual table, type-change
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── VIEW TABS (Prospectos / Clientes) ─────────────────────────── */
+.view-tabs {
+  display: flex;
+  gap: 0;
+  flex-shrink: 0;
+}
+.view-tab {
+  padding: 7px 18px;
+  border: 1.5px solid var(--border);
+  background: var(--paper);
+  color: var(--ink3);
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-family: var(--fh);
+  letter-spacing: -.01em;
+}
+.view-tab:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+.view-tab:last-child  { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; border-left: none; }
+.view-tab:hover { background: var(--paper2); color: var(--ink); }
+.view-tab.active { background: var(--ink); color: white; border-color: var(--ink); z-index: 1; }
+
+.filter-divider { width: 1px; background: var(--border); margin: 0 8px; flex-shrink: 0; }
+
+/* ── CLIENT STATUS BADGE ───────────────────────────────────────── */
+.badge-ok       { background: #f0fdf4; color: #15803d; }
+.badge-ok::before { background: #15803d; }
+.badge-incident { background: #fffbeb; color: #b45309; }
+.badge-incident::before { background: #b45309; }
+
+/* ── SEND MODAL — type filter ──────────────────────────────────── */
+.recip-filters-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+/* ── TABLE section label ───────────────────────────────────────── */
+.table-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 6px;
+}
+.table-section-title {
+  font-family: var(--fh);
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--ink2);
+}
+.table-section-count {
+  font-size: .72rem;
+  color: var(--ink3);
+  font-family: var(--fm);
+  background: var(--paper2);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+/* ── PANEL: client-only / prospect-only visibility ─────────────── */
+.client-only, .prospect-only { transition: opacity var(--transition); }
+
+/* ── Filterbar responsive ───────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .recip-filters-grid { grid-template-columns: 1fr 1fr 1fr; }
+}
+@media (max-width: 780px) {
+  .view-tabs { width: 100%; }
+  .view-tab  { flex: 1; text-align: center; }
+  .filter-divider { display: none; }
+  .recip-filters-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   v3 ADDITIONS
+   ══════════════════════════════════════════════════════════════ */
+
+/* View tabs (Prospectos / Clientes) */
+.view-tabs { display:flex; gap:3px; margin-right:10px; }
+.view-tab {
+  padding:5px 14px; border-radius:20px;
+  border:2px solid var(--border); background:transparent;
+  color:var(--ink3); font-size:.82rem; font-weight:700;
+  cursor:pointer; transition:all var(--transition);
+  font-family:var(--fh);
+}
+.view-tab:hover { border-color:var(--border2); color:var(--ink); }
+.view-tab.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+
+/* Client status badges */
+.badge-ok       { background:#f0fdf4; color:#166534; }
+.badge-incident { background:#fef2f2; color:#991b1b; }
+.badge-renewal  { background:#eff6ff; color:#1e40af; }
+.badge-churned  { background:#f9fafb; color:#6b7280; }
+
+/* Saved attachments grid in send modal */
+.saved-attach-grid { display:flex; flex-wrap:wrap; gap:6px; min-height:32px; margin-bottom:8px; }
+.saved-attach-chip {
+  display:flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:6px;
+  border:2px solid var(--border); background:white;
+  font-size:.75rem; cursor:pointer; transition:all var(--transition);
+}
+.saved-attach-chip:hover { border-color:var(--border2); }
+.saved-attach-chip.active { border-color:var(--c-replied); background:var(--c-replied-bg); color:var(--c-replied); }
+.saved-attach-chip .del-attach { color:var(--ink3); font-size:.65rem; cursor:pointer; margin-left:3px; }
+.saved-attach-chip .del-attach:hover { color:var(--c-lost); }
+.add-attach-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:5px 10px; border-radius:6px;
+  border:1.5px dashed var(--border); background:var(--paper);
+  font-size:.75rem; color:var(--ink3); cursor:pointer;
+  transition:all var(--transition);
+}
+.add-attach-btn:hover { border-color:var(--acc); color:var(--acc); }
+
+/* Recipient type filter */
+.recip-filters-grid { grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr; }
+
+/* History incident type */
+.type-incident { border-left-color: #dc2626 !important; }
+
+/* Status selector — client variant (7 options) */
+.status-selector { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+
+/* filter-right flex gap */
+.filter-right { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+#extraFiltersP, #extraFiltersC { display:contents; }
