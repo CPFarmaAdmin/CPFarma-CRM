@@ -310,7 +310,7 @@ a:hover { text-decoration: underline; }
   background: var(--paper);
   color: var(--ink);
   outline: none;
-  width: 220px;
+  width: 120px;
   transition: all var(--transition);
 }
 .search-input:focus { border-color: var(--acc); background: white; box-shadow: 0 0 0 3px rgba(15,108,189,.1); }
@@ -1082,11 +1082,11 @@ textarea { resize: vertical; line-height: 1.6; }
 /* ── SELECTED ROW ────────────────────────────────────────────── */
 tr.selected-row { background: #f0f7ff !important; }
 
-/* ── MAP ROW fix ─────────────────────────────────────────────── */
-.map-row { display: grid; grid-template-columns: 1fr 20px 1fr; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--paper2); }
+/* ── MAP ROW — clean: just column name → select ─────────────── */
+.map-row { display: grid; grid-template-columns: 1fr 24px 1.4fr; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--paper2); }
 .map-row:last-child { border-bottom: none; }
-.map-col-name { font-family: var(--fm); font-size: .75rem; color: var(--ink2); font-weight: 600; }
-.map-arrow { color: var(--ink3); text-align: center; }
+.map-col-name { font-family: var(--fm); font-size: .8rem; color: var(--ink); font-weight: 600; background: var(--paper2); padding: 4px 9px; border-radius: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.map-arrow { color: var(--acc); text-align: center; font-size: 1rem; }
 
 /* ── TOPBAR badge ─────────────────────────────────────────────── */
 .topbar-badge { font-size: .7rem; color: var(--ink3); font-family: var(--fm); white-space: nowrap; }

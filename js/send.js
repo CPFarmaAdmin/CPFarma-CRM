@@ -343,10 +343,14 @@ async function doSend() {
     if (useSig && sigTxt) pBody += '\n\n-- \n' + sigTxt.replace(/<[^>]*>/g, '');
     const pSubj = personalise(subj, r);
 
-    window.open(
-      `${webmail}/?_task=mail&_action=compose&_to=${encodeURIComponent(r.email)}&_subject=${encodeURIComponent(pSubj)}&_body=${encodeURIComponent(pBody)}`,
-      '_blank'
-    );
+    // Build Roundcube compose URL
+    // Standard Roundcube format: /?_task=mail&_action=compose
+    const rcBase = webmail.endsWith('/') ? webmail.slice(0,-1) : webmail;
+    const rcUrl  = `${rcBase}/?_task=mail&_action=compose` +
+      `&_to=${encodeURIComponent(r.email)}` +
+      `&_subject=${encodeURIComponent(pSubj)}` +
+      `&_body=${encodeURIComponent(pBody)}`;
+    window.open(rcUrl, '_blank');
 
     try {
       const todayStr = new Date().toISOString().split('T')[0];
@@ -377,7 +381,9 @@ async function doSend() {
 }
 
 function personalise(text, r) {
-  return (text || '').replace(/\[Name\]/gi, r.company || r.contact || '[Name]');
+  // [Name] = contact person name first, fallback to company name
+  const name = r.contact || r.company || '[Name]';
+  return (text || '').replace(/\[Name\]/gi, name);
 }
 
 // ── SIGNATURE ─────────────────────────────────────────────────

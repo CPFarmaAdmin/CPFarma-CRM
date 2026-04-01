@@ -57,10 +57,10 @@
       <div class="topbar-right">
         <div class="search-wrap">
           <span class="search-icon">⌕</span>
-          <input type="text" id="searchInput" class="search-input" placeholder="Buscar nombre, email, país…" oninput="renderBothTables()">
+          <input type="text" id="searchInput" class="search-input" placeholder="Buscar…" oninput="renderBothTables()">
         </div>
         <button class="btn btn-ghost btn-sm" onclick="openImport()">📥 Importar</button>
-        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇️ CSV</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇️ Exportar</button>
         <button class="btn btn-send btn-sm" onclick="openSendModal()">✉️ Enviar emails</button>
         <button class="btn btn-primary btn-sm" id="btnNew" onclick="openPanel()">+ Nuevo</button>
       </div>
@@ -97,6 +97,11 @@
         </div>
         <!-- Client extra filters -->
         <div id="extraFiltersC" style="display:none">
+          <select class="filter-select" id="filterClientStatus" onchange="renderBothTables()">
+            <option value="">Estado</option>
+            <option value="ok">✅ Sin incidencias</option>
+            <option value="incident">⚠️ Incidencia activa</option>
+          </select>
           <select class="filter-select" id="filterCountryC" onchange="renderBothTables()"><option value="">País</option></select>
         </div>
         <span class="rcount" id="rcount"></span>
@@ -572,26 +577,26 @@
         <div id="impGuide" class="imp-guide">
           <div class="imp-guide-title">📋 Cómo preparar tu Excel</div>
           <div class="imp-guide-body">
-            <p>Primera fila = cabeceras. El sistema detecta las columnas automáticamente. Sólo son obligatorias <strong>Nombre</strong> (empresa/cliente) y <strong>Email</strong>.</p>
+            <p>Debes poner en la primera fila las cabeceras. El sistema detecta las columnas automáticamente, luego seleccionarás una a una el mapeo entre la columna que has puesto y la columna real de la base de datos del programa. Solo son obligatorias <strong>Nombre</strong> y <strong>Email</strong>.</p>
             <div class="imp-guide-cols">
-              <div class="imp-guide-col"><strong>Columnas detectadas:</strong>
-                <ul>
-                  <li>Empresa / Nombre / Company</li><li>Email / Correo</li>
-                  <li>Contacto / Persona de contacto</li><li>Cargo / Rol</li>
-                  <li>País / Country</li><li>Ciudad / City</li>
-                  <li>Teléfono / Phone</li><li>Programa</li>
-                  <li>Versión</li><li>Tipo (prospect/client)</li>
-                  <li>Prioridad (Alta/Media/Baja)</li><li>Notas / Comentarios</li>
-                </ul>
-              </div>
-              <div class="imp-guide-col">
-                <strong>Formatos aceptados:</strong>
+              <div class="imp-guide-col"><strong>Formatos aceptados:</strong>
                 <ul><li>📊 Excel (.xlsx, .xls)</li><li>📄 CSV (.csv)</li></ul>
-                <strong>Modos:</strong>
+                <strong>Modos de importación:</strong>
                 <ul>
                   <li><strong>Añadir</strong> — agrega sin borrar nada</li>
                   <li><strong>Fusionar</strong> — actualiza si el email ya existe</li>
-                  <li><strong>Reemplazar</strong> — borra carpeta e importa</li>
+                  <li><strong>Reemplazar</strong> — borra carpeta e importa de nuevo</li>
+                </ul>
+              </div>
+              <div class="imp-guide-col"><strong>Columnas mapeables:</strong>
+                <ul>
+                  <li>Empresa (obligatorio)</li><li>Email (obligatorio)</li>
+                  <li>Persona de contacto</li><li>Cargo</li>
+                  <li>País</li><li>Ciudad</li><li>Teléfono</li>
+                  <li>Programa</li><li>Versión</li>
+                  <li>Tipo (Prospecto / Cliente)</li>
+                  <li>Tipo cliente (Público / Privado)</li>
+                  <li>Prioridad (Alta / Media / Baja)</li><li>Notas</li>
                 </ul>
               </div>
             </div>

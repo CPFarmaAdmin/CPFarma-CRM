@@ -76,15 +76,34 @@ function setupRealtimeSync() {
 // ── VIEW SWITCHER (Prospectos / Clientes) ─────────────────────
 function setView(v) {
   activeView = v;
+
+  // Sync all view-tab buttons (top AND sidebar)
   document.querySelectorAll('.view-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.view === v);
   });
-  renderBothTables();
-  // Update topbar title
+
+  // Always update the title based on current view
+  const folderName = activeFolder !== 'all' ? folders.find(f=>f.id===activeFolder)?.name : null;
   document.getElementById('viewTitle').textContent =
-    activeFolder === 'all'
-      ? (v === 'prospects' ? 'Prospectos' : 'Clientes')
-      : (folders.find(f=>f.id===activeFolder)?.name || '');
+    folderName || (v === 'prospects' ? 'Prospectos' : 'Clientes');
+
+  // Show/hide filter bars based on view
+  const fp = document.getElementById('filtersProspects');
+  const fc = document.getElementById('filtersClients');
+  const ep = document.getElementById('extraFiltersP');
+  const ec = document.getElementById('extraFiltersC');
+  if (fp) fp.style.display = v === 'prospects' ? '' : 'none';
+  if (fc) fc.style.display = v === 'clients'   ? '' : 'none';
+  if (ep) ep.style.display = v === 'prospects' ? 'contents' : 'none';
+  if (ec) ec.style.display = v === 'clients'   ? 'contents' : 'none';
+
+  // Reset filter to 'all' when switching views
+  cFilter = 'all';
+  document.querySelectorAll('.ftab').forEach(t => {
+    t.classList.toggle('active', t.dataset.filter === 'all');
+  });
+
+  renderBothTables();
 }
 
 // ── SIDEBAR ───────────────────────────────────────────────────
@@ -126,7 +145,7 @@ function renderSidebar() {
       <button onclick="openFolderModal()" style="float:right;background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);border-radius:3px;padding:1px 6px;cursor:pointer;font-size:.62rem">+ Nueva</button>
     </div>
     ${folders.map(f => `
-      <button class="nb ${activeFolder===f.id?'active':''}" onclick="setFolder('${f.id}')">
+      <button class="nb ${activeFolder===f.id?'active':''}" onclick="setFolder('${f.id}');setView(activeView)">
         <span class="ni">${f.icon||'📁'}</span>
         <span class="nt">${f.name}</span>
         <span class="nk">${fc[f.id]||0}</span>
@@ -146,8 +165,9 @@ function renderSidebar() {
 
 function setFolder(id) {
   activeFolder = id;
-  const name = id === 'all' ? (activeView==='prospects'?'Prospectos':'Clientes')
-    : (folders.find(f=>f.id===id)?.name || id);
+  const name = id === 'all'
+    ? (activeView === 'prospects' ? 'Prospectos' : 'Clientes')
+    : (folders.find(f => f.id === id)?.name || id);
   document.getElementById('viewTitle').textContent = name;
   renderSidebar();
   renderBothTables();
@@ -226,11 +246,18 @@ function getFilteredFor(viewType) {
     if (prio    && r.priority !== prio)    return false;
     if (country && r.country !== country)  return false;
 
+    // Client status filter (dropdown)
+    const clientStatusFilter = document.getElementById('filterClientStatus')?.value || '';
+    if (isClient && clientStatusFilter && r.client_status !== clientStatusFilter) return false;
+
     // Status tabs
     if (cFilter === 'new')      return !r.status || r.status === 'new';
     if (cFilter === 'sent')     return r.status === 'sent';
     if (cFilter === 'replied')  return r.status === 'replied';
     if (cFilter === 'waiting')  return r.status === 'waiting';
+    // Client-specific tab filters
+    if (cFilter === 'ok')       return r.client_status === 'ok' || !r.client_status;
+    if (cFilter === 'incident') return r.client_status === 'incident';
     if (cFilter === 'followup') {
       if (!r.next_followup) return false;
       const d = new Date(r.next_followup); d.setHours(0,0,0,0);
