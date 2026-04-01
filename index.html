@@ -10,61 +10,42 @@
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════ LOGIN SCREEN -->
+<!-- LOGIN -->
 <div id="loginScreen" class="login-screen">
   <div class="login-card">
     <div class="login-logo">
       <div class="login-logo-mark">CP</div>
-      <div class="login-logo-text">
-        <span class="login-brand">CP Farma</span>
-        <span class="login-sub">CRM · Outreach</span>
-      </div>
+      <div><span class="login-brand">CP Farma</span><span class="login-sub">CRM · Outreach</span></div>
     </div>
     <h1 class="login-title">Bienvenido</h1>
-    <p class="login-desc">Inicia sesión para acceder al panel de seguimiento comercial.</p>
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" id="loginEmail" placeholder="tu@cpfarma.es" autocomplete="email">
-    </div>
-    <div class="form-group">
-      <label>Contraseña</label>
-      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
-    </div>
+    <p class="login-desc">Accede al panel de seguimiento comercial.</p>
+    <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@cpfarma.es" autocomplete="email"></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password"></div>
     <div id="loginError" class="login-error" style="display:none"></div>
     <button class="btn btn-primary btn-full" onclick="doLogin()" id="loginBtn">Entrar</button>
     <div class="login-footer">CP Farma © 2025 · Uso interno</div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════ MAIN APP -->
+<!-- APP -->
 <div id="app" class="app" style="display:none">
 
   <!-- SIDEBAR -->
-  <aside class="sidebar" id="sidebar">
+  <aside class="sidebar">
     <div class="sb-header">
       <div class="sb-brand">
         <div class="sb-logo">CP</div>
-        <div>
-          <div class="sb-brand-name">CP Farma</div>
-          <div class="sb-brand-sub">CRM</div>
-        </div>
+        <div><div class="sb-brand-name">CP Farma</div><div class="sb-brand-sub">CRM</div></div>
       </div>
       <div class="sb-user" id="sbUser"></div>
     </div>
-
     <div class="sb-stats" id="sbStats"></div>
-
     <nav class="sb-nav" id="sbNav"></nav>
-
-    <div class="sb-footer">
-      <button class="sb-logout" onclick="doLogout()">⎋ Cerrar sesión</button>
-    </div>
+    <div class="sb-footer"><button class="sb-logout" onclick="doLogout()">⎋ Cerrar sesión</button></div>
   </aside>
 
-  <!-- MAIN CONTENT -->
+  <!-- MAIN -->
   <main class="main-content">
-
-    <!-- TOPBAR -->
     <div class="topbar">
       <div class="topbar-left">
         <h1 class="topbar-title" id="viewTitle">Todos los contactos</h1>
@@ -82,7 +63,6 @@
       </div>
     </div>
 
-    <!-- FILTER BAR -->
     <div class="filterbar">
       <div class="filter-tabs" id="filterTabs">
         <button class="ftab active" data-filter="all" onclick="setFilter('all',this)">Todos</button>
@@ -99,59 +79,60 @@
           <option value="Media">🟡 Media</option>
           <option value="Baja">🟢 Baja</option>
         </select>
-        <select class="filter-select" id="filterCountry" onchange="renderTable()">
-          <option value="">País</option>
+        <select class="filter-select" id="filterCountry" onchange="renderTable()"><option value="">País</option></select>
+        <select class="filter-select" id="filterType" onchange="renderTable()">
+          <option value="">Tipo</option>
+          <option value="prospect">🎯 Prospectos</option>
+          <option value="client">💼 Clientes</option>
+          <option value="partner">🤝 Partners</option>
         </select>
         <span class="rcount" id="rcount"></span>
       </div>
     </div>
 
-    <!-- FOLLOWUP ALERT BANNER -->
     <div id="followupBanner" class="followup-banner" style="display:none"></div>
 
-    <!-- TABLE -->
     <div class="table-wrap">
-      <table class="contacts-table" id="contactsTable">
-        <thead>
-          <tr>
-            <th style="width:36px"><input type="checkbox" id="selAll" onchange="toggleSelAll(this)" class="chk"></th>
-            <th class="sortable" onclick="setSort('company')"><span>Empresa</span><span class="sort-icon" id="si-company"></span></th>
-            <th>Contacto · Email</th>
-            <th class="sortable" onclick="setSort('country')"><span>País</span><span class="sort-icon" id="si-country"></span></th>
-            <th class="sortable" onclick="setSort('date')"><span>Últ. contacto</span><span class="sort-icon" id="si-date"></span></th>
-            <th>Estado</th>
-            <th class="sortable" onclick="setSort('prio')"><span>Prioridad</span><span class="sort-icon" id="si-prio"></span></th>
-            <th class="sortable" onclick="setSort('followup')"><span>Próx. follow-up</span><span class="sort-icon" id="si-followup"></span></th>
-            <th style="width:80px">Acciones</th>
-          </tr>
-        </thead>
+      <table class="contacts-table" id="contactsTable" style="display:none">
+        <thead><tr>
+          <th style="width:36px"><input type="checkbox" id="selAll" onchange="toggleSelAll(this)" class="chk"></th>
+          <th class="sortable" onclick="setSort('company')"><span>Empresa</span><span class="sort-icon" id="si-company"></span></th>
+          <th>Contacto · Email</th>
+          <th class="sortable" onclick="setSort('country')"><span>País</span><span class="sort-icon" id="si-country"></span></th>
+          <th class="sortable" onclick="setSort('date')"><span>Últ. contacto</span><span class="sort-icon" id="si-date"></span></th>
+          <th>Estado</th>
+          <th class="sortable" onclick="setSort('prio')"><span>Prioridad</span><span class="sort-icon" id="si-prio"></span></th>
+          <th class="sortable" onclick="setSort('followup')"><span>Próx. follow-up</span><span class="sort-icon" id="si-followup"></span></th>
+          <th style="width:90px">Acciones</th>
+        </tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
       <div id="emptyState" class="empty-state" style="display:none">
         <div class="empty-icon">📭</div>
         <h3>Sin contactos</h3>
-        <p>Crea tu primer contacto o importa un Excel.</p>
-        <button class="btn btn-primary" onclick="openPanel()">+ Crear contacto</button>
+        <p>Crea el primero o importa un Excel.</p>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="openPanel()">+ Crear contacto</button>
+          <button class="btn btn-ghost" onclick="openImport()">📥 Importar Excel</button>
+        </div>
       </div>
-      <div id="loadingState" class="empty-state" style="display:none">
+      <div id="loadingState" class="empty-state">
         <div class="loading-spinner"></div>
         <p>Cargando…</p>
       </div>
     </div>
 
-    <!-- BULK ACTION BAR -->
     <div class="bulk-bar" id="bulkBar" style="display:none">
       <span id="bulkCount"></span>
-      <button class="btn btn-ghost btn-sm" onclick="openMoveModal()">📁 Mover a carpeta</button>
-      <button class="btn btn-send btn-sm" onclick="bulkSend()">✉️ Enviar email</button>
+      <button class="btn btn-ghost btn-sm" onclick="openMoveModal()">📁 Mover</button>
+      <button class="btn btn-send btn-sm" onclick="bulkSend()">✉️ Email</button>
       <button class="btn btn-danger btn-sm" onclick="bulkDelete()">🗑 Eliminar</button>
-      <button class="btn btn-ghost btn-sm" onclick="clearSelection()">✕ Cancelar</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearSelection()">✕</button>
     </div>
-
   </main>
 </div>
 
-<!-- ═══════════════════════════════════════════════ CONTACT PANEL -->
+<!-- CONTACT PANEL -->
 <div class="overlay" id="overlay" onclick="closePanel()"></div>
 <div class="side-panel" id="sidePanel">
   <div class="panel-header">
@@ -161,17 +142,15 @@
     </div>
     <button class="close-btn" onclick="closePanel()">✕</button>
   </div>
-
   <div class="panel-tabs">
-    <button class="ptab active" onclick="switchPanelTab('info',this)">📋 Info</button>
-    <button class="ptab" onclick="switchPanelTab('email',this)">📤 Email</button>
-    <button class="ptab" onclick="switchPanelTab('followup',this)">🔔 Seguimiento</button>
-    <button class="ptab" onclick="switchPanelTab('history',this)">💬 Historial</button>
+    <button class="ptab active" data-tab="info" onclick="switchPanelTab('info',this)">📋 Info</button>
+    <button class="ptab" data-tab="email" onclick="switchPanelTab('email',this)">📤 Email</button>
+    <button class="ptab" data-tab="followup" onclick="switchPanelTab('followup',this)">🔔 Seguimiento</button>
+    <button class="ptab" data-tab="history" onclick="switchPanelTab('history',this)">💬 Historial</button>
   </div>
+  <div class="panel-body">
 
-  <div class="panel-body" id="panelBody">
-
-    <!-- TAB: INFO -->
+    <!-- TAB INFO -->
     <div class="ptab-content active" id="tab-info">
       <div class="form-section">
         <div class="form-section-title">🏢 Datos del contacto</div>
@@ -219,7 +198,7 @@
           <div><label>LinkedIn</label><input type="url" id="f-linkedin" placeholder="linkedin.com/in/…"></div>
           <div><label>Web</label><input type="url" id="f-url" placeholder="https://…"></div>
           <div class="fg-full"><label>Etiquetas</label>
-            <div class="tag-input-wrap" id="tagWrap">
+            <div class="tag-input-wrap" id="tagWrap" onclick="document.getElementById('tagInput').focus()">
               <input type="text" class="tag-input" id="tagInput" placeholder="Escribe y pulsa Enter" onkeydown="addTag(event)">
             </div>
           </div>
@@ -227,7 +206,7 @@
       </div>
     </div>
 
-    <!-- TAB: EMAIL -->
+    <!-- TAB EMAIL -->
     <div class="ptab-content" id="tab-email">
       <div class="form-section">
         <div class="form-section-title">📤 Último email enviado</div>
@@ -245,16 +224,8 @@
               <label>Cuerpo del email</label>
               <button class="btn-link" onclick="pasteStdText()">📋 Pegar plantilla</button>
             </div>
-            <textarea id="f-sentText" rows="6" placeholder="Pega o escribe el email enviado…"></textarea>
+            <textarea id="f-sentText" rows="7" placeholder="Pega o escribe el email enviado…"></textarea>
           </div>
-        </div>
-      </div>
-      <div class="form-section">
-        <div class="form-section-title">📥 Respuesta recibida</div>
-        <div class="form-grid">
-          <div><label>Fecha respuesta</label><input type="date" id="f-replyDate"></div>
-          <div><label>Respondido por</label><input type="text" id="f-replyFrom" placeholder="Nombre del respondedor"></div>
-          <div class="fg-full"><label>Texto de la respuesta</label><textarea id="f-replyText" rows="4" placeholder="Copia aquí la respuesta recibida…"></textarea></div>
         </div>
       </div>
       <div class="form-section">
@@ -269,9 +240,17 @@
           <div class="status-opt" data-v="lost" onclick="selStatus('lost')">❌<span>Perdido</span></div>
         </div>
       </div>
+      <div class="form-section">
+        <div class="form-section-title">📥 Respuesta recibida</div>
+        <div class="form-grid">
+          <div><label>Fecha respuesta</label><input type="date" id="f-replyDate"></div>
+          <div><label>Respondido por</label><input type="text" id="f-replyFrom" placeholder="Nombre"></div>
+          <div class="fg-full"><label>Texto de la respuesta</label><textarea id="f-replyText" rows="4" placeholder="Copia aquí la respuesta recibida…"></textarea></div>
+        </div>
+      </div>
     </div>
 
-    <!-- TAB: FOLLOWUP -->
+    <!-- TAB FOLLOWUP -->
     <div class="ptab-content" id="tab-followup">
       <div class="form-section">
         <div class="form-section-title">🔔 Programar seguimiento</div>
@@ -286,7 +265,7 @@
               <option>Presencial</option><option>Llamada</option>
             </select>
           </div>
-          <div class="fg-full"><label>Notas del seguimiento</label><textarea id="f-followupNotes" rows="4" placeholder="Qué temas tratar, contexto, objetivos de la llamada…"></textarea></div>
+          <div class="fg-full"><label>Notas del seguimiento</label><textarea id="f-followupNotes" rows="4" placeholder="Qué tratar, contexto, objetivos…"></textarea></div>
         </div>
       </div>
       <div class="form-section">
@@ -295,12 +274,12 @@
           <div><label>Producto / Servicio</label><input type="text" id="f-product" placeholder="Qué producto le interesa…"></div>
           <div><label>Valor estimado (€)</label><input type="number" id="f-dealValue" placeholder="0.00"></div>
           <div><label>Probabilidad (%)</label><input type="number" id="f-dealProb" placeholder="50" min="0" max="100"></div>
-          <div><label>Fecha cierre estimada</label><input type="date" id="f-dealClose"></div>
+          <div><label>Cierre estimado</label><input type="date" id="f-dealClose"></div>
         </div>
       </div>
     </div>
 
-    <!-- TAB: HISTORY -->
+    <!-- TAB HISTORY -->
     <div class="ptab-content" id="tab-history">
       <div class="history-add">
         <div class="history-add-header">
@@ -314,14 +293,15 @@
           </select>
           <input type="date" id="noteDate" class="note-date">
         </div>
-        <textarea id="noteText" placeholder="Escribe tu nota, copia la respuesta recibida, describe la llamada…" rows="4"></textarea>
-        <button class="btn btn-primary btn-sm" onclick="addNote()">➕ Añadir entrada</button>
+        <textarea id="noteText" placeholder="Escribe tu nota: qué ocurrió, qué respondieron, resultado de la llamada…" rows="4"></textarea>
+        <button class="btn btn-primary btn-sm" onclick="addNote()">➕ Añadir</button>
       </div>
-      <div class="history-thread" id="historyThread"></div>
+      <div class="history-thread" id="historyThread">
+        <div style="color:var(--ink3);font-size:.82rem;font-style:italic;padding:12px 0">Abre un contacto para ver su historial.</div>
+      </div>
     </div>
 
   </div>
-
   <div class="panel-footer">
     <button class="btn btn-danger btn-sm" id="panelDelBtn" onclick="delFromPanel()" style="display:none">🗑 Eliminar</button>
     <div style="flex:1"></div>
@@ -331,9 +311,9 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════ SEND MODAL -->
+<!-- SEND MODAL -->
 <div class="modal-wrap" id="sendModal">
-  <div class="modal modal-lg">
+  <div class="modal modal-xl">
     <div class="modal-header">
       <div class="modal-icon">✉️</div>
       <h3>Enviar emails</h3>
@@ -347,28 +327,25 @@
     </div>
     <div class="modal-body">
 
-      <!-- Step 1: Template -->
+      <!-- Step 1 -->
       <div id="sendStep1">
         <div class="template-tabs" id="sendStdTabs"></div>
-        <div class="form-group">
-          <label>Asunto del email</label>
-          <input type="text" id="sendSubject" placeholder="Asunto…">
-        </div>
+        <div class="form-group"><label>Asunto</label><input type="text" id="sendSubject" placeholder="Asunto del email…"></div>
         <div class="form-group">
           <div class="label-row">
             <label>Cuerpo del email</label>
             <span class="hint">Usa <code>[Name]</code> para personalizar con el nombre de la empresa</span>
           </div>
-          <textarea id="sendBody" rows="10" placeholder="Escribe el email. [Name] se sustituirá por el nombre de cada empresa."></textarea>
+          <textarea id="sendBody" rows="11" placeholder="Escribe el email. [Name] se sustituirá por cada empresa."></textarea>
         </div>
         <div class="sig-section">
           <div class="label-row">
             <label>✍️ Firma</label>
             <label class="toggle-label"><input type="checkbox" id="useSig"> Incluir firma</label>
-            <button class="btn-link" onclick="toggleSigEdit()">Editar</button>
+            <button class="btn-link" onclick="toggleSigEdit()">Editar firma</button>
           </div>
           <div id="sigEditArea" style="display:none">
-            <textarea id="sigHtml" rows="3" placeholder="<p><strong>Sergio Garbayo</strong> · CP Farma</p>"></textarea>
+            <textarea id="sigHtml" rows="3" placeholder="<p><strong>Tu nombre</strong> · CP Farma</p>"></textarea>
             <div style="display:flex;gap:6px;margin-top:6px">
               <button class="btn btn-ghost btn-sm" onclick="previewSig()">👁 Vista previa</button>
               <button class="btn btn-primary btn-sm" onclick="saveSig()">💾 Guardar firma</button>
@@ -378,13 +355,11 @@
         </div>
       </div>
 
-      <!-- Step 2: Recipients -->
+      <!-- Step 2 -->
       <div id="sendStep2" style="display:none">
-        <div class="recip-filters">
-          <input type="text" id="recipSearch" placeholder="🔍 Buscar…" oninput="filterRecip()">
-          <select id="recipFolderFilter" onchange="filterRecip()">
-            <option value="">Todas las carpetas</option>
-          </select>
+        <div class="recip-filters-grid">
+          <input type="text" id="recipSearch" placeholder="🔍 Buscar empresa, email, ciudad…" oninput="filterRecip()">
+          <select id="recipFolderFilter" onchange="filterRecip()"><option value="">📬 Todas las carpetas</option></select>
           <select id="recipStatusFilter" onchange="filterRecip()">
             <option value="">Todos los estados</option>
             <option value="new">🆕 Sin contactar</option>
@@ -392,8 +367,20 @@
             <option value="waiting">⏳ Sin respuesta</option>
             <option value="replied">✅ Respondido</option>
           </select>
+          <select id="recipPrioFilter" onchange="filterRecip()">
+            <option value="">Toda prioridad</option>
+            <option value="Alta">🔴 Alta</option>
+            <option value="Media">🟡 Media</option>
+            <option value="Baja">🟢 Baja</option>
+          </select>
+          <select id="recipCountryFilter" onchange="filterRecip()"><option value="">Todos los países</option></select>
         </div>
-        <div class="recip-info" id="recipCount"></div>
+        <!-- Quick folder buttons -->
+        <div class="folder-quick-select" id="folderQuickSelect"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div class="recip-info" id="recipCount"></div>
+          <button class="btn-link" style="margin-left:auto" onclick="clearAllRecip()">✕ Limpiar selección</button>
+        </div>
         <div class="recip-list-wrap">
           <div class="recip-selall">
             <input type="checkbox" id="selAllRecip" onchange="toggleSelAllRecip(this)" class="chk">
@@ -403,11 +390,12 @@
           <div id="recipItems"></div>
         </div>
         <div class="selected-chips-wrap">
+          <div style="font-size:.7rem;font-weight:600;color:var(--ink3);margin-bottom:4px;font-family:var(--fm)">SELECCIONADOS:</div>
           <div class="selected-chips" id="selChips"></div>
         </div>
       </div>
 
-      <!-- Step 3: Preview -->
+      <!-- Step 3 -->
       <div id="sendStep3" style="display:none">
         <div class="preview-nav">
           <button class="btn btn-ghost btn-sm" onclick="prevPrev()">← Anterior</button>
@@ -425,19 +413,13 @@
         <div class="info-box">ℹ️ Se abrirá Roundcube en nueva pestaña por cada destinatario. Asegúrate de estar logueado en <a href="https://webmail.cpfarma.es" target="_blank">webmail.cpfarma.es</a></div>
       </div>
 
-      <!-- Step 4: Sending -->
+      <!-- Step 4 -->
       <div id="sendStep4" style="display:none">
-        <div class="send-progress">
-          <div class="progress-header">
-            <span id="sProgLabel">Preparando…</span>
-            <span id="sProgPct">0%</span>
-          </div>
-          <div class="progress-bar-wrap"><div class="progress-bar" id="sProgBar" style="width:0%"></div></div>
-          <div class="send-log" id="sLog"></div>
-          <div id="sDoneMsg" class="done-msg" style="display:none">✅ Completado. Revisa Roundcube para confirmar los envíos.</div>
-        </div>
+        <div class="progress-header"><span id="sProgLabel">Preparando…</span><span id="sProgPct">0%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar" id="sProgBar" style="width:0%"></div></div>
+        <div class="send-log" id="sLog"></div>
+        <div id="sDoneMsg" class="done-msg" style="display:none">✅ Completado. Revisa Roundcube para confirmar los envíos.</div>
       </div>
-
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeSendModal()">Cancelar</button>
@@ -447,40 +429,31 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════ TEMPLATES MODAL -->
+<!-- TEMPLATES MODAL -->
 <div class="modal-wrap" id="tplModal">
-  <div class="modal">
+  <div class="modal modal-lg">
     <div class="modal-header">
-      <div class="modal-icon">📝</div>
-      <h3>Plantillas de email</h3>
+      <div class="modal-icon">📝</div><h3>Plantillas de email</h3>
       <button class="close-btn" onclick="closeTplModal()">✕</button>
     </div>
     <div class="modal-body">
       <div class="tpl-list" id="tplList"></div>
-      <button class="btn btn-primary btn-sm" onclick="addTpl()" style="margin-top:10px">+ Nueva plantilla</button>
+      <button class="btn btn-primary btn-sm" onclick="addTpl()" style="margin-top:12px">+ Nueva plantilla</button>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeTplModal()">Cerrar</button>
-    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeTplModal()">Cerrar</button></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════ FOLDER MODAL -->
+<!-- FOLDER MODAL -->
 <div class="modal-wrap" id="folderModal">
   <div class="modal modal-sm">
     <div class="modal-header">
-      <div class="modal-icon">📁</div>
-      <h3 id="folderModalTitle">Nueva carpeta</h3>
+      <div class="modal-icon">📁</div><h3 id="folderModalTitle">Nueva carpeta</h3>
       <button class="close-btn" onclick="closeFolderModal()">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-group"><label>Nombre</label><input type="text" id="folderName" placeholder="Nombre de la carpeta"></div>
-      <div class="form-group">
-        <label>Icono</label>
-        <div class="icon-picker" id="iconPicker">
-          📁 🌎 🇺🇸 🇲🇽 🇪🇸 🇩🇪 🇫🇷 🇬🇧 🇮🇹 🇸🇪 🇳🇴 🇵🇹 ⭐ 🔥 💼 🏗️ 💊 🎯 📌 🏥 🔬 🤝 💰
-        </div>
-      </div>
+      <div class="form-group"><label>Icono</label><div class="icon-picker" id="iconPicker"></div></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeFolderModal()">Cancelar</button>
@@ -489,55 +462,89 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════ MOVE MODAL -->
+<!-- MOVE MODAL -->
 <div class="modal-wrap" id="moveModal">
   <div class="modal modal-sm">
     <div class="modal-header">
-      <div class="modal-icon">📁</div>
-      <h3>Mover a carpeta</h3>
+      <div class="modal-icon">📁</div><h3>Mover a carpeta</h3>
       <button class="close-btn" onclick="closeMoveModal()">✕</button>
     </div>
-    <div class="modal-body">
-      <div id="moveFolderList" style="display:flex;flex-direction:column;gap:6px"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeMoveModal()">Cancelar</button>
-    </div>
+    <div class="modal-body"><div id="moveFolderList"></div></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeMoveModal()">Cancelar</button></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════ IMPORT MODAL -->
+<!-- IMPORT MODAL -->
 <div class="modal-wrap" id="impModal">
-  <div class="modal">
+  <div class="modal modal-lg">
     <div class="modal-header">
-      <div class="modal-icon">📥</div>
-      <h3>Importar contactos</h3>
+      <div class="modal-icon">📥</div><h3>Importar contactos</h3>
       <button class="close-btn" onclick="closeImport()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="dropzone" id="dz" onclick="document.getElementById('fInput').click()" ondragover="dzDrag(event,true)" ondragleave="dzDrag(event,false)" ondrop="dzDrop(event)">
-        <input type="file" id="fInput" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])" style="display:none">
-        <div class="dz-icon">📊</div>
-        <h4>Arrastra tu Excel o haz clic</h4>
-        <p>.xlsx · .xls · .csv</p>
-      </div>
-      <div id="impPrev" style="display:none"></div>
-      <div id="impMap" style="display:none">
-        <div class="section-label">Mapeo de columnas</div>
-        <div id="mapRows" class="map-rows"></div>
-      </div>
-      <div id="impFolderWrap" style="display:none">
-        <div class="form-group"><label>Importar a carpeta</label><select id="impFolder"></select></div>
-      </div>
-      <div id="impModeWrap" style="display:none">
-        <div class="form-group">
-          <label>Modo de importación</label>
-          <div class="import-modes">
-            <div class="imode active" id="m-add" onclick="setIMode('add')">➕ Añadir<small>Sin borrar existentes</small></div>
-            <div class="imode" id="m-merge" onclick="setIMode('merge')">🔄 Fusionar<small>Actualiza si email coincide</small></div>
-            <div class="imode" id="m-replace" onclick="setIMode('replace')">♻️ Reemplazar<small>Borra carpeta e importa</small></div>
+      <div id="impWizard">
+        <!-- Guide -->
+        <div id="impGuide" class="imp-guide">
+          <div class="imp-guide-title">📋 Cómo preparar tu Excel</div>
+          <div class="imp-guide-body">
+            <p>Tu archivo debe tener <strong>cabeceras en la primera fila</strong>. Las columnas pueden llamarse de cualquier forma — el sistema las detecta automáticamente. Las únicas columnas necesarias son <strong>Empresa</strong> y <strong>Email</strong>.</p>
+            <div class="imp-guide-cols">
+              <div class="imp-guide-col"><strong>Columnas detectadas automáticamente:</strong>
+                <ul>
+                  <li>Empresa / Company</li><li>Email / Correo</li><li>Contacto / Contact</li>
+                  <li>Cargo / Rol / Role</li><li>País / Country</li><li>Ciudad / City</li>
+                  <li>Teléfono / Phone</li><li>Sector / Industry</li><li>Notas / Comments</li>
+                  <li>Prioridad (Alta/Media/Baja)</li><li>Estado (nuevo/enviado/respondido…)</li>
+                  <li>LinkedIn, Web, Etiquetas</li>
+                </ul>
+              </div>
+              <div class="imp-guide-col"><strong>Formatos aceptados:</strong>
+                <ul>
+                  <li>📊 Excel (.xlsx, .xls)</li>
+                  <li>📄 CSV (.csv)</li>
+                </ul>
+                <strong>Ejemplo de cabeceras válidas:</strong>
+                <div class="imp-guide-example">Empresa | Email | Contacto | País | Teléfono | Notas</div>
+                <p style="margin-top:8px"><strong>Modos de importación:</strong></p>
+                <ul>
+                  <li><strong>Añadir</strong> — agrega sin borrar nada</li>
+                  <li><strong>Fusionar</strong> — actualiza si el email ya existe</li>
+                  <li><strong>Reemplazar</strong> — borra la carpeta e importa de nuevo</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
+        <div class="dropzone" id="dz" onclick="document.getElementById('fInput').click()" ondragover="dzDrag(event,true)" ondragleave="dzDrag(event,false)" ondrop="dzDrop(event)">
+          <input type="file" id="fInput" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])" style="display:none">
+          <div class="dz-icon">📊</div>
+          <h4>Arrastra tu Excel aquí o haz clic</h4>
+          <p>.xlsx · .xls · .csv</p>
+        </div>
+        <div id="impPrev" style="display:none"></div>
+        <div id="impMap" style="display:none">
+          <div class="section-label" style="margin-top:14px">Mapeo de columnas — revisa que cada columna va al campo correcto:</div>
+          <div id="mapRows" class="map-rows"></div>
+        </div>
+        <div id="impFolderWrap" style="display:none;margin-top:12px">
+          <div class="form-group"><label>Importar a carpeta</label><select id="impFolder"></select></div>
+        </div>
+        <div id="impModeWrap" style="display:none">
+          <div class="form-group">
+            <label>Modo de importación</label>
+            <div class="import-modes">
+              <div class="imode active" id="m-add" onclick="setIMode('add')">➕ Añadir<small>Sin borrar existentes</small></div>
+              <div class="imode" id="m-merge" onclick="setIMode('merge')">🔄 Fusionar<small>Actualiza si email coincide</small></div>
+              <div class="imode" id="m-replace" onclick="setIMode('replace')">♻️ Reemplazar<small>Borra carpeta e importa</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Result -->
+      <div id="impResult" style="display:none">
+        <div id="impResultMsg"></div>
+        <button class="btn btn-primary" onclick="closeImport()" style="margin-top:16px">✅ Cerrar</button>
+        <button class="btn btn-ghost" onclick="openImport()" style="margin-top:16px;margin-left:8px">📥 Importar más</button>
       </div>
     </div>
     <div class="modal-footer">
@@ -547,12 +554,9 @@
   </div>
 </div>
 
-<!-- TOAST CONTAINER -->
 <div class="toast-container" id="toasts"></div>
 
-<!-- ═══════════════════════════════════════════════ SCRIPTS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- SUPABASE: replace with your project URL and anon key -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
 <script src="js/db.js"></script>

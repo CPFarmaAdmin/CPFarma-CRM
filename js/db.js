@@ -1,6 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
 // DB.JS — Capa de base de datos (Supabase)
-// Todas las llamadas a la API van aquí
 // ═══════════════════════════════════════════════════════════════
 
 const { createClient } = supabase;
@@ -14,7 +13,10 @@ async function dbGetContacts() {
     .select('*, interactions(count)')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data || [];
+  return (data || []).map(r => ({
+    ...r,
+    _noteCount: r.interactions?.[0]?.count || 0,
+  }));
 }
 
 async function dbGetContact(id) {
@@ -28,9 +30,8 @@ async function dbGetContact(id) {
 }
 
 async function dbSaveContact(record) {
-  const { id, ...fields } = record;
+  const { id, interactions, _noteCount, ...fields } = record;
   if (id) {
-    // Update
     const { data, error } = await db
       .from('contacts')
       .update({ ...fields, updated_at: new Date().toISOString() })
@@ -40,7 +41,6 @@ async function dbSaveContact(record) {
     if (error) throw error;
     return data;
   } else {
-    // Insert
     const { data, error } = await db
       .from('contacts')
       .insert(fields)
@@ -52,19 +52,12 @@ async function dbSaveContact(record) {
 }
 
 async function dbDeleteContact(id) {
-  // Interactions are deleted by CASCADE in the DB
-  const { error } = await db
-    .from('contacts')
-    .delete()
-    .eq('id', id);
+  const { error } = await db.from('contacts').delete().eq('id', id);
   if (error) throw error;
 }
 
 async function dbDeleteContacts(ids) {
-  const { error } = await db
-    .from('contacts')
-    .delete()
-    .in('id', ids);
+  const { error } = await db.from('contacts').delete().in('id', ids);
   if (error) throw error;
 }
 
@@ -76,7 +69,7 @@ async function dbMoveContacts(ids, folderId) {
   if (error) throw error;
 }
 
-// ── INTERACTIONS (history) ─────────────────────────────────────
+// ── INTERACTIONS ──────────────────────────────────────────────
 
 async function dbGetInteractions(contactId) {
   const { data, error } = await db
@@ -99,10 +92,7 @@ async function dbAddInteraction(interaction) {
 }
 
 async function dbDeleteInteraction(id) {
-  const { error } = await db
-    .from('interactions')
-    .delete()
-    .eq('id', id);
+  const { error } = await db.from('interactions').delete().eq('id', id);
   if (error) throw error;
 }
 
@@ -120,30 +110,20 @@ async function dbGetFolders() {
 async function dbSaveFolder(folder) {
   const { id, ...fields } = folder;
   if (id) {
-    const { data, error } = await db
-      .from('folders')
-      .update(fields)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await db.from('folders').update(fields).eq('id', id).select().single();
     if (error) throw error;
     return data;
   } else {
-    const { data, error } = await db
-      .from('folders')
-      .insert(fields)
-      .select()
-      .single();
+    const { data, error } = await db.from('folders').insert(fields).select().single();
     if (error) throw error;
     return data;
   }
 }
 
 async function dbDeleteFolder(id) {
-  const { error } = await db
-    .from('folders')
-    .delete()
-    .eq('id', id);
+  // First clear folder_id from contacts (do NOT delete them)
+  await db.from('contacts').update({ folder_id: null }).eq('folder_id', id);
+  const { error } = await db.from('folders').delete().eq('id', id);
   if (error) throw error;
 }
 
@@ -161,59 +141,38 @@ async function dbGetTemplates() {
 async function dbSaveTemplate(tpl) {
   const { id, ...fields } = tpl;
   if (id) {
-    const { data, error } = await db
-      .from('templates')
-      .update(fields)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await db.from('templates').update(fields).eq('id', id).select().single();
     if (error) throw error;
     return data;
   } else {
-    const { data, error } = await db
-      .from('templates')
-      .insert(fields)
-      .select()
-      .single();
+    const { data, error } = await db.from('templates').insert(fields).select().single();
     if (error) throw error;
     return data;
   }
 }
 
 async function dbDeleteTemplate(id) {
-  const { error } = await db
-    .from('templates')
-    .delete()
-    .eq('id', id);
+  const { error } = await db.from('templates').delete().eq('id', id);
   if (error) throw error;
 }
 
 // ── USER SETTINGS ─────────────────────────────────────────────
 
 async function dbGetSettings(userId) {
-  const { data } = await db
-    .from('user_settings')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
+  const { data } = await db.from('user_settings').select('*').eq('user_id', userId).single();
   return data || {};
 }
 
 async function dbSaveSettings(userId, settings) {
-  const { error } = await db
-    .from('user_settings')
-    .upsert({ user_id: userId, ...settings });
+  const { error } = await db.from('user_settings').upsert({ user_id: userId, ...settings });
   if (error) throw error;
 }
 
-// ── REAL-TIME SUBSCRIPTIONS ───────────────────────────────────
+// ── REALTIME ──────────────────────────────────────────────────
 
 function subscribeToContacts(callback) {
   return db
     .channel('contacts-changes')
-    .on('postgres_changes',
-      { event: '*', schema: 'public', table: 'contacts' },
-      callback
-    )
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'contacts' }, callback)
     .subscribe();
 }

@@ -994,3 +994,109 @@ textarea { resize: vertical; line-height: 1.6; }
   .fg-full { grid-column: span 1; }
   .status-selector { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ADDITIONS v2 — Import guide, send filters, history fixes
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Modal XL */
+.modal-xl { max-width: 780px; }
+
+/* ── IMPORT GUIDE ────────────────────────────────────────────── */
+.imp-guide {
+  background: #f0f7ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.imp-guide-title { font-weight: 700; font-size: .88rem; color: #1e40af; margin-bottom: 8px; }
+.imp-guide-body { font-size: .82rem; color: var(--ink2); line-height: 1.6; }
+.imp-guide-body p { margin-bottom: 8px; }
+.imp-guide-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+.imp-guide-col ul { padding-left: 14px; margin-top: 4px; }
+.imp-guide-col li { margin-bottom: 2px; font-size: .8rem; }
+.imp-guide-example {
+  background: white; border: 1px solid var(--border);
+  border-radius: 5px; padding: 6px 10px;
+  font-family: var(--fm); font-size: .75rem;
+  margin-top: 6px; color: var(--ink2);
+}
+.imp-file-info {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 13px; background: var(--paper2);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-size: .83rem;
+}
+.imp-file-meta { font-size: .72rem; color: var(--ink3); font-family: var(--fm); margin-top: 2px; }
+.map-col-info { min-width: 0; }
+.map-col-sample { font-size: .67rem; color: var(--ink3); font-family: var(--fm); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.map-sel-mapped { border-color: var(--c-replied) !important; background: var(--c-replied-bg) !important; }
+.map-warning { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 8px 12px; font-size: .78rem; color: #92400e; margin-bottom: 10px; }
+.imp-stat-ok   { display:inline-block; padding:3px 10px; background:var(--c-replied-bg); color:var(--c-replied); border-radius:20px; font-size:.82rem; font-weight:700; }
+.imp-stat-blue { display:inline-block; padding:3px 10px; background:var(--acc-l); color:var(--acc); border-radius:20px; font-size:.82rem; font-weight:700; }
+.imp-stat-er   { display:inline-block; padding:3px 10px; background:var(--c-lost-bg); color:var(--c-lost); border-radius:20px; font-size:.82rem; font-weight:700; }
+
+/* ── SEND MODAL — recipient filters ──────────────────────────── */
+.recip-filters-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.recip-filters-grid input,
+.recip-filters-grid select { font-size: .78rem; padding: 6px 8px; }
+
+.folder-quick-select {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  background: var(--paper2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.folder-quick-btn {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: white;
+  cursor: pointer;
+  font-size: .73rem;
+  font-weight: 600;
+  color: var(--ink2);
+  transition: all var(--transition);
+  display: flex; align-items: center; gap: 4px;
+}
+.folder-quick-btn:hover { border-color: var(--acc); background: var(--acc-l); color: var(--acc); }
+.folder-quick-btn.all-sel { background: var(--c-replied-bg); border-color: var(--c-replied); color: var(--c-replied); }
+
+/* ── FILTER TYPE ─────────────────────────────────────────────── */
+.filter-select option { font-size: .82rem; }
+
+/* ── HISTORY ─────────────────────────────────────────────────── */
+.history-empty {
+  text-align: center; padding: 30px 16px;
+  color: var(--ink3); font-size: .82rem; font-style: italic;
+}
+
+/* ── SELECTED ROW ────────────────────────────────────────────── */
+tr.selected-row { background: #f0f7ff !important; }
+
+/* ── MAP ROW fix ─────────────────────────────────────────────── */
+.map-row { display: grid; grid-template-columns: 1fr 20px 1fr; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--paper2); }
+.map-row:last-child { border-bottom: none; }
+.map-col-name { font-family: var(--fm); font-size: .75rem; color: var(--ink2); font-weight: 600; }
+.map-arrow { color: var(--ink3); text-align: center; }
+
+/* ── TOPBAR badge ─────────────────────────────────────────────── */
+.topbar-badge { font-size: .7rem; color: var(--ink3); font-family: var(--fm); white-space: nowrap; }
+
+/* ── RESPONSIVE fixes ────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .recip-filters-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .imp-guide-cols { grid-template-columns: 1fr; }
+}
+@media (max-width: 680px) {
+  .recip-filters-grid { grid-template-columns: 1fr 1fr; }
+  .status-selector { grid-template-columns: repeat(2, 1fr); }
+}

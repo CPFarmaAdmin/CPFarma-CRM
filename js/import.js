@@ -6,44 +6,64 @@ let iMode = 'add';
 let iCols = [];
 let iRows = [];
 
-// Column name → field mapping
 const FIELD_MAP = {
-  company:    ['empresa', 'company', 'nombre de la empresa', 'nombre'],
-  email:      ['email', 'correo', 'e-mail'],
-  contact:    ['contacto', 'contact', 'nombre contacto', 'nombre y apellidos'],
-  role:       ['cargo', 'rol', 'role', 'puesto'],
-  country:    ['país', 'pais', 'country'],
-  city:       ['ciudad', 'city'],
-  phone:      ['teléfono', 'telefono', 'phone', 'tel'],
-  sector:     ['sector', 'industry'],
-  priority:   ['prioridad', 'priority'],
-  status:     ['estado', 'status'],
-  sent_date:  ['fecha envío', 'fecha envio', 'sent_date', 'fecha'],
-  subject:    ['asunto', 'subject'],
-  notes:      ['notas', 'notes', 'comentario', 'comentarios'],
+  company:       ['empresa','company','nombre empresa','nombre de la empresa','compañia','compañía'],
+  email:         ['email','correo','e-mail','correo electrónico','mail'],
+  contact:       ['contacto','contact','nombre contacto','persona de contacto','responsable'],
+  role:          ['cargo','rol','role','puesto','posición','position'],
+  country:       ['país','pais','country'],
+  city:          ['ciudad','city','localidad','población'],
+  phone:         ['teléfono','telefono','phone','tel','móvil','movil','celular'],
+  sector:        ['sector','industria','industry'],
+  priority:      ['prioridad','priority'],
+  status:        ['estado','status'],
+  type:          ['tipo','type','categoría','categoria'],
+  sent_date:     ['fecha envío','fecha envio','sent_date','fecha contacto'],
+  subject:       ['asunto','subject'],
+  next_followup: ['próximo followup','proximo followup','next followup','fecha followup'],
+  deal_product:  ['producto','product','servicio','interés'],
+  deal_value:    ['valor','value','importe','presupuesto'],
+  linkedin:      ['linkedin'],
+  url:           ['web','url','website'],
+  notes:         ['notas','notes','comentario','comentarios','observaciones'],
+  tags:          ['etiquetas','tags'],
+};
+
+const FIELD_LABELS = {
+  company:'Empresa ⚠️', email:'Email ⚠️', contact:'Contacto', role:'Cargo',
+  country:'País', city:'Ciudad', phone:'Teléfono', sector:'Sector',
+  priority:'Prioridad', status:'Estado', type:'Tipo (prospect/client)',
+  sent_date:'Fecha envío', subject:'Asunto', next_followup:'Próx. Follow-up',
+  deal_product:'Producto', deal_value:'Valor (€)', linkedin:'LinkedIn',
+  url:'Web', notes:'Notas/Comentarios', tags:'Etiquetas',
 };
 
 function autoMapField(colName) {
-  const c = colName.toLowerCase().trim();
+  const c = (colName||'').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   for (const [field, aliases] of Object.entries(FIELD_MAP)) {
-    if (aliases.some(a => c.includes(a))) return field;
+    if (aliases.some(a => {
+      const n = a.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      return c === n || c.includes(n);
+    })) return field;
   }
   return '';
 }
 
-// ── OPEN / CLOSE ──────────────────────────────────────────────
 function openImport() {
-  ['impPrev', 'impMap', 'impFolderWrap', 'impModeWrap'].forEach(id => {
-    document.getElementById(id).style.display = 'none';
+  document.getElementById('impWizard').style.display = '';
+  document.getElementById('impResult').style.display = 'none';
+  ['impPrev','impMap','impFolderWrap','impModeWrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
   });
   document.getElementById('impBtn').style.display = 'none';
   document.getElementById('fInput').value = '';
+  document.getElementById('impGuide').style.display = '';
   iCols = []; iRows = [];
 
-  // Populate folder select
   const fsel = document.getElementById('impFolder');
   fsel.innerHTML = '<option value="">— Sin carpeta —</option>' +
-    folders.map(f => `<option value="${f.id}">${f.icon || '📁'} ${f.name}</option>`).join('');
+    folders.map(f => `<option value="${f.id}">${f.icon||'📁'} ${f.name}</option>`).join('');
 
   document.getElementById('impModal').classList.add('open');
 }
@@ -64,9 +84,8 @@ function dzDrop(e) {
   if (f) handleFile(f);
 }
 
-// ── FILE HANDLING ─────────────────────────────────────────────
 function handleFile(file) {
-  const ext    = file.name.split('.').pop().toLowerCase();
+  const ext = file.name.split('.').pop().toLowerCase();
   const reader = new FileReader();
 
   reader.onload = e => {
@@ -78,62 +97,67 @@ function handleFile(file) {
       const ws   = wb.Sheets[wb.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-      if (!json.length) { toast('❌ Archivo vacío', 'er'); return; }
+      if (!json.length) { toast('Archivo vacío', 'er'); return; }
 
       iCols = json[0].map(c => String(c).trim());
-      iRows = json.slice(1).filter(r => r.some(c => String(c).trim() !== ''));
+      iRows = json.slice(1).filter(r => r.some(c => String(c||'').trim() !== ''));
 
-      // Show preview info
+      document.getElementById('impGuide').style.display = 'none';
+
       document.getElementById('impPrev').style.display = '';
       document.getElementById('impPrev').innerHTML = `
-        <div style="background:var(--paper2);border-radius:7px;padding:9px 12px;font-size:.82rem;border:1px solid var(--border)">
-          <strong>📊 ${escH(file.name)}</strong>
-          <div style="font-family:var(--fm);font-size:.72rem;color:var(--ink3);margin-top:3px">
-            ${iRows.length} filas · ${iCols.length} columnas
-          </div>
+        <div class="imp-file-info">
+          <span>📊</span>
+          <div><strong>${escH(file.name)}</strong>
+          <div class="imp-file-meta">${iRows.length} filas · ${iCols.length} columnas</div></div>
+          <button class="btn-link" onclick="document.getElementById('fInput').click()">Cambiar</button>
         </div>`;
 
-      // Column mapping UI
       document.getElementById('impMap').style.display = '';
+      const autoMapped = iCols.map(c => autoMapField(c));
       const allFields = [
-        { val: '', label: '— No importar —' },
-        ...Object.keys(FIELD_MAP).map(k => ({ val: k, label: k })),
+        {val:'',label:'— No importar —'},
+        ...Object.keys(FIELD_LABELS).map(k=>({val:k,label:FIELD_LABELS[k]})),
       ];
-      document.getElementById('mapRows').innerHTML = iCols.map((col, i) => {
-        const auto = autoMapField(col);
-        return `
-          <div class="map-row">
-            <span class="map-col-name">${escH(col)}</span>
-            <span style="color:var(--ink3)">→</span>
-            <select id="map-${i}">
-              ${allFields.map(o => `<option value="${o.val}" ${o.val === auto ? 'selected' : ''}>${o.label}</option>`).join('')}
+
+      document.getElementById('mapRows').innerHTML =
+        iCols.map((col, i) => {
+          const auto = autoMapped[i];
+          const sample = iRows.slice(0,2).map(r=>String(r[i]||'').trim()).filter(Boolean).join(' / ');
+          return `<div class="map-row">
+            <div class="map-col-info">
+              <div class="map-col-name">${escH(col)}</div>
+              ${sample?`<div class="map-col-sample">${escH(sample.slice(0,50))}</div>`:''}
+            </div>
+            <span class="map-arrow">→</span>
+            <select id="map-${i}" class="${auto?'map-sel-mapped':''}">
+              ${allFields.map(o=>`<option value="${o.val}"${o.val===auto?' selected':''}>${o.label}</option>`).join('')}
             </select>
           </div>`;
-      }).join('');
+        }).join('');
 
       document.getElementById('impFolderWrap').style.display = '';
       document.getElementById('impModeWrap').style.display   = '';
       document.getElementById('impBtn').style.display        = '';
       setIMode('add');
     } catch (err) {
-      toast('❌ Error al leer el archivo: ' + err.message, 'er');
+      toast('Error al leer el archivo: ' + err.message, 'er');
     }
   };
 
-  if (ext === 'csv') reader.readAsText(file);
+  if (ext === 'csv') reader.readAsText(file, 'UTF-8');
   else               reader.readAsArrayBuffer(file);
 }
 
 function setIMode(m) {
   iMode = m;
-  ['add', 'merge', 'replace'].forEach(x => {
-    document.getElementById(`m-${x}`).classList.toggle('active', x === m);
+  ['add','merge','replace'].forEach(x => {
+    document.getElementById(`m-${x}`)?.classList.toggle('active', x === m);
   });
 }
 
-// ── DO IMPORT ─────────────────────────────────────────────────
 async function doImport() {
-  if (!iRows.length) { toast('❌ Sin datos para importar', 'er'); return; }
+  if (!iRows.length) { toast('Sin datos', 'er'); return; }
 
   const mapping = {};
   iCols.forEach((col, i) => {
@@ -142,74 +166,89 @@ async function doImport() {
   });
 
   const folderId = document.getElementById('impFolder').value || null;
-  const btn      = document.getElementById('impBtn');
+  const btn = document.getElementById('impBtn');
   btn.textContent = 'Importando…';
-  btn.disabled    = true;
+  btn.disabled = true;
 
-  // Build records array
   const newRecords = iRows.map(row => {
     const r = {
-      company: '', email: '', contact: '', role: '', country: '', city: '',
-      phone: '', sector: '', priority: 'Media', status: 'new', tags: [],
-      folder_id: folderId, type: 'prospect', user_id: currentUser?.id,
+      company:'', email:'', contact:'', role:'', country:'', city:'',
+      phone:'', sector:'', priority:'Media', status:'new', type:'prospect',
+      tags:[], folder_id:folderId, user_id:currentUser?.id,
     };
     iCols.forEach((col, i) => {
-      if (mapping[i]) r[mapping[i]] = String(row[i] || '').trim();
+      const field = mapping[i];
+      if (!field) return;
+      const val = String(row[i]||'').trim();
+      if (field === 'tags') {
+        r.tags = val ? val.split(/[,;]/).map(t=>t.trim()).filter(Boolean) : [];
+      } else {
+        r[field] = val;
+      }
     });
+    // Normalize priority
+    const pMap = {'alta':'Alta','media':'Media','baja':'Baja','high':'Alta','low':'Baja'};
+    if (r.priority) r.priority = pMap[r.priority.toLowerCase()] || 'Media';
+    // Normalize status
+    const sMap = {'nuevo':'new','enviado':'sent','respondido':'replied','sin respuesta':'waiting','negociando':'negotiation','ganado':'won','perdido':'lost'};
+    if (r.status) r.status = sMap[r.status.toLowerCase()] || 'new';
     return r;
   }).filter(r => r.company || r.email);
 
-  try {
-    let added = 0, merged = 0;
+  let added = 0, merged = 0, errors = 0;
 
+  try {
     if (iMode === 'replace' && folderId) {
-      // Delete all contacts in that folder first
       const toDelete = records.filter(r => r.folder_id === folderId).map(r => r.id);
       if (toDelete.length) await dbDeleteContacts(toDelete);
     }
 
     for (const rec of newRecords) {
-      if (iMode === 'merge' && rec.email) {
-        const existing = records.find(r =>
-          r.email?.toLowerCase() === rec.email?.toLowerCase()
-        );
-        if (existing) {
-          await dbSaveContact({ ...rec, id: existing.id });
-          merged++;
-          continue;
-        }
-      }
-
-      // Extract notes if present
       const notesText = rec.notes;
       delete rec.notes;
-
-      const saved = await dbSaveContact(rec);
-
-      // Import notes as interaction
-      if (notesText && saved.id) {
-        await dbAddInteraction({
-          contact_id: saved.id,
-          type: 'comment',
-          date: new Date().toISOString().split('T')[0],
-          text: notesText,
-          user_id: currentUser?.id,
-        });
-      }
-      added++;
+      try {
+        if (iMode === 'merge' && rec.email) {
+          const existing = records.find(r => r.email?.toLowerCase() === rec.email?.toLowerCase());
+          if (existing) {
+            await dbSaveContact({...rec, id:existing.id});
+            if (notesText) {
+              await dbAddInteraction({
+                contact_id:existing.id, type:'comment',
+                date:new Date().toISOString().split('T')[0],
+                text:'[Importado] '+notesText, user_id:currentUser?.id,
+              });
+            }
+            merged++; continue;
+          }
+        }
+        const saved = await dbSaveContact(rec);
+        if (notesText && saved?.id) {
+          await dbAddInteraction({
+            contact_id:saved.id, type:'comment',
+            date:new Date().toISOString().split('T')[0],
+            text:'[Importado] '+notesText, user_id:currentUser?.id,
+          });
+        }
+        added++;
+      } catch(rowErr) { console.error(rowErr); errors++; }
     }
 
     await loadContacts();
-    renderSidebar();
-    renderTable();
-    renderFollowupBanner();
-    populateCountryFilter();
-    closeImport();
-    toast(`✅ ${added} nuevos${merged ? `, ${merged} actualizados` : ''}`, 'ok');
-  } catch (err) {
+    renderSidebar(); renderTable(); renderFollowupBanner(); populateCountryFilter();
+
+    document.getElementById('impWizard').style.display = 'none';
+    document.getElementById('impResult').style.display = '';
+    document.getElementById('impResultMsg').innerHTML = `
+      <div style="font-size:1.1rem;font-weight:700;color:var(--c-replied);margin-bottom:10px">✅ Importación completada</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${added>0?`<span class="imp-stat-ok">+${added} nuevos</span>`:''}
+        ${merged>0?`<span class="imp-stat-blue">${merged} actualizados</span>`:''}
+        ${errors>0?`<span class="imp-stat-er">${errors} con error</span>`:''}
+      </div>`;
+  } catch(err) {
     toast('Error al importar: ' + err.message, 'er');
   }
 
   btn.textContent = '📥 Importar';
-  btn.disabled    = false;
+  btn.disabled = false;
 }

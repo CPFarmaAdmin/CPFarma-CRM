@@ -2,84 +2,83 @@
 // UI.JS — Panel de contacto, formulario, historial
 // ═══════════════════════════════════════════════════════════════
 
-let editId     = null;
-let cTags      = [];
-let cStatus    = 'new';
-let cNotes     = [];   // loaded separately from DB
-let activeTab  = 'info';
+let editId    = null;
+let cTags     = [];
+let cStatus   = 'new';
+let cNotes    = [];
+let activeTab = 'info';
 
-// ── PANEL OPEN / CLOSE ────────────────────────────────────────
+// ── PANEL OPEN/CLOSE ──────────────────────────────────────────
 async function openPanel(id) {
-  editId = id || null;
-  cTags = [];
+  editId  = id || null;
+  cTags   = [];
   cStatus = 'new';
-  cNotes = [];
+  cNotes  = [];
 
   document.getElementById('panelTitle').textContent = id ? 'Editar contacto' : 'Nuevo contacto';
-  document.getElementById('panelSub').textContent = '';
-  document.getElementById('panelDelBtn').style.display = id ? '' : 'none';
+  document.getElementById('panelSub').textContent   = '';
+  document.getElementById('panelDelBtn').style.display  = id ? '' : 'none';
   document.getElementById('panelSendBtn').style.display = 'none';
 
-  // Reset tabs
-  switchPanelTab('info', document.querySelector('.ptab'));
+  // Reset to first tab
+  switchPanelTab('info', document.querySelector('.ptab[data-tab="info"]'));
 
-  // Reset form
+  // Reset all fields
   clearForm();
-  setDate('f-sentDate', today());
+  setVal('f-sentDate', today());
 
   // Populate folder select
   const sel = document.getElementById('f-folder');
   sel.innerHTML = '<option value="">— Sin carpeta —</option>' +
-    folders.map(f => `<option value="${f.id}">${f.icon || '📁'} ${f.name}</option>`).join('');
+    folders.map(f => `<option value="${f.id}">${f.icon||'📁'} ${f.name}</option>`).join('');
   if (activeFolder !== 'all') sel.value = activeFolder;
 
   if (id) {
     const r = records.find(x => x.id === id);
     if (!r) return;
 
-    document.getElementById('panelSub').textContent = `${r.company} · ${r.email}`;
+    document.getElementById('panelSub').textContent       = `${r.company}${r.email ? ' · ' + r.email : ''}`;
     document.getElementById('panelSendBtn').style.display = r.email ? '' : 'none';
 
-    // Fill form fields
-    setVal('f-company', r.company);
-    setVal('f-contact', r.contact);
-    setVal('f-role', r.role);
-    setVal('f-email', r.email);
-    setVal('f-phone', r.phone);
-    setVal('f-country', r.country);
-    setVal('f-city', r.city);
-    setVal('f-sector', r.sector);
-    setVal('f-type', r.type || 'prospect');
-    setVal('f-priority', r.priority || 'Media');
-    setVal('f-folder', r.folder_id || '');
-    setVal('f-linkedin', r.linkedin);
-    setVal('f-url', r.url);
-
-    setVal('f-sentDate', r.sent_date);
-    setVal('f-emailType', r.email_type);
-    setVal('f-subject', r.subject);
-    setVal('f-sentText', r.sent_text);
-    setVal('f-replyDate', r.reply_date);
-    setVal('f-replyFrom', r.reply_from);
-    setVal('f-replyText', r.reply_text);
-
-    setVal('f-followupNum', r.followup_num);
-    setVal('f-nextFollowup', r.next_followup);
-    setVal('f-meetingDate', r.meeting_date);
+    // Fill all fields
+    setVal('f-company',         r.company);
+    setVal('f-contact',         r.contact);
+    setVal('f-role',            r.role);
+    setVal('f-email',           r.email);
+    setVal('f-phone',           r.phone);
+    setVal('f-country',         r.country);
+    setVal('f-city',            r.city);
+    setVal('f-sector',          r.sector);
+    setVal('f-type',            r.type || 'prospect');
+    setVal('f-priority',        r.priority || 'Media');
+    setVal('f-folder',          r.folder_id || '');
+    setVal('f-linkedin',        r.linkedin);
+    setVal('f-url',             r.url);
+    setVal('f-sentDate',        r.sent_date);
+    setVal('f-emailType',       r.email_type);
+    setVal('f-subject',         r.subject);
+    setVal('f-sentText',        r.sent_text);
+    setVal('f-replyDate',       r.reply_date);
+    setVal('f-replyFrom',       r.reply_from);
+    setVal('f-replyText',       r.reply_text);
+    setVal('f-followupNum',     r.followup_num);
+    setVal('f-nextFollowup',    r.next_followup);
+    setVal('f-meetingDate',     r.meeting_date);
     setVal('f-meetingPlatform', r.meeting_platform);
-    setVal('f-followupNotes', r.followup_notes);
-    setVal('f-product', r.deal_product);
-    setVal('f-dealValue', r.deal_value);
-    setVal('f-dealProb', r.deal_prob);
-    setVal('f-dealClose', r.deal_close);
+    setVal('f-followupNotes',   r.followup_notes);
+    setVal('f-product',         r.deal_product);
+    setVal('f-dealValue',       r.deal_value);
+    setVal('f-dealProb',        r.deal_prob);
+    setVal('f-dealClose',       r.deal_close);
 
     cTags = Array.isArray(r.tags) ? [...r.tags] : [];
     selStatus(r.status || 'new');
 
-    // Load interaction history
+    // Load interaction history from DB
     try {
       cNotes = await dbGetInteractions(id);
-    } catch (e) {
+    } catch(e) {
+      console.warn('Could not load interactions:', e);
       cNotes = [];
     }
   } else {
@@ -105,14 +104,17 @@ function closePanel() {
 // ── PANEL TABS ────────────────────────────────────────────────
 function switchPanelTab(tab, btn) {
   activeTab = tab;
-  document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.ptab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById(`tab-${tab}`)?.classList.add('active');
-  // Find and activate the button
-  document.querySelectorAll('.ptab').forEach(t => {
-    if (t.getAttribute('onclick')?.includes(`'${tab}'`)) t.classList.add('active');
-  });
-  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+  const content = document.getElementById('tab-' + tab);
+  if (content) content.classList.add('active');
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    // Find by data-tab attribute
+    const tabBtn = document.querySelector(`.ptab[data-tab="${tab}"]`);
+    if (tabBtn) tabBtn.classList.add('active');
+  }
 }
 
 // ── STATUS SELECTOR ───────────────────────────────────────────
@@ -120,7 +122,7 @@ function selStatus(v) {
   cStatus = v;
   document.querySelectorAll('.status-opt').forEach(el => {
     el.className = 'status-opt';
-    if (el.dataset.v === v) el.classList.add(`active-${v}`);
+    if (el.dataset.v === v) el.classList.add('active-' + v);
   });
 }
 
@@ -144,24 +146,24 @@ function removeTag(t) {
 function renderTags() {
   const wrap = document.getElementById('tagWrap');
   const inp  = document.getElementById('tagInput');
-  // Remove existing tags (keep input)
+  if (!wrap || !inp) return;
   [...wrap.children].forEach(c => { if (!c.classList.contains('tag-input')) c.remove(); });
   cTags.forEach(t => {
     const span = document.createElement('span');
     span.className = 'tag';
-    span.innerHTML = `${escH(t)} <span class="tag-remove" onclick="removeTag('${t}')">✕</span>`;
+    span.innerHTML = `${escH(t)} <span class="tag-remove" onclick="removeTag('${escH(t)}')">✕</span>`;
     wrap.insertBefore(span, inp);
   });
 }
 
-// ── HISTORY / NOTES ──────────────────────────────────────────
+// ── HISTORY ───────────────────────────────────────────────────
 const NOTE_META = {
-  comment:  { label: '💬 Comentario',          color: 'var(--acc)' },
-  reply:    { label: '📥 Respuesta recibida',   color: 'var(--c-replied)' },
-  followup: { label: '🔔 Seguimiento',          color: 'var(--c-waiting)' },
-  sent:     { label: '📤 Email enviado',        color: 'var(--c-sent)' },
-  call:     { label: '📞 Llamada',             color: 'var(--c-nego)' },
-  meeting:  { label: '🤝 Reunión',             color: 'var(--c-won)' },
+  comment:  { label: '💬 Comentario',        cls: 'type-comment'  },
+  reply:    { label: '📥 Respuesta recibida', cls: 'type-reply'    },
+  followup: { label: '🔔 Seguimiento',        cls: 'type-followup' },
+  sent:     { label: '📤 Email enviado',      cls: 'type-sent'     },
+  call:     { label: '📞 Llamada',           cls: 'type-call'     },
+  meeting:  { label: '🤝 Reunión',           cls: 'type-meeting'  },
 };
 
 async function addNote() {
@@ -172,59 +174,59 @@ async function addNote() {
   if (!text) { toast('Escribe el texto de la nota', 'er'); return; }
 
   if (editId) {
-    // Save directly to DB
     try {
       const note = await dbAddInteraction({
-        contact_id: editId,
-        type, date, text,
+        contact_id: editId, type, date, text,
         user_id: currentUser?.id,
       });
       cNotes.unshift(note);
       document.getElementById('noteText').value = '';
       renderHistory();
-
-      // Update interaction count in local records
+      // Update local count
       const idx = records.findIndex(r => r.id === editId);
       if (idx >= 0) {
-        const cnt = records[idx].interactions?.[0]?.count || 0;
-        records[idx].interactions = [{ count: cnt + 1 }];
+        records[idx]._noteCount = (records[idx]._noteCount || 0) + 1;
+        records[idx].interactions = [{ count: records[idx]._noteCount }];
       }
-    } catch (err) {
+    } catch(err) {
       toast('Error al guardar nota: ' + err.message, 'er');
     }
   } else {
-    // Pending (new contact not saved yet) - store in memory
-    cNotes.unshift({ type, date, text, id: 'tmp_' + Date.now() });
+    // New contact not saved yet — store in memory
+    cNotes.unshift({ id: 'tmp_' + Date.now(), type, date, text });
     document.getElementById('noteText').value = '';
     renderHistory();
   }
 }
 
-async function deleteNote(id) {
-  if (id.startsWith('tmp_')) {
-    cNotes = cNotes.filter(n => n.id !== id);
+async function deleteNote(noteId) {
+  if (String(noteId).startsWith('tmp_')) {
+    cNotes = cNotes.filter(n => n.id !== noteId);
     renderHistory();
     return;
   }
   try {
-    await dbDeleteInteraction(id);
-    cNotes = cNotes.filter(n => n.id !== id);
+    await dbDeleteInteraction(noteId);
+    cNotes = cNotes.filter(n => n.id !== noteId);
     renderHistory();
-  } catch (err) {
+  } catch(err) {
     toast('Error: ' + err.message, 'er');
   }
 }
 
 function renderHistory() {
   const el = document.getElementById('historyThread');
+  if (!el) return;
+
   if (!cNotes.length) {
-    el.innerHTML = '<div style="color:var(--ink3);font-size:.82rem;font-style:italic;padding:12px 0">Sin entradas aún. Añade la primera nota.</div>';
+    el.innerHTML = `<div class="history-empty">Sin entradas aún.<br>Añade la primera nota arriba.</div>`;
     return;
   }
+
   el.innerHTML = cNotes.map(n => {
     const meta = NOTE_META[n.type] || NOTE_META.comment;
     return `
-    <div class="history-item type-${n.type}">
+    <div class="history-item ${meta.cls}">
       <div class="history-item-header">
         <span class="history-item-type">${meta.label}</span>
         <span class="history-item-date">${n.date || ''}</span>
@@ -245,7 +247,7 @@ async function saveRecord() {
 
   const btn = document.getElementById('saveBtn');
   btn.textContent = 'Guardando…';
-  btn.disabled = true;
+  btn.disabled    = true;
 
   const record = {
     id:               editId || undefined,
@@ -265,31 +267,31 @@ async function saveRecord() {
     tags:             cTags,
     status:           cStatus,
     email_type:       getVal('f-emailType'),
-    sent_date:        getVal('f-sentDate') || null,
+    sent_date:        getVal('f-sentDate')       || null,
     subject:          getVal('f-subject'),
     sent_text:        getVal('f-sentText'),
-    reply_date:       getVal('f-replyDate') || null,
+    reply_date:       getVal('f-replyDate')      || null,
     reply_from:       getVal('f-replyFrom'),
     reply_text:       getVal('f-replyText'),
     followup_num:     getVal('f-followupNum'),
-    next_followup:    getVal('f-nextFollowup') || null,
-    meeting_date:     getVal('f-meetingDate') || null,
+    next_followup:    getVal('f-nextFollowup')   || null,
+    meeting_date:     getVal('f-meetingDate')    || null,
     meeting_platform: getVal('f-meetingPlatform'),
     followup_notes:   getVal('f-followupNotes'),
     deal_product:     getVal('f-product'),
-    deal_value:       parseFloat(getVal('f-dealValue')) || null,
-    deal_prob:        parseInt(getVal('f-dealProb')) || null,
-    deal_close:       getVal('f-dealClose') || null,
+    deal_value:       parseFloat(getVal('f-dealValue'))  || null,
+    deal_prob:        parseInt(getVal('f-dealProb'))      || null,
+    deal_close:       getVal('f-dealClose')     || null,
     user_id:          currentUser?.id,
   };
 
   try {
     const saved = await dbSaveContact(record);
 
-    // Save pending notes for new contacts
-    if (!editId && cNotes.length > 0) {
+    // Save pending notes for brand-new contacts
+    if (!editId && cNotes.length) {
       for (const n of [...cNotes].reverse()) {
-        if (n.id?.startsWith('tmp_')) {
+        if (String(n.id).startsWith('tmp_')) {
           await dbAddInteraction({
             contact_id: saved.id,
             type: n.type, date: n.date, text: n.text,
@@ -300,18 +302,20 @@ async function saveRecord() {
     }
 
     await loadContacts();
+    await loadFolders();
     renderSidebar();
     renderTable();
     renderFollowupBanner();
     populateCountryFilter();
     closePanel();
     toast(`✅ ${company} guardado`, 'ok');
-  } catch (err) {
+  } catch(err) {
     toast('Error al guardar: ' + err.message, 'er');
+    console.error(err);
   }
 
   btn.textContent = '💾 Guardar';
-  btn.disabled = false;
+  btn.disabled    = false;
 }
 
 // ── DELETE ────────────────────────────────────────────────────
@@ -321,12 +325,12 @@ async function deleteRecord(id) {
   if (!confirm(`¿Eliminar "${r.company}"?\nEsta acción no se puede deshacer.`)) return;
   try {
     await dbDeleteContact(id);
-    await loadContacts();
+    records = records.filter(x => x.id !== id);
     renderSidebar();
     renderTable();
     renderFollowupBanner();
     toast('🗑 Contacto eliminado', 'er');
-  } catch (err) {
+  } catch(err) {
     toast('Error: ' + err.message, 'er');
   }
 }
@@ -350,31 +354,32 @@ function quickSend(id) {
 
 // ── HELPERS ───────────────────────────────────────────────────
 function today() { return new Date().toISOString().split('T')[0]; }
-function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v || ''; }
-function setDate(id, v) { const el = document.getElementById(id); if (el) el.value = v || ''; }
-function getVal(id) { return (document.getElementById(id)?.value || '').trim(); }
+function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v == null ? '' : v; }
+function getVal(id)    { return (document.getElementById(id)?.value || '').trim(); }
 
 function clearForm() {
-  const ids = ['f-company','f-contact','f-role','f-email','f-phone','f-city',
-    'f-linkedin','f-url','f-sentText','f-subject','f-replyDate','f-replyFrom',
-    'f-replyText','f-followupNum','f-nextFollowup','f-meetingDate','f-followupNotes',
-    'f-product','f-dealValue','f-dealProb','f-dealClose'];
-  ids.forEach(id => setVal(id, ''));
-  setVal('f-country', '');
-  setVal('f-sector', '');
-  setVal('f-type', 'prospect');
-  setVal('f-priority', 'Media');
-  setVal('f-emailType', 'Primer contacto');
+  ['f-company','f-contact','f-role','f-email','f-phone','f-city','f-linkedin','f-url',
+   'f-sentText','f-subject','f-replyDate','f-replyFrom','f-replyText',
+   'f-followupNum','f-nextFollowup','f-meetingDate','f-followupNotes',
+   'f-product','f-dealValue','f-dealProb','f-dealClose'].forEach(id => setVal(id, ''));
+  setVal('f-country',         '');
+  setVal('f-sector',          '');
+  setVal('f-type',            'prospect');
+  setVal('f-priority',        'Media');
+  setVal('f-emailType',       'Primer contacto');
   setVal('f-meetingPlatform', '');
   cTags = [];
-  renderTags();
-  renderHistory();
+  cNotes = [];
+  if (document.getElementById('tagWrap')) renderTags();
+  if (document.getElementById('historyThread')) renderHistory();
 }
 
 function pasteStdText() {
   if (!templates.length) { toast('No hay plantillas guardadas', 'er'); return; }
-  const activeTpl = templates[0];
-  setVal('f-sentText', activeTpl.body);
-  if (activeTpl.subject) setVal('f-subject', activeTpl.subject);
-  toast('📋 Plantilla pegada', 'info');
+  const tpl = templates.find(t => t.id === activeStdId) || templates[0];
+  if (tpl) {
+    setVal('f-sentText', tpl.body);
+    if (tpl.subject) setVal('f-subject', tpl.subject);
+    toast('📋 Plantilla pegada', 'info');
+  }
 }

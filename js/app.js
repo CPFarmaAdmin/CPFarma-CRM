@@ -35,27 +35,46 @@ async function initApp() {
 }
 
 async function loadContacts() {
-  records = await dbGetContacts();
-  // interactions count comes embedded from the join
-}
-
-async function loadFolders() {
-  folders = await dbGetFolders();
-  // Populate folder selects in panel
-  const sel = document.getElementById('f-folder');
-  if (sel) {
-    sel.innerHTML = '<option value="">— Sin carpeta —</option>' +
-      folders.map(f => `<option value="${f.id}">${f.icon || '📁'} ${f.name}</option>`).join('');
+  try {
+    records = await dbGetContacts();
+  } catch(err) {
+    console.error('loadContacts:', err);
+    records = [];
   }
 }
 
+async function loadFolders() {
+  try {
+    folders = await dbGetFolders();
+  } catch(err) {
+    console.error('loadFolders:', err);
+    folders = [];
+  }
+  // Refresh all folder selects in the UI
+  const folderOpts = '<option value="">— Sin carpeta —</option>' +
+    folders.map(f => `<option value="${f.id}">${f.icon || '📁'} ${f.name}</option>`).join('');
+  ['f-folder','impFolder'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { const prev = el.value; el.innerHTML = folderOpts; if (prev) el.value = prev; }
+  });
+}
+
 async function loadTemplates() {
-  templates = await dbGetTemplates();
+  try {
+    templates = await dbGetTemplates();
+  } catch(err) {
+    console.error('loadTemplates:', err);
+    templates = [];
+  }
 }
 
 function showLoading(on) {
-  document.getElementById('loadingState').style.display = on ? '' : 'none';
-  document.getElementById('contactsTable').style.display = on ? 'none' : '';
+  const loading = document.getElementById('loadingState');
+  const table   = document.getElementById('contactsTable');
+  const empty   = document.getElementById('emptyState');
+  if (loading) loading.style.display = on ? '' : 'none';
+  if (table)   table.style.display   = on ? 'none' : '';
+  if (on && empty) empty.style.display = 'none';
 }
 
 // ── REALTIME ──────────────────────────────────────────────────
@@ -199,6 +218,10 @@ function getFiltered() {
     // Country filter
     if (country && r.country !== country) return false;
 
+    // Type filter
+    const typeFilter = document.getElementById('filterType')?.value || '';
+    if (typeFilter && r.type !== typeFilter) return false;
+
     // Status filter
     if (cFilter === 'new')     return r.status === 'new' || !r.status;
     if (cFilter === 'sent')    return r.status === 'sent';
@@ -243,7 +266,7 @@ function renderTable() {
   document.getElementById('emptyState').style.display = 'none';
 
   tbody.innerHTML = rows.map(r => {
-    const noteCount = r.interactions?.[0]?.count || 0;
+    const noteCount = r._noteCount || r.interactions?.[0]?.count || 0;
     const isSelected = selectedIds.has(r.id);
     return `
     <tr onclick="openEdit('${r.id}')" class="${isSelected ? 'selected-row' : ''}">
