@@ -55,10 +55,7 @@
         <div class="topbar-badge" id="topbarBadge"></div>
       </div>
       <div class="topbar-right">
-        <div class="search-wrap">
-          <span class="search-icon">⌕</span>
-          <input type="text" id="searchInput" class="search-input" placeholder="Buscar…" oninput="renderBothTables()">
-        </div>
+<input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar…" oninput="renderBothTables()">
         <button class="btn btn-ghost btn-sm" onclick="openImport()">📥 Importar</button>
         <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇️ Exportar</button>
         <button class="btn btn-send btn-sm" onclick="openSendModal()">✉️ Enviar emails</button>
@@ -75,18 +72,20 @@
         <button class="ftab" data-filter="sent" onclick="setFilter('sent',this)">📤 Enviados</button>
         <button class="ftab" data-filter="replied" onclick="setFilter('replied',this)">✅ Respondidos</button>
         <button class="ftab" data-filter="waiting" onclick="setFilter('waiting',this)">⏳ Sin respuesta</button>
+        <button class="ftab" data-filter="rejected" onclick="setFilter('rejected',this)">🚫 Rechazados</button>
         <button class="ftab ftab-alert" data-filter="followup" onclick="setFilter('followup',this)">🔔 Follow-up hoy</button>
       </div>
       <!-- Client filters -->
       <div id="filtersClients" class="filter-tabs" style="display:none">
-        <button class="ftab active" data-filter="all" onclick="setFilter('all',this)">Todos</button>
+        <button class="ftab active" data-filter="active" onclick="setFilter('active',this)">✅ Activos</button>
+        <button class="ftab" data-filter="inactive" onclick="setFilter('inactive',this)">❌ Inactivos</button>
         <button class="ftab" data-filter="ok" onclick="setFilter('ok',this)">✅ Sin incidencias</button>
         <button class="ftab" data-filter="incident" onclick="setFilter('incident',this)">⚠️ Con incidencia</button>
         <button class="ftab ftab-alert" data-filter="followup" onclick="setFilter('followup',this)">🔔 Follow-up hoy</button>
       </div>
       <div class="filter-right">
         <!-- Prospect extra filters -->
-        <div id="extraFiltersP">
+        <div id="extraFiltersP" style="display:contents">
           <select class="filter-select" id="filterPriority" onchange="renderBothTables()">
             <option value="">Prioridad</option>
             <option value="Alta">🔴 Alta</option>
@@ -94,6 +93,18 @@
             <option value="Baja">🟢 Baja</option>
           </select>
           <select class="filter-select" id="filterCountry" onchange="renderBothTables()"><option value="">País</option></select>
+          <select class="filter-select" id="filterProgram" onchange="renderBothTables()">
+            <option value="">Programa</option>
+            <option value="Galenic Plus">Galenic Plus</option>
+            <option value="Citostaticos">Citostaticos</option>
+          </select>
+          <select class="filter-select" id="filterDateRange" onchange="renderBothTables()">
+            <option value="">Últ. contacto</option>
+            <option value="7">Últimos 7 días</option>
+            <option value="30">Últimos 30 días</option>
+            <option value="90">Últimos 3 meses</option>
+            <option value="never">Sin contactar nunca</option>
+          </select>
         </div>
         <!-- Client extra filters -->
         <div id="extraFiltersC" style="display:none">
@@ -103,6 +114,14 @@
             <option value="incident">⚠️ Incidencia activa</option>
           </select>
           <select class="filter-select" id="filterCountryC" onchange="renderBothTables()"><option value="">País</option></select>
+          <select class="filter-select" id="filterProgramC" onchange="renderBothTables()">
+            <option value="">Programa</option>
+            <option value="Galenic Plus">Galenic Plus</option>
+            <option value="Citostaticos">Citostaticos</option>
+          </select>
+          <select class="filter-select" id="filterVersionC" onchange="renderBothTables()">
+            <option value="">Versión</option>
+          </select>
         </div>
         <span class="rcount" id="rcount"></span>
       </div>
@@ -207,7 +226,9 @@
           </div>
           <div><label>Persona de contacto</label><input type="text" id="f-contact" placeholder="Nombre y apellidos"></div>
           <div><label>Cargo</label><input type="text" id="f-role" placeholder="CEO, Director de Compras…"></div>
-          <div><label>Correo electrónico <span class="req">*</span></label><input type="email" id="f-email" placeholder="contacto@empresa.com"></div>
+          <div><label>Correo electrónico <span class="req">*</span></label><input type="email" id="f-email" placeholder="principal@empresa.com"></div>
+          <div><label>Correo electrónico 2</label><input type="email" id="f-email2" placeholder="alternativo@empresa.com"></div>
+          <div class="fg-full"><label>Correo electrónico 3</label><input type="email" id="f-email3" placeholder="otro@empresa.com"></div>
           <div><label>Teléfono</label><input type="text" id="f-phone" placeholder="+34 600 000 000"></div>
           <div><label>País</label>
             <select id="f-country">
@@ -259,6 +280,10 @@
             </select>
           </div>
           <div><label>Carpeta</label><select id="f-folder"></select></div>
+          <div class="fg-full">
+            <label>📝 Notas generales</label>
+            <textarea id="f-notes" rows="3" placeholder="Observaciones, contexto general, información relevante…"></textarea>
+          </div>
         </div>
       </div>
     </div>
@@ -301,6 +326,7 @@
           <div class="status-opt" data-v="negotiation" onclick="selStatus('negotiation')">🤝<span>Negociando</span></div>
           <div class="status-opt" data-v="won" onclick="selStatus('won')">🏆<span>Ganado</span></div>
           <div class="status-opt" data-v="lost" onclick="selStatus('lost')">❌<span>Perdido</span></div>
+          <div class="status-opt" data-v="rejected" onclick="selStatus('rejected')">🚫<span>Rechazado</span></div>
         </div>
         <div id="statusSelClient" class="status-selector" style="display:none">
           <div class="status-opt" data-v="ok" onclick="selStatus('ok')">✅<span>Sin incidencias</span></div>

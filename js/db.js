@@ -30,6 +30,7 @@ async function dbGetContact(id) {
 }
 
 async function dbSaveContact(record) {
+  // Strip any computed/joined fields that aren't DB columns
   const { id, interactions, _noteCount, ...fields } = record;
   if (id) {
     const { data, error } = await db

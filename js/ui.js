@@ -47,6 +47,8 @@ async function openPanel(id) {
     setVal('f-contact',         r.contact);
     setVal('f-role',            r.role);
     setVal('f-email',           r.email);
+    setVal('f-email2',          r.email2);
+    setVal('f-email3',          r.email3);
     setVal('f-phone',           r.phone);
     setVal('f-country',         r.country);
     setVal('f-city',            r.city);
@@ -70,6 +72,7 @@ async function openPanel(id) {
     setVal('f-meetingDate',     r.meeting_date);
     setVal('f-meetingPlatform', r.meeting_platform);
     setVal('f-followupNotes',   r.followup_notes);
+    setVal('f-notes',           r.notes);
     setVal('f-product',         r.deal_product);
     setVal('f-dealValue',       r.deal_value);
     setVal('f-dealProb',        r.deal_prob);
@@ -243,6 +246,8 @@ async function saveRecord() {
     contact:          getVal('f-contact'),
     role:             getVal('f-role'),
     email,
+    email2:           getVal('f-email2') || null,
+    email3:           getVal('f-email3') || null,
     phone:            getVal('f-phone'),
     country:          getVal('f-country'),
     city:             getVal('f-city'),
@@ -268,6 +273,7 @@ async function saveRecord() {
     meeting_date:     getVal('f-meetingDate')     || null,
     meeting_platform: getVal('f-meetingPlatform'),
     followup_notes:   getVal('f-followupNotes'),
+    notes:            getVal('f-notes'),
     deal_product:     getVal('f-product'),
     deal_value:       parseFloat(getVal('f-dealValue'))  || null,
     deal_prob:        parseInt(getVal('f-dealProb'))      || null,
@@ -318,7 +324,8 @@ function setVal(id, v) { const el = document.getElementById(id); if (el) el.valu
 function getVal(id)    { return (document.getElementById(id)?.value || '').trim(); }
 
 function clearForm() {
-  ['f-company','f-contact','f-role','f-email','f-phone','f-city','f-program','f-version',
+  ['f-company','f-contact','f-role','f-email','f-email2','f-email3','f-phone',
+   'f-city','f-program','f-version','f-notes',
    'f-sentText','f-subject','f-attachments','f-replyDate','f-replyFrom','f-replyText',
    'f-followupNum','f-nextFollowup','f-meetingDate','f-followupNotes',
    'f-product','f-dealValue','f-dealProb','f-dealClose'].forEach(id => setVal(id, ''));

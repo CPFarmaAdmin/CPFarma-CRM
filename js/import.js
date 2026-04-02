@@ -8,37 +8,59 @@ let iRows = [];
 
 // ── FIELD DEFINITIONS (issues 5 — only the fields we want) ───
 const FIELD_MAP = {
-  company:      ['empresa','company','nombre empresa','nombre de la empresa','compañia','nombre','cliente','prospecto'],
-  email:        ['email','correo','e-mail','correo electrónico','mail'],
-  contact:      ['contacto','contact','persona de contacto','nombre contacto','responsable'],
-  role:         ['cargo','rol','role','puesto','posición','position'],
-  country:      ['país','pais','country'],
-  city:         ['ciudad','city','localidad'],
-  phone:        ['teléfono','telefono','phone','tel','móvil','movil','celular'],
-  priority:     ['prioridad','priority'],
-  status:       ['estado','status'],
-  type:         ['tipo','type'],
-  program:      ['programa','program','producto','galenic','citostaticos'],
-  version:      ['versión','version','ver'],
-  notes:        ['notas','notes','comentario','comentarios','observaciones'],
-  client_type:  ['tipo cliente','tipo de cliente','client type','público','publico','privado'],
+  // Core (obligatory)
+  company:          ['empresa','company','nombre empresa','nombre de la empresa','compañia','nombre','cliente','prospecto'],
+  email:            ['email','correo','e-mail','correo electrónico','mail'],
+  // Contact info
+  contact:          ['contacto','contact','persona de contacto','nombre contacto','responsable'],
+  role:             ['cargo','rol','role','puesto','posición','position'],
+  country:          ['país','pais','country'],
+  city:             ['ciudad','city','localidad'],
+  phone:            ['teléfono','telefono','phone','tel','móvil','movil','celular'],
+  // Classification
+  priority:         ['prioridad','priority'],
+  type:             ['tipo','type'],
+  program:          ['programa','program','galenic','citostaticos'],
+  version:          ['versión','version','ver'],
+  notes:            ['notas','notes','comentario','comentarios','observaciones'],
+  client_type:      ['tipo cliente','tipo de cliente','client type','público','publico','privado'],
+  // Email tracking (fix 7)
+  status:           ['estado del proceso','estado proceso','estado','status','situación'],
+  sent_date:        ['fecha envío','fecha envio','fecha de envio','fecha contacto','fecha primer contacto','sent date'],
+  email_type:       ['tipo de email','tipo email','tipo de correo','tipo correo','tipo envío'],
+  subject:          ['asunto','subject','asunto del email'],
+  sent_text:        ['cuerpo del email','cuerpo email','cuerpo','email enviado','texto enviado','body'],
+  attachments:      ['adjuntos','adjuntos enviados','adjuntos nombres','attachments','archivos adjuntos'],
+  reply_date:       ['fecha respuesta','fecha de respuesta','reply date'],
+  reply_from:       ['respondido por','respuesta de','quien respondio','replied by'],
+  reply_text:       ['texto respuesta','respuesta recibida','reply text','texto de la respuesta'],
+  next_followup:    ['próximo followup','proximo followup','next followup','fecha followup','followup'],
 };
 
 const FIELD_LABELS = {
-  company:     'Empresa / Nombre ⚠️',
-  email:       'Email ⚠️',
-  contact:     'Persona de contacto',
-  role:        'Cargo',
-  country:     'País',
-  city:        'Ciudad',
-  phone:       'Teléfono',
-  priority:    'Prioridad (Alta/Media/Baja)',
-  status:      'Estado',
-  type:        'Tipo (Prospecto / Cliente)',
-  program:     'Programa (Galenic Plus / Citostaticos)',
-  version:     'Versión',
-  notes:       'Notas / Comentarios',
-  client_type: 'Tipo cliente (Público / Privado)',
+  company:       'Empresa / Nombre ⚠️',
+  email:         'Email ⚠️',
+  contact:       'Persona de contacto',
+  role:          'Cargo',
+  country:       'País',
+  city:          'Ciudad',
+  phone:         'Teléfono',
+  priority:      'Prioridad (Alta/Media/Baja)',
+  type:          'Tipo (Prospecto / Cliente)',
+  program:       'Programa',
+  version:       'Versión',
+  notes:         'Notas / Comentarios',
+  client_type:   'Tipo cliente (Público / Privado)',
+  status:        'Estado del proceso',
+  sent_date:     'Fecha de envío',
+  email_type:    'Tipo de email',
+  subject:       'Asunto',
+  sent_text:     'Cuerpo del email enviado',
+  attachments:   'Adjuntos enviados',
+  reply_date:    'Fecha respuesta',
+  reply_from:    'Respondido por',
+  reply_text:    'Texto de la respuesta',
+  next_followup: 'Próximo follow-up',
 };
 
 function autoMapField(colName) {
@@ -183,6 +205,19 @@ async function doImport() {
     const m = { 'cliente':'client','client':'client','clientes':'client',
                 'prospecto':'prospect','prospect':'prospect','prospectos':'prospect' };
     return m[(v||'').toLowerCase()] || 'prospect';
+  };
+  const normStatus = v => {
+    const m = {
+      'sin contactar':'new','new':'new','nuevo':'new',
+      'enviado':'sent','sent':'sent','enviados':'sent',
+      'respondido':'replied','replied':'replied','respondidos':'replied',
+      'sin respuesta':'waiting','waiting':'waiting',
+      'negociando':'negotiation','negotiation':'negotiation',
+      'ganado':'won','won':'won',
+      'perdido':'lost','lost':'lost','inactivo':'lost',
+      'rechazado':'rejected','rejected':'rejected',
+    };
+    return m[(v||'').toLowerCase().trim()] || v || 'new';
   };
   const normClientType = v => {
     const m = { 'público':'public','publico':'public','public':'public',

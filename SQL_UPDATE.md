@@ -16,3 +16,15 @@ ALTER TABLE contacts
 ```
 
 Eso es todo. Ejecuta el SQL, recarga la web, y ya funciona.
+
+---
+
+## SQL v5 — Ejecutar también este bloque (nuevas columnas)
+
+```sql
+-- Añadir email2, email3 y notes a contacts
+ALTER TABLE contacts
+  ADD COLUMN IF NOT EXISTS email2  TEXT,
+  ADD COLUMN IF NOT EXISTS email3  TEXT,
+  ADD COLUMN IF NOT EXISTS notes   TEXT;
+```

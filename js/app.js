@@ -1,15 +1,15 @@
 // ═══════════════════════════════════════════════════════════════
-// APP.JS — Lógica principal: estado, tabla dual, filtros, sidebar
+// APP.JS — v5: dual tables, sidebar sync, filters, multi-email
 // ═══════════════════════════════════════════════════════════════
 
-// ── STATE ─────────────────────────────────────────────────────
 let records   = [];
 let folders   = [];
 let templates = [];
 
 let activeFolder  = 'all';
-let activeView    = 'prospects'; // 'prospects' | 'clients'
-let cFilter       = 'all';
+let activeView    = 'prospects';
+let cFilter       = 'active';   // clients start on 'active'
+let cFilterP      = 'all';      // prospects filter
 let cSort         = 'date';
 let cSortDir      = 'desc';
 let selectedIds   = new Set();
@@ -18,9 +18,9 @@ let selectedIds   = new Set();
 async function initApp() {
   showLoading(true);
   try {
-    await Promise.all([ loadFolders(), loadTemplates() ]);
+    await Promise.all([loadFolders(), loadTemplates()]);
     await loadContacts();
-    setView('prospects');           // start on prospects tab
+    setView('prospects');
     renderSidebar();
     renderFollowupBanner();
     populateCountryFilter();
@@ -39,7 +39,7 @@ async function loadContacts() {
 
 async function loadFolders() {
   try { folders = await dbGetFolders(); }
-  catch(err) { console.error('loadFolders:', err); folders = []; }
+  catch(err) { folders = []; }
   const opts = '<option value="">— Sin carpeta —</option>' +
     folders.map(f => `<option value="${f.id}">${f.icon||'📁'} ${f.name}</option>`).join('');
   ['f-folder','impFolder'].forEach(id => {
@@ -50,7 +50,7 @@ async function loadFolders() {
 
 async function loadTemplates() {
   try { templates = await dbGetTemplates(); }
-  catch(err) { console.error('loadTemplates:', err); templates = []; }
+  catch(err) { templates = []; }
 }
 
 function showLoading(on) {
@@ -62,32 +62,29 @@ function showLoading(on) {
   if (on && empty) empty.style.display = 'none';
 }
 
-// ── REALTIME ──────────────────────────────────────────────────
 function setupRealtimeSync() {
   subscribeToContacts(async () => {
     await loadContacts();
-    renderSidebar();
-    renderBothTables();
-    renderFollowupBanner();
-    populateCountryFilter();
+    renderSidebar(); renderBothTables(); renderFollowupBanner(); populateCountryFilter();
   });
 }
 
-// ── VIEW SWITCHER (Prospectos / Clientes) ─────────────────────
+// ── VIEW SWITCHER ─────────────────────────────────────────────
 function setView(v) {
   activeView = v;
 
-  // Sync all view-tab buttons (top AND sidebar)
+  // Sync ALL view-tab buttons everywhere (top bar + sidebar)
   document.querySelectorAll('.view-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.view === v);
   });
 
-  // Always update the title based on current view
-  const folderName = activeFolder !== 'all' ? folders.find(f=>f.id===activeFolder)?.name : null;
+  // Always update title
+  const folderName = activeFolder !== 'all' ? folders.find(f => f.id === activeFolder)?.name : null;
   document.getElementById('viewTitle').textContent =
-    folderName || (v === 'prospects' ? 'Prospectos' : 'Clientes');
+    folderName ? `${folderName} — ${v === 'prospects' ? 'Prospectos' : 'Clientes'}`
+               : (v === 'prospects' ? 'Prospectos' : 'Clientes');
 
-  // Show/hide filter bars based on view
+  // Toggle filter bars
   const fp = document.getElementById('filtersProspects');
   const fc = document.getElementById('filtersClients');
   const ep = document.getElementById('extraFiltersP');
@@ -97,20 +94,29 @@ function setView(v) {
   if (ep) ep.style.display = v === 'prospects' ? 'contents' : 'none';
   if (ec) ec.style.display = v === 'clients'   ? 'contents' : 'none';
 
-  // Reset filter to 'all' when switching views
-  cFilter = 'all';
-  document.querySelectorAll('.ftab').forEach(t => {
-    t.classList.toggle('active', t.dataset.filter === 'all');
-  });
+  // Restore appropriate filter for this view
+  if (v === 'clients') {
+    cFilter = 'active'; // default for clients: show activos
+    // Reset client tab buttons
+    document.querySelectorAll('#filtersClients .ftab').forEach(t => {
+      t.classList.toggle('active', t.dataset.filter === 'active');
+    });
+  } else {
+    cFilter = cFilterP; // restore prospect filter
+    document.querySelectorAll('#filtersProspects .ftab').forEach(t => {
+      t.classList.toggle('active', t.dataset.filter === cFilterP);
+    });
+  }
 
   renderBothTables();
 }
 
 // ── SIDEBAR ───────────────────────────────────────────────────
 function renderSidebar() {
-  const today = new Date(); today.setHours(0,0,0,0);
+  const today     = new Date(); today.setHours(0,0,0,0);
   const prospects = records.filter(r => r.type !== 'client');
-  const clients   = records.filter(r => r.type === 'client');
+  const clients   = records.filter(r => r.type === 'client' && r.status !== 'lost');
+  const inactive  = records.filter(r => r.type === 'client' && r.status === 'lost');
   const fuToday   = records.filter(r => {
     if (!r.next_followup) return false;
     const d = new Date(r.next_followup); d.setHours(0,0,0,0);
@@ -120,7 +126,7 @@ function renderSidebar() {
   document.getElementById('sbStats').innerHTML = `
     <div class="sb-stat"><div class="sb-stat-n">${prospects.length}</div><div class="sb-stat-l">Prospectos</div></div>
     <div class="sb-stat"><div class="sb-stat-n green">${clients.length}</div><div class="sb-stat-l">Clientes</div></div>
-    <div class="sb-stat"><div class="sb-stat-n yellow">${records.filter(r=>r.status==='replied').length}</div><div class="sb-stat-l">Respondidos</div></div>
+    <div class="sb-stat"><div class="sb-stat-n yellow">${inactive.length}</div><div class="sb-stat-l">Inactivos</div></div>
     <div class="sb-stat"><div class="sb-stat-n ${fuToday>0?'red':''}">${fuToday}</div><div class="sb-stat-l">Follow-up</div></div>
   `;
 
@@ -129,10 +135,10 @@ function renderSidebar() {
 
   document.getElementById('sbNav').innerHTML = `
     <div class="sb-section">Vistas</div>
-    <button class="nb ${activeFolder==='all'&&activeView==='prospects'?'active':''}" onclick="setFolder('all');setView('prospects')">
+    <button class="nb view-tab ${activeFolder==='all'&&activeView==='prospects'?'active':''}" data-view="prospects" onclick="setFolder('all');setView('prospects')">
       <span class="ni">🎯</span><span class="nt">Prospectos</span><span class="nk">${prospects.length}</span>
     </button>
-    <button class="nb ${activeFolder==='all'&&activeView==='clients'?'active':''}" onclick="setFolder('all');setView('clients')">
+    <button class="nb view-tab ${activeFolder==='all'&&activeView==='clients'?'active':''}" data-view="clients" onclick="setFolder('all');setView('clients')">
       <span class="ni">💼</span><span class="nt">Clientes</span><span class="nk">${clients.length}</span>
     </button>
     <button class="nb" onclick="showFollowups()">
@@ -165,39 +171,59 @@ function renderSidebar() {
 
 function setFolder(id) {
   activeFolder = id;
-  const name = id === 'all'
-    ? (activeView === 'prospects' ? 'Prospectos' : 'Clientes')
-    : (folders.find(f => f.id === id)?.name || id);
-  document.getElementById('viewTitle').textContent = name;
+  // Title update is handled by setView which is called after this
   renderSidebar();
-  renderBothTables();
 }
 
 function showFollowups() {
-  cFilter = 'followup';
-  document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
-  document.querySelector('[data-filter="followup"]')?.classList.add('active');
+  if (activeView === 'clients') {
+    cFilter = 'followup';
+    document.querySelectorAll('#filtersClients .ftab').forEach(t => {
+      t.classList.toggle('active', t.dataset.filter === 'followup');
+    });
+  } else {
+    cFilterP = 'followup';
+    cFilter  = 'followup';
+    document.querySelectorAll('#filtersProspects .ftab').forEach(t => {
+      t.classList.toggle('active', t.dataset.filter === 'followup');
+    });
+  }
   renderBothTables();
 }
 
 // ── FILTERS ───────────────────────────────────────────────────
 function setFilter(f, btn) {
   cFilter = f;
-  document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  if (activeView === 'prospects') cFilterP = f;
+
+  // Update button active state in the correct bar
+  const barId = activeView === 'prospects' ? '#filtersProspects' : '#filtersClients';
+  document.querySelectorAll(`${barId} .ftab`).forEach(t => {
+    t.classList.toggle('active', t.dataset.filter === f);
+  });
+
   renderBothTables();
 }
 
 function populateCountryFilter() {
-  const countries = [...new Set(records.map(r=>r.country).filter(Boolean))].sort();
+  const countries = [...new Set(records.map(r => r.country).filter(Boolean))].sort();
   ['filterCountry','filterCountryC'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const prev = sel.value;
     sel.innerHTML = '<option value="">País</option>' +
-      countries.map(c=>`<option value="${c}">${c}</option>`).join('');
+      countries.map(c => `<option value="${c}">${c}</option>`).join('');
     if (prev) sel.value = prev;
   });
+  // Populate version filter for clients
+  const versions = [...new Set(records.filter(r=>r.type==='client').map(r=>r.version).filter(Boolean))].sort();
+  const vsel = document.getElementById('filterVersionC');
+  if (vsel) {
+    const prev = vsel.value;
+    vsel.innerHTML = '<option value="">Versión</option>' +
+      versions.map(v => `<option value="${v}">${v}</option>`).join('');
+    if (prev) vsel.value = prev;
+  }
 }
 
 // ── SORTING ───────────────────────────────────────────────────
@@ -207,9 +233,8 @@ function setSort(col) {
   updateSortIcons();
   renderBothTables();
 }
-
 function updateSortIcons() {
-  ['name','country','date','prio','followup','program','status-c'].forEach(col => {
+  ['name','country','date','prio','followup','program'].forEach(col => {
     const el = document.getElementById('si-'+col);
     if (!el) return;
     el.textContent = cSort===col ? (cSortDir==='asc'?'↑':'↓') : '';
@@ -220,45 +245,71 @@ function updateSortIcons() {
 // ── GET FILTERED DATA ─────────────────────────────────────────
 function getFilteredFor(viewType) {
   const q       = (document.getElementById('searchInput')?.value||'').toLowerCase();
-  const prio    = viewType==='prospects' ? (document.getElementById('filterPriority')?.value||'') : '';
-  const country = viewType==='prospects'
-    ? (document.getElementById('filterCountry')?.value||'')
-    : (document.getElementById('filterCountryC')?.value||'');
   const today   = new Date(); today.setHours(0,0,0,0);
-
   const isClient = viewType === 'clients';
 
-  return records.filter(r => {
-    // Type split
-    if (isClient  && r.type !== 'client')  return false;
-    if (!isClient && r.type === 'client')  return false;
+  // Read filters for the appropriate view
+  const prio        = !isClient ? (document.getElementById('filterPriority')?.value||'') : '';
+  const country     = !isClient ? (document.getElementById('filterCountry')?.value||'')
+                                : (document.getElementById('filterCountryC')?.value||'');
+  const program     = !isClient ? (document.getElementById('filterProgram')?.value||'')
+                                : (document.getElementById('filterProgramC')?.value||'');
+  const dateRange   = !isClient ? (document.getElementById('filterDateRange')?.value||'') : '';
+  const clientStat  = isClient  ? (document.getElementById('filterClientStatus')?.value||'') : '';
+  const versionF    = isClient  ? (document.getElementById('filterVersionC')?.value||'') : '';
 
-    // Folder
+  const activeFilter = isClient ? cFilter : cFilterP;
+
+  return records.filter(r => {
+    // ── Type split — CLIENTS: only type=client. PROSPECTS: everything else
+    if (isClient  && r.type !== 'client') return false;
+    if (!isClient && r.type === 'client') return false;
+
+    // ── Folder
     if (activeFolder !== 'all' && r.folder_id !== activeFolder) return false;
 
-    // Search
+    // ── Text search (also searches email2, email3, notes)
     if (q) {
-      const s = [r.company, r.contact, r.email, r.city, r.country, r.program, r.version]
+      const s = [r.company, r.contact, r.email, r.email2, r.email3,
+                 r.city, r.country, r.program, r.version, r.notes]
         .join(' ').toLowerCase();
       if (!s.includes(q)) return false;
     }
 
-    if (prio    && r.priority !== prio)    return false;
-    if (country && r.country !== country)  return false;
+    // ── Extra filters
+    if (prio      && r.priority      !== prio)      return false;
+    if (country   && r.country       !== country)   return false;
+    if (program   && r.program       !== program)   return false;
+    if (versionF  && r.version       !== versionF)  return false;
+    if (clientStat && r.client_status !== clientStat) return false;
 
-    // Client status filter (dropdown)
-    const clientStatusFilter = document.getElementById('filterClientStatus')?.value || '';
-    if (isClient && clientStatusFilter && r.client_status !== clientStatusFilter) return false;
+    // Date range filter
+    if (dateRange) {
+      if (dateRange === 'never') {
+        if (r.sent_date) return false;
+      } else {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - parseInt(dateRange));
+        cutoff.setHours(0,0,0,0);
+        if (!r.sent_date) return dateRange === 'never';
+        const sd = new Date(r.sent_date); sd.setHours(0,0,0,0);
+        if (sd < cutoff) return false;
+      }
+    }
 
-    // Status tabs
-    if (cFilter === 'new')      return !r.status || r.status === 'new';
-    if (cFilter === 'sent')     return r.status === 'sent';
-    if (cFilter === 'replied')  return r.status === 'replied';
-    if (cFilter === 'waiting')  return r.status === 'waiting';
-    // Client-specific tab filters
-    if (cFilter === 'ok')       return r.client_status === 'ok' || !r.client_status;
-    if (cFilter === 'incident') return r.client_status === 'incident';
-    if (cFilter === 'followup') {
+    // ── Status/client tabs
+    // Clients: Activos = not lost, Inactivos = lost
+    if (activeFilter === 'active')   return r.status !== 'lost';
+    if (activeFilter === 'inactive') return r.status === 'lost';
+    if (activeFilter === 'ok')       return r.client_status === 'ok' || !r.client_status;
+    if (activeFilter === 'incident') return r.client_status === 'incident';
+    // Prospects
+    if (activeFilter === 'new')      return !r.status || r.status === 'new';
+    if (activeFilter === 'sent')     return r.status === 'sent';
+    if (activeFilter === 'replied')  return r.status === 'replied';
+    if (activeFilter === 'waiting')  return r.status === 'waiting';
+    if (activeFilter === 'rejected') return r.status === 'rejected';
+    if (activeFilter === 'followup') {
       if (!r.next_followup) return false;
       const d = new Date(r.next_followup); d.setHours(0,0,0,0);
       return d <= today;
@@ -282,7 +333,6 @@ function getFilteredFor(viewType) {
 function renderBothTables() {
   const prospects = getFilteredFor('prospects');
   const clients   = getFilteredFor('clients');
-
   const totalShown = activeView==='prospects' ? prospects.length : clients.length;
   document.getElementById('rcount').textContent =
     `${totalShown} ${activeView==='prospects'?'prospecto':'cliente'}${totalShown!==1?'s':''}`;
@@ -290,25 +340,39 @@ function renderBothTables() {
   renderProspectsTable(prospects);
   renderClientsTable(clients);
 
-  // Show/hide sections based on activeView
   const pSec = document.getElementById('prospectsSection');
   const cSec = document.getElementById('clientsSection');
   if (pSec) pSec.style.display = activeView==='prospects' ? '' : 'none';
   if (cSec) cSec.style.display = activeView==='clients'   ? '' : 'none';
 
   const empty = document.getElementById('emptyState');
-  empty.style.display = totalShown === 0 ? '' : 'none';
+  const eIcon = document.getElementById('emptyIcon');
+  const eTitle = document.getElementById('emptyTitle');
+  const eMsg = document.getElementById('emptyMsg');
+  if (empty) {
+    empty.style.display = totalShown === 0 ? '' : 'none';
+    if (eIcon) eIcon.textContent = activeView==='prospects' ? '🎯' : '💼';
+    if (eTitle) eTitle.textContent = `Sin ${activeView==='prospects'?'prospectos':'clientes'}`;
+    if (eMsg) eMsg.textContent = 'Crea el primero o importa un Excel.';
+  }
 }
-
-// Alias for old callers
 function renderTable() { renderBothTables(); }
+
+// ── HELPER: render multi-email ────────────────────────────────
+function renderEmails(r) {
+  const emails = [r.email, r.email2, r.email3].filter(Boolean);
+  if (!emails.length) return '';
+  return `<div class="tc-emails">${emails.map(e =>
+    `<div class="tc-email-line">${escH(e)}</div>`
+  ).join('')}</div>`;
+}
 
 // ── PROSPECTS TABLE ───────────────────────────────────────────
 function renderProspectsTable(rows) {
   const tbody = document.getElementById('tbodyProspects');
   if (!tbody) return;
   tbody.innerHTML = rows.map(r => {
-    const n = r._noteCount || 0;
+    const n   = r._noteCount || 0;
     const sel = selectedIds.has(r.id);
     const loc = [r.city, r.country].filter(Boolean).join(', ') || '—';
     return `
@@ -317,10 +381,11 @@ function renderProspectsTable(rows) {
       <td>
         <div class="tc-company">${escH(r.company)}</div>
         ${n>0?`<div class="tc-notes">💬 ${n}</div>`:''}
+        ${r.notes?`<div class="tc-sub" style="font-style:italic;color:var(--ink3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escH(r.notes)}">${escH(r.notes.slice(0,50))}${r.notes.length>50?'…':''}</div>`:''}
       </td>
       <td>
         <div style="font-size:.82rem;color:var(--ink2)">${r.contact||'<span style="color:var(--ink3);font-style:italic">—</span>'}</div>
-        <div class="tc-email">${r.email||''}</div>
+        ${renderEmails(r)}
       </td>
       <td><div style="font-size:.82rem">${escH(loc)}</div></td>
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.program||'—')}</td>
@@ -342,25 +407,27 @@ function renderClientsTable(rows) {
   const tbody = document.getElementById('tbodyClients');
   if (!tbody) return;
   tbody.innerHTML = rows.map(r => {
-    const n = r._noteCount || 0;
+    const n   = r._noteCount || 0;
     const sel = selectedIds.has(r.id);
     const loc = [r.city, r.country].filter(Boolean).join(', ') || '—';
-    const clientStatus = r.client_status || 'ok'; // 'ok' | 'incident'
+    const cs  = r.client_status || 'ok';
+    const isLost = r.status === 'lost';
     return `
-    <tr onclick="openEdit('${r.id}')" class="${sel?'selected-row':''}">
+    <tr onclick="openEdit('${r.id}')" class="${sel?'selected-row':''}${isLost?' row-inactive':''}">
       <td onclick="event.stopPropagation()"><input type="checkbox" class="chk rchk" data-id="${r.id}" ${sel?'checked':''} onchange="toggleRowSel(this)"></td>
       <td>
-        <div class="tc-company">${escH(r.company)}</div>
+        <div class="tc-company">${escH(r.company)}${isLost?'<span class="badge badge-inactive" style="margin-left:5px;font-size:.6rem">Inactivo</span>':''}</div>
         ${n>0?`<div class="tc-notes">💬 ${n}</div>`:''}
+        ${r.notes?`<div class="tc-sub" style="font-style:italic;color:var(--ink3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escH(r.notes.slice(0,50))}${r.notes.length>50?'…':''}</div>`:''}
       </td>
       <td>
         <div style="font-size:.82rem;color:var(--ink2)">${r.contact||'<span style="color:var(--ink3);font-style:italic">—</span>'}</div>
-        <div class="tc-email">${r.email||''}</div>
+        ${renderEmails(r)}
       </td>
       <td><div style="font-size:.82rem">${escH(loc)}</div></td>
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.program||'—')}</td>
       <td style="font-size:.82rem;color:var(--ink3);font-family:var(--fm)">${escH(r.version||'—')}</td>
-      <td>${renderClientStatusBadge(clientStatus)}</td>
+      <td>${renderClientStatusBadge(cs)}</td>
       <td class="tc-date">${r.sent_date?fmtDate(r.sent_date):'<span style="font-style:italic;color:var(--ink3)">—</span>'}</td>
       <td>${renderFollowup(r.next_followup)}</td>
       <td><div class="row-actions">
@@ -374,12 +441,20 @@ function renderClientsTable(rows) {
 
 // ── FOLLOW-UP BANNER ──────────────────────────────────────────
 function renderFollowupBanner() {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const overdue  = records.filter(r => { if (!r.next_followup) return false; const d=new Date(r.next_followup);d.setHours(0,0,0,0);return d<today; });
-  const todayFu  = records.filter(r => { if (!r.next_followup) return false; const d=new Date(r.next_followup);d.setHours(0,0,0,0);return d.getTime()===today.getTime(); });
-  const banner   = document.getElementById('followupBanner');
-  const total    = overdue.length + todayFu.length;
-  if (total === 0) { banner.style.display='none'; return; }
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const overdue = records.filter(r => {
+    if (!r.next_followup) return false;
+    const d = new Date(r.next_followup); d.setHours(0,0,0,0);
+    return d < today;
+  });
+  const todayFu = records.filter(r => {
+    if (!r.next_followup) return false;
+    const d = new Date(r.next_followup); d.setHours(0,0,0,0);
+    return d.getTime() === today.getTime();
+  });
+  const banner = document.getElementById('followupBanner');
+  const total  = overdue.length + todayFu.length;
+  if (total === 0) { banner.style.display = 'none'; return; }
   let msg = '🔔 ';
   if (overdue.length) msg += `<strong>${overdue.length} follow-up${overdue.length>1?'s':''} vencido${overdue.length>1?'s':''}</strong>`;
   if (overdue.length && todayFu.length) msg += ' · ';
@@ -401,43 +476,42 @@ function escH(s) {
 
 const STATUS_LABELS = {
   new:'🆕 Sin contactar', sent:'📤 Enviado', replied:'✅ Respondido',
-  waiting:'⏳ Sin respuesta', negotiation:'🤝 Negociando', won:'🏆 Ganado', lost:'❌ Perdido',
+  waiting:'⏳ Sin respuesta', negotiation:'🤝 Negociando',
+  won:'🏆 Ganado', lost:'❌ Perdido/Inactivo', rejected:'🚫 Rechazado',
 };
-
 function renderBadge(status) {
-  const s = status||'new';
+  const s = status || 'new';
   return `<span class="badge badge-${s}">${STATUS_LABELS[s]||s}</span>`;
 }
-
 function renderClientStatusBadge(s) {
   if (s === 'incident') return `<span class="badge badge-incident">⚠️ Incidencia activa</span>`;
   return `<span class="badge badge-ok">✅ Sin incidencias</span>`;
 }
-
 function renderPrio(p) {
   const cls = p==='Alta'?'alta':p==='Baja'?'baja':'media';
   return `<span class="prio prio-${cls}"><span class="prio-dot"></span>${p||'Media'}</span>`;
 }
-
 function renderFollowup(dateStr) {
   if (!dateStr) return '<span style="color:var(--ink3);font-size:.72rem">—</span>';
   const today = new Date(); today.setHours(0,0,0,0);
   const d = new Date(dateStr); d.setHours(0,0,0,0);
   const diff = Math.round((d-today)/86400000);
-  let cls='fu-ok', note=`en ${diff}d`;
-  if (diff<0)      { cls='fu-overdue'; note=`vencido (${-diff}d)`; }
-  else if (diff===0) { cls='fu-soon'; note='HOY'; }
-  else if (diff<=3)  { cls='fu-soon'; }
+  let cls = 'fu-ok', note = `en ${diff}d`;
+  if (diff < 0)        { cls='fu-overdue'; note=`vencido (${-diff}d)`; }
+  else if (diff === 0) { cls='fu-soon';    note='HOY'; }
+  else if (diff <= 3)  { cls='fu-soon'; }
   return `<div class="fu-cell ${cls}"><span class="fu-date">${fmtDate(dateStr)}</span><br><small style="font-size:.65rem">(${note})</small></div>`;
 }
-
 function toast(msg, type='') {
   const c = document.getElementById('toasts');
   const t = document.createElement('div');
   t.className = `toast ${type}`;
   t.textContent = msg;
   c.appendChild(t);
-  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateY(8px)'; t.style.transition='all 300ms'; setTimeout(()=>t.remove(),300); }, 3500);
+  setTimeout(() => {
+    t.style.opacity='0'; t.style.transform='translateY(8px)';
+    t.style.transition='all 300ms'; setTimeout(()=>t.remove(),300);
+  }, 3500);
 }
 
 // ── SELECTION ─────────────────────────────────────────────────
@@ -449,14 +523,13 @@ function toggleRowSel(chk) {
 function toggleSelAll(chk) {
   const rows = getFilteredFor(activeView);
   rows.forEach(r => { if (chk.checked) selectedIds.add(r.id); else selectedIds.delete(r.id); });
-  renderBothTables();
-  updateBulkBar();
+  renderBothTables(); updateBulkBar();
 }
 function clearSelection() { selectedIds.clear(); renderBothTables(); updateBulkBar(); }
 function updateBulkBar() {
   const bar = document.getElementById('bulkBar');
-  const n = selectedIds.size;
-  bar.style.display = n>0 ? '' : 'none';
+  const n   = selectedIds.size;
+  bar.style.display = n > 0 ? '' : 'none';
   document.getElementById('bulkCount').textContent = `${n} seleccionado${n!==1?'s':''}`;
 }
 async function bulkDelete() {
@@ -500,8 +573,7 @@ async function saveFolderModal() {
     const maxPos = folders.length ? Math.max(...folders.map(f=>f.position||0)) : 0;
     await dbSaveFolder({ id:editingFolderId||undefined, name, icon:pickedIcon, position:editingFolderId?undefined:maxPos+1 });
     await loadFolders();
-    closeFolderModal();
-    renderSidebar();
+    closeFolderModal(); renderSidebar();
     toast(`✅ Carpeta "${name}" guardada`,'ok');
   } catch(err) { toast('Error: '+err.message,'er'); }
 }
@@ -518,11 +590,10 @@ async function deleteFolder(id) {
   } catch(err) { toast('Error: '+err.message,'er'); }
 }
 
-// ── MOVE MODAL ────────────────────────────────────────────────
+// ── MOVE ──────────────────────────────────────────────────────
 function openMoveModal() {
   const ids = [...selectedIds];
-  const list = document.getElementById('moveFolderList');
-  list.innerHTML = folders.map(f =>
+  document.getElementById('moveFolderList').innerHTML = folders.map(f =>
     `<button class="nb" style="color:var(--ink2);background:var(--paper);border:1.5px solid var(--border);margin-bottom:4px" onclick="doMove('${f.id}',${JSON.stringify(ids)})">
       <span>${f.icon||'📁'}</span><span style="flex:1;color:var(--ink)">${f.name}</span>
       <span style="font-size:.72rem;color:var(--acc)">→ mover aquí</span>
@@ -535,23 +606,23 @@ async function doMove(folderId, ids) {
   try {
     await dbMoveContacts(ids, folderId);
     await loadContacts();
-    clearSelection();
-    renderSidebar(); renderBothTables(); closeMoveModal();
+    clearSelection(); renderSidebar(); renderBothTables(); closeMoveModal();
     toast(`📁 ${ids.length} → ${folders.find(f=>f.id===folderId)?.name}`,'ok');
   } catch(err) { toast('Error: '+err.message,'er'); }
 }
 
-// ── EXPORT CSV ────────────────────────────────────────────────
+// ── EXPORT ────────────────────────────────────────────────────
 function exportCSV() {
   const rows = getFilteredFor(activeView);
-  const H = ['ID','Nombre','Contacto','Email','Cargo','País','Ciudad','Programa','Versión',
-    'Tipo','Tipo cliente','Prioridad','Estado','Fecha Envío','Asunto','Próx. Follow-up','Carpeta'];
+  const H = ['ID','Nombre','Contacto','Email','Email2','Email3','Cargo','País','Ciudad',
+    'Programa','Versión','Tipo','Tipo cliente','Prioridad','Estado cliente','Estado',
+    'Fecha Envío','Asunto','Próx. Follow-up','Notas','Carpeta'];
   const esc = v => `"${String(v||'').replace(/"/g,'""')}"`;
   const fn  = id => folders.find(f=>f.id===id)?.name||'';
   const csv = [H.join(','), ...rows.map(r=>[
-    r.id,r.company,r.contact,r.email,r.role,r.country,r.city,
-    r.program,r.version,r.type,r.client_type,r.priority,r.status,
-    r.sent_date,r.subject,r.next_followup,fn(r.folder_id)
+    r.id,r.company,r.contact,r.email,r.email2||'',r.email3||'',r.role,r.country,r.city,
+    r.program,r.version,r.type,r.client_type,r.priority,r.client_status,r.status,
+    r.sent_date,r.subject,r.next_followup,r.notes,fn(r.folder_id)
   ].map(esc).join(','))].join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
@@ -560,5 +631,4 @@ function exportCSV() {
   toast('📥 CSV exportado','info');
 }
 
-// ── START ──────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => initAuth());
