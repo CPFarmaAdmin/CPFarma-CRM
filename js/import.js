@@ -1,40 +1,59 @@
 // ═══════════════════════════════════════════════════════════════
-// IMPORT.JS — Importar contactos desde Excel / CSV
+// IMPORT.JS v6 — todos los bugs de importación corregidos
 // ═══════════════════════════════════════════════════════════════
 
 let iMode = 'add';
 let iCols = [];
 let iRows = [];
 
-// ── FIELD DEFINITIONS (issues 5 — only the fields we want) ───
+// ── ESTADOS válidos por tipo ──────────────────────────────────
+// Prospectos: new | sent | replied | waiting | negotiation | won | rejected
+// Clientes:   ok  | incident | renewal | churned | lost (inactivo)
+
+const PROSPECT_STATUS_MAP = {
+  'sin contactar':'new',  'new':'new',     'nuevo':'new',      'sin email':'new',
+  'enviado':'sent',       'sent':'sent',   'enviados':'sent',
+  'respondido':'replied', 'replied':'replied', 'respondidos':'replied',
+  'sin respuesta':'waiting', 'waiting':'waiting', 'no responde':'waiting',
+  'negociando':'negotiation', 'negotiation':'negotiation', 'en negociacion':'negotiation',
+  'ganado':'won',         'won':'won',     'cerrado':'won',
+  'rechazado':'rejected', 'rejected':'rejected', 'rechaza':'rejected',
+};
+
+const CLIENT_STATUS_MAP = {
+  'sin incidencias':'ok', 'ok':'ok', 'activo':'ok',  'active':'ok', 'normal':'ok',
+  'incidencia':'incident', 'incident':'incident', 'incidencia activa':'incident', 'con incidencia':'incident',
+  'renovacion':'renewal',  'renewal':'renewal',   'renovación':'renewal',
+  'baja':'churned',        'churned':'churned',
+  'perdido':'lost',        'lost':'lost',         'inactivo':'lost', 'inactive':'lost',
+};
+
+// ── FIELD DEFINITIONS ─────────────────────────────────────────
 const FIELD_MAP = {
-  // Core (obligatory)
-  company:          ['empresa','company','nombre empresa','nombre de la empresa','compañia','nombre','cliente','prospecto'],
-  email:            ['email','correo','e-mail','correo electrónico','mail'],
-  // Contact info
-  contact:          ['contacto','contact','persona de contacto','nombre contacto','responsable'],
-  role:             ['cargo','rol','role','puesto','posición','position'],
-  country:          ['país','pais','country'],
-  city:             ['ciudad','city','localidad'],
-  phone:            ['teléfono','telefono','phone','tel','móvil','movil','celular'],
-  // Classification
-  priority:         ['prioridad','priority'],
-  type:             ['tipo','type'],
-  program:          ['programa','program','galenic','citostaticos'],
-  version:          ['versión','version','ver'],
-  notes:            ['notas','notes','comentario','comentarios','observaciones'],
-  client_type:      ['tipo cliente','tipo de cliente','client type','público','publico','privado'],
-  // Email tracking (fix 7)
-  status:           ['estado del proceso','estado proceso','estado','status','situación'],
-  sent_date:        ['fecha envío','fecha envio','fecha de envio','fecha contacto','fecha primer contacto','sent date'],
-  email_type:       ['tipo de email','tipo email','tipo de correo','tipo correo','tipo envío'],
-  subject:          ['asunto','subject','asunto del email'],
-  sent_text:        ['cuerpo del email','cuerpo email','cuerpo','email enviado','texto enviado','body'],
-  attachments:      ['adjuntos','adjuntos enviados','adjuntos nombres','attachments','archivos adjuntos'],
-  reply_date:       ['fecha respuesta','fecha de respuesta','reply date'],
-  reply_from:       ['respondido por','respuesta de','quien respondio','replied by'],
-  reply_text:       ['texto respuesta','respuesta recibida','reply text','texto de la respuesta'],
-  next_followup:    ['próximo followup','proximo followup','next followup','fecha followup','followup'],
+  company:       ['empresa','company','nombre empresa','nombre de la empresa','compañia','nombre','cliente','prospecto','hospital','laboratorio','centro'],
+  email:         ['email','correo','e-mail','correo electrónico','mail'],
+  contact:       ['contacto','contact','persona de contacto','nombre contacto','responsable','interlocutor'],
+  role:          ['cargo','rol','role','puesto','posición','position','título'],
+  country:       ['país','pais','country','nación'],
+  city:          ['ciudad','city','localidad','municipio','población'],
+  phone:         ['teléfono','telefono','phone','tel','móvil','movil','celular','tfno'],
+  priority:      ['prioridad','priority'],
+  type:          ['tipo','type'],
+  client_type:   ['tipo cliente','tipo de cliente','client type','público','publico','privado','sector publico','sector privado'],
+  program:       ['programa','program','galenic','citostaticos','producto'],
+  version:       ['versión','version','ver','v.'],
+  notes:         ['notas','notes','comentario','comentarios','observaciones','nota'],
+  status:        ['estado del proceso','estado proceso','estado','status','situación','situacion'],
+  sent_date:     ['fecha envío','fecha envio','fecha de envio','fecha contacto','fecha primer contacto','sent date','fecha'],
+  email_type:    ['tipo de email','tipo email','tipo de correo','tipo correo','tipo envío'],
+  subject:       ['asunto','subject','asunto del email'],
+  sent_text:     ['cuerpo del email','cuerpo email','cuerpo','email enviado','texto enviado','body'],
+  attachments:   ['adjuntos','adjuntos enviados','adjuntos nombres','attachments','archivos adjuntos'],
+  reply_date:    ['fecha respuesta','fecha de respuesta','reply date'],
+  reply_from:    ['respondido por','respuesta de','quien respondio','replied by'],
+  reply_text:    ['texto respuesta','respuesta recibida','reply text','texto de la respuesta'],
+  next_followup: ['próximo followup','proximo followup','next followup','fecha followup','followup','proximo follow-up','próximo follow-up'],
+  client_status: ['estado cliente','estado del cliente','incidencia','client status'],
 };
 
 const FIELD_LABELS = {
@@ -47,11 +66,12 @@ const FIELD_LABELS = {
   phone:         'Teléfono',
   priority:      'Prioridad (Alta/Media/Baja)',
   type:          'Tipo (Prospecto / Cliente)',
+  client_type:   'Tipo cliente (Público / Privado)',
   program:       'Programa',
   version:       'Versión',
-  notes:         'Notas / Comentarios',
-  client_type:   'Tipo cliente (Público / Privado)',
-  status:        'Estado del proceso',
+  notes:         'Notas generales',
+  status:        'Estado del proceso (prospecto)',
+  client_status: 'Estado del cliente (incidencias)',
   sent_date:     'Fecha de envío',
   email_type:    'Tipo de email',
   subject:       'Asunto',
@@ -64,8 +84,9 @@ const FIELD_LABELS = {
 };
 
 function autoMapField(colName) {
-  const c = (colName||'').toLowerCase().trim()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const col = (colName||'').trim();
+  if (!col) return '';  // Fix 3: empty column → no importar
+  const c = col.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   for (const [field, aliases] of Object.entries(FIELD_MAP)) {
     if (aliases.some(a => {
       const n = a.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -73,6 +94,38 @@ function autoMapField(colName) {
     })) return field;
   }
   return '';
+}
+
+// ── NORMALIZE HELPERS ─────────────────────────────────────────
+function normPriority(v) {
+  const m = {'alta':'Alta','media':'Media','baja':'Baja','high':'Alta','low':'Baja','medium':'Media'};
+  return m[(v||'').toLowerCase()] || 'Media';
+}
+
+function normType(v) {
+  // Fix 1: robust client detection
+  const lower = (v||'').toLowerCase().trim();
+  const clientWords = ['cliente','client','clientes','clients'];
+  const prospectWords = ['prospecto','prospect','prospectos','prospects'];
+  if (clientWords.includes(lower)) return 'client';
+  if (prospectWords.includes(lower)) return 'prospect';
+  return 'prospect'; // default
+}
+
+function normClientType(v) {
+  const lower = (v||'').toLowerCase();
+  if (lower.includes('priv')) return 'private';
+  return 'public';
+}
+
+function normProspectStatus(v) {
+  const lower = (v||'').toLowerCase().trim();
+  return PROSPECT_STATUS_MAP[lower] || 'new';
+}
+
+function normClientStatus(v) {
+  const lower = (v||'').toLowerCase().trim();
+  return CLIENT_STATUS_MAP[lower] || 'ok';
 }
 
 // ── OPEN/CLOSE ────────────────────────────────────────────────
@@ -99,16 +152,8 @@ function closeImport() {
   document.getElementById('impModal').classList.remove('open');
 }
 
-function dzDrag(e, on) {
-  e.preventDefault();
-  document.getElementById('dz').classList.toggle('drag', on);
-}
-function dzDrop(e) {
-  e.preventDefault();
-  dzDrag(e, false);
-  const f = e.dataTransfer.files[0];
-  if (f) handleFile(f);
-}
+function dzDrag(e, on) { e.preventDefault(); document.getElementById('dz').classList.toggle('drag', on); }
+function dzDrop(e) { e.preventDefault(); dzDrag(e, false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }
 
 // ── FILE HANDLING ─────────────────────────────────────────────
 function handleFile(file) {
@@ -131,17 +176,15 @@ function handleFile(file) {
 
       document.getElementById('impGuide').style.display = 'none';
 
-      // File info
       document.getElementById('impPrev').style.display = '';
       document.getElementById('impPrev').innerHTML = `
         <div class="imp-file-info">
           <span>📊</span>
           <div><strong>${escH(file.name)}</strong>
-          <div class="imp-file-meta">${iRows.length} filas · ${iCols.length} columnas detectadas</div></div>
-          <button class="btn-link" onclick="document.getElementById('fInput').click()">Cambiar archivo</button>
+          <div class="imp-file-meta">${iRows.length} filas · ${iCols.length} columnas</div></div>
+          <button class="btn-link" onclick="document.getElementById('fInput').click()">Cambiar</button>
         </div>`;
 
-      // Column mapping — issue 10: NO sample data shown, just column name + arrow + select
       document.getElementById('impMap').style.display = '';
       const autoMapped = iCols.map(c => autoMapField(c));
       const allFields = [
@@ -149,13 +192,16 @@ function handleFile(file) {
         ...Object.keys(FIELD_LABELS).map(k => ({ val: k, label: FIELD_LABELS[k] })),
       ];
 
+      // Fix 3: empty column name → auto-map to '' (no importar)
       document.getElementById('mapRows').innerHTML =
         iCols.map((col, i) => {
           const auto = autoMapped[i];
+          const isEmpty = !col.trim();
+          const displayName = isEmpty ? '<em style="color:var(--ink3)">(columna vacía)</em>' : escH(col);
           return `<div class="map-row">
-            <span class="map-col-name">${escH(col)}</span>
+            <span class="map-col-name">${displayName}</span>
             <span class="map-arrow">→</span>
-            <select id="map-${i}" class="${auto ? 'map-sel-mapped' : ''}">
+            <select id="map-${i}" class="${auto && !isEmpty ? 'map-sel-mapped' : ''}">
               ${allFields.map(o => `<option value="${o.val}"${o.val===auto?' selected':''}>${o.label}</option>`).join('')}
             </select>
           </div>`;
@@ -165,7 +211,7 @@ function handleFile(file) {
       document.getElementById('impModeWrap').style.display   = '';
       document.getElementById('impBtn').style.display        = '';
       setIMode('add');
-    } catch (err) {
+    } catch(err) {
       toast('Error al leer el archivo: ' + err.message, 'er');
     }
   };
@@ -196,54 +242,81 @@ async function doImport() {
   btn.textContent = 'Importando…';
   btn.disabled = true;
 
-  // Normalize helpers
-  const normPriority = v => {
-    const m = { 'alta':'Alta','media':'Media','baja':'Baja','high':'Alta','low':'Baja','medium':'Media' };
-    return m[(v||'').toLowerCase()] || 'Media';
-  };
-  const normType = v => {
-    const m = { 'cliente':'client','client':'client','clientes':'client',
-                'prospecto':'prospect','prospect':'prospect','prospectos':'prospect' };
-    return m[(v||'').toLowerCase()] || 'prospect';
-  };
-  const normStatus = v => {
-    const m = {
-      'sin contactar':'new','new':'new','nuevo':'new',
-      'enviado':'sent','sent':'sent','enviados':'sent',
-      'respondido':'replied','replied':'replied','respondidos':'replied',
-      'sin respuesta':'waiting','waiting':'waiting',
-      'negociando':'negotiation','negotiation':'negotiation',
-      'ganado':'won','won':'won',
-      'perdido':'lost','lost':'lost','inactivo':'lost',
-      'rechazado':'rejected','rejected':'rejected',
-    };
-    return m[(v||'').toLowerCase().trim()] || v || 'new';
-  };
-  const normClientType = v => {
-    const m = { 'público':'public','publico':'public','public':'public',
-                'privado':'private','private':'private' };
-    return m[(v||'').toLowerCase()] || 'public';
-  };
-
   const newRecords = iRows.map(row => {
-    const r = {
-      company:'', email:'', contact:'', role:'', country:'', city:'', phone:'',
-      priority:'Media', status:'new', type:'prospect', client_type:'public',
-      program:'', version:'', folder_id:folderId, user_id:currentUser?.id,
-    };
+    // Build raw record from mapped columns first
+    const raw = {};
     iCols.forEach((col, i) => {
       const field = mapping[i];
       if (!field) return;
-      const val = String(row[i]||'').trim();
-      if      (field === 'priority')    r.priority    = normPriority(val);
-      else if (field === 'type')        r.type        = normType(val);
-      else if (field === 'client_type') r.client_type = normClientType(val);
-      else r[field] = val;
+      raw[field] = String(row[i]||'').trim();
     });
+
+    // Fix 1: determine type FIRST from the data
+    const resolvedType = raw.type ? normType(raw.type) : (activeView === 'clients' ? 'client' : 'prospect');
+    const isClient = resolvedType === 'client';
+
+    // Build final record with correct defaults per type
+    const r = {
+      company:       raw.company || '',
+      email:         raw.email   || '',
+      contact:       raw.contact || '',
+      role:          raw.role    || '',
+      country:       raw.country || '',
+      city:          raw.city    || '',
+      phone:         raw.phone   || '',
+      program:       raw.program || '',
+      version:       raw.version || '',
+      notes:         raw.notes   || '',   // Fix 2: goes to notes field, not history
+      sent_date:     raw.sent_date     || null,
+      email_type:    raw.email_type    || '',
+      subject:       raw.subject       || '',
+      sent_text:     raw.sent_text     || '',
+      attachments:   raw.attachments   || '',
+      reply_date:    raw.reply_date    || null,
+      reply_from:    raw.reply_from    || '',
+      reply_text:    raw.reply_text    || '',
+      next_followup: raw.next_followup || null,
+      type:          resolvedType,
+      client_type:   raw.client_type ? normClientType(raw.client_type) : 'public',
+      priority:      raw.priority ? normPriority(raw.priority) : (isClient ? null : 'Media'),
+      folder_id:     folderId,
+      user_id:       currentUser?.id,
+    };
+
+    // Fix 4+8: Status normalization — different per type
+    if (isClient) {
+      // For clients, 'status' column maps to client_status (incidencias)
+      // 'client_status' column also maps to client_status
+      if (raw.client_status) {
+        r.client_status = normClientStatus(raw.client_status);
+        r.status = 'ok'; // main status for clients is irrelevant, use ok by default
+      } else if (raw.status) {
+        // Try to map status to client context
+        const cs = normClientStatus(raw.status);
+        if (cs !== 'ok' || CLIENT_STATUS_MAP[(raw.status||'').toLowerCase()]) {
+          r.client_status = cs;
+          r.status = 'ok';
+        } else {
+          // Might be 'perdido/inactivo' → goes to r.status for clients
+          const ps = normProspectStatus(raw.status);
+          r.status = ps === 'rejected' ? 'lost' : ps; // rejected doesn't apply to clients
+          r.client_status = 'ok';
+        }
+      } else {
+        r.status = 'ok';
+        r.client_status = 'ok';
+      }
+    } else {
+      // For prospects, 'status' maps directly to status
+      r.status = raw.status ? normProspectStatus(raw.status) : 'new';
+      r.client_status = null;
+    }
+
     return r;
   }).filter(r => r.company || r.email);
 
   let added = 0, merged = 0, errors = 0;
+  const errorList = [];
 
   try {
     if (iMode === 'replace' && folderId) {
@@ -252,33 +325,21 @@ async function doImport() {
     }
 
     for (const rec of newRecords) {
-      const notesText = rec.notes;
-      delete rec.notes;
       try {
         if (iMode === 'merge' && rec.email) {
           const existing = records.find(r => r.email?.toLowerCase() === rec.email?.toLowerCase());
           if (existing) {
             await dbSaveContact({ ...rec, id: existing.id });
-            if (notesText) {
-              await dbAddInteraction({
-                contact_id: existing.id, type:'comment',
-                date: new Date().toISOString().split('T')[0],
-                text: '[Importado] ' + notesText, user_id: currentUser?.id,
-              });
-            }
             merged++; continue;
           }
         }
-        const saved = await dbSaveContact(rec);
-        if (notesText && saved?.id) {
-          await dbAddInteraction({
-            contact_id: saved.id, type:'comment',
-            date: new Date().toISOString().split('T')[0],
-            text: '[Importado] ' + notesText, user_id: currentUser?.id,
-          });
-        }
+        await dbSaveContact(rec);
         added++;
-      } catch(rowErr) { console.error(rowErr); errors++; }
+      } catch(rowErr) {
+        console.error('Row error:', rowErr, rec);
+        errors++;
+        errorList.push(rec.company || rec.email);
+      }
     }
 
     await loadContacts();
@@ -288,13 +349,15 @@ async function doImport() {
     document.getElementById('impResult').style.display = '';
     document.getElementById('impResultMsg').innerHTML = `
       <div style="font-size:1.1rem;font-weight:700;color:var(--c-replied);margin-bottom:10px">✅ Importación completada</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${added>0   ? `<span class="imp-stat-ok">+${added} nuevos</span>`        : ''}
-        ${merged>0  ? `<span class="imp-stat-blue">${merged} actualizados</span>` : ''}
-        ${errors>0  ? `<span class="imp-stat-er">${errors} con error</span>`      : ''}
-      </div>`;
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:${errors?'10px':'0'}">
+        ${added>0   ? `<span class="imp-stat-ok">+${added} nuevos</span>`         : ''}
+        ${merged>0  ? `<span class="imp-stat-blue">${merged} actualizados</span>`  : ''}
+        ${errors>0  ? `<span class="imp-stat-er">${errors} con error</span>`       : ''}
+      </div>
+      ${errors>0 ? `<div style="font-size:.75rem;color:var(--ink3);margin-top:6px">Con error: ${errorList.slice(0,5).join(', ')}${errorList.length>5?'…':''}</div>` : ''}`;
   } catch(err) {
     toast('Error al importar: ' + err.message, 'er');
+    console.error(err);
   }
 
   btn.textContent = '📥 Importar';

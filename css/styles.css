@@ -1255,3 +1255,28 @@ tr.row-inactive .tc-company { color: var(--ink3); }
 
 /* Extra filter selects in filterbar */
 .filter-right .filter-select { margin-bottom: 0; }
+
+/* ═══ v6 — sidebar nav view buttons: NO border, clean active state ═══ */
+.sb-nav-view {
+  border: none !important;
+  background: transparent;
+}
+.sb-nav-view.active {
+  background: var(--acc) !important;
+  color: white !important;
+  border: none !important;
+}
+.sb-nav-view:not(.active):hover {
+  background: rgba(255,255,255,.07) !important;
+  border: none !important;
+}
+
+/* ═══ v6 — Client status badges ═══ */
+.badge-c-ok       { background: #f0fdf4; color: #166534; }
+.badge-c-incident { background: #fef2f2; color: #991b1b; }
+.badge-c-renewal  { background: #eff6ff; color: #1e40af; }
+.badge-c-churned  { background: #f9fafb; color: #6b7280; }
+.badge-c-lost     { background: #f9fafb; color: #9ca3af; }
+
+/* ═══ v6 — Prospect-only badge-rejected ═══ */
+.badge-rejected   { background: #fdf4ff; color: #7e22ce; }

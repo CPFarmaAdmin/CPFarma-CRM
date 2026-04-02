@@ -79,7 +79,8 @@ async function openPanel(id) {
     setVal('f-dealClose',       r.deal_close);
 
     cTags = Array.isArray(r.tags) ? [...r.tags] : [];
-    selStatus(r.status || (isClient ? 'ok' : 'new'));
+    // Fix 8: clients use client_status, prospects use status
+    selStatus(isClient ? (r.client_status || 'ok') : (r.status || 'new'));
 
     try { cNotes = await dbGetInteractions(id); }
     catch(e) { cNotes = []; }
@@ -96,18 +97,16 @@ async function openPanel(id) {
 
 // Apply UI changes when type changes
 function _applyTypeUI(isClient) {
-  // Section title
   const t = document.getElementById('infoSectionTitle');
   if (t) t.textContent = isClient ? '💼 Datos del cliente' : '🎯 Datos del prospecto';
 
   const lbl = document.getElementById('labelCompany');
   if (lbl) lbl.innerHTML = `${isClient ? 'Nombre del cliente' : 'Nombre del prospecto'} <span class="req">*</span>`;
 
-  // Show/hide conditional fields
   document.querySelectorAll('.client-only').forEach(el => el.style.display = isClient ? '' : 'none');
   document.querySelectorAll('.prospect-only').forEach(el => el.style.display = !isClient ? '' : 'none');
 
-  // Status selectors
+  // Show the correct status selector block
   const sp = document.getElementById('statusSelProspect');
   const sc = document.getElementById('statusSelClient');
   if (sp) sp.style.display = isClient ? 'none' : '';
@@ -118,7 +117,9 @@ function _applyTypeUI(isClient) {
 function onTypeChange(sel) {
   const isClient = sel.value === 'client';
   _applyTypeUI(isClient);
-  selStatus(isClient ? 'ok' : 'new');
+  // Reset status to correct default for the type
+  cStatus = isClient ? 'ok' : 'new';
+  selStatus(cStatus);
 }
 
 function openEdit(id) { openPanel(id); }
@@ -141,6 +142,7 @@ function switchPanelTab(tab, btn) {
 // ── STATUS ────────────────────────────────────────────────────
 function selStatus(v) {
   cStatus = v;
+  // Highlight in whichever selector is currently visible
   document.querySelectorAll('.status-opt').forEach(el => {
     el.className = 'status-opt';
     if (el.dataset.v === v) el.classList.add('active-' + v);
@@ -259,7 +261,12 @@ async function saveRecord() {
     priority:         isClient ? null : (getVal('f-priority') || 'Media'),
     folder_id:        getVal('f-folder') || null,
     tags:             cTags,
-    status:           cStatus,
+    // Fix 8: for clients, cStatus = client_status (ok/incident/renewal/churned/lost)
+    //          for prospects, cStatus = status (new/sent/replied/waiting/rejected/won)
+    status:           isClient
+                        ? (cStatus === 'lost' ? 'lost' : 'ok')   // 'lost' marks inactive client, else 'ok'
+                        : cStatus,
+    client_status:    isClient ? cStatus : null,
     email_type:       getVal('f-emailType'),
     sent_date:        getVal('f-sentDate')        || null,
     subject:          getVal('f-subject'),

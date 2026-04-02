@@ -73,8 +73,12 @@ function setupRealtimeSync() {
 function setView(v) {
   activeView = v;
 
-  // Sync ALL view-tab buttons everywhere (top bar + sidebar)
+  // Sync top-bar view-tab buttons
   document.querySelectorAll('.view-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.view === v);
+  });
+  // Sync sidebar nav buttons (separate class to avoid CSS conflicts)
+  document.querySelectorAll('.sb-nav-view').forEach(t => {
     t.classList.toggle('active', t.dataset.view === v);
   });
 
@@ -135,10 +139,10 @@ function renderSidebar() {
 
   document.getElementById('sbNav').innerHTML = `
     <div class="sb-section">Vistas</div>
-    <button class="nb view-tab ${activeFolder==='all'&&activeView==='prospects'?'active':''}" data-view="prospects" onclick="setFolder('all');setView('prospects')">
+    <button class="nb sb-nav-view ${activeFolder==='all'&&activeView==='prospects'?'active':''}" data-view="prospects" onclick="setFolder('all');setView('prospects')">
       <span class="ni">🎯</span><span class="nt">Prospectos</span><span class="nk">${prospects.length}</span>
     </button>
-    <button class="nb view-tab ${activeFolder==='all'&&activeView==='clients'?'active':''}" data-view="clients" onclick="setFolder('all');setView('clients')">
+    <button class="nb sb-nav-view ${activeFolder==='all'&&activeView==='clients'?'active':''}" data-view="clients" onclick="setFolder('all');setView('clients')">
       <span class="ni">💼</span><span class="nt">Clientes</span><span class="nk">${clients.length}</span>
     </button>
     <button class="nb" onclick="showFollowups()">
@@ -297,24 +301,34 @@ function getFilteredFor(viewType) {
       }
     }
 
-    // ── Status/client tabs
-    // Clients: Activos = not lost, Inactivos = lost
-    if (activeFilter === 'active')   return r.status !== 'lost';
-    if (activeFilter === 'inactive') return r.status === 'lost';
-    if (activeFilter === 'ok')       return r.client_status === 'ok' || !r.client_status;
-    if (activeFilter === 'incident') return r.client_status === 'incident';
-    // Prospects
-    if (activeFilter === 'new')      return !r.status || r.status === 'new';
-    if (activeFilter === 'sent')     return r.status === 'sent';
-    if (activeFilter === 'replied')  return r.status === 'replied';
-    if (activeFilter === 'waiting')  return r.status === 'waiting';
-    if (activeFilter === 'rejected') return r.status === 'rejected';
-    if (activeFilter === 'followup') {
-      if (!r.next_followup) return false;
-      const d = new Date(r.next_followup); d.setHours(0,0,0,0);
-      return d <= today;
+    // ── Status/client tabs — completely separated by view type
+    if (isClient) {
+      // CLIENT FILTERS — based on client_status (incidencias) OR lost status
+      if (activeFilter === 'active')   return r.status !== 'lost';                           // Activos: todos menos perdidos
+      if (activeFilter === 'inactive') return r.status === 'lost';                           // Inactivos: solo perdidos
+      if (activeFilter === 'ok')       return r.status !== 'lost' && (r.client_status === 'ok' || !r.client_status);
+      if (activeFilter === 'incident') return r.status !== 'lost' && r.client_status === 'incident';
+      if (activeFilter === 'followup') {
+        if (!r.next_followup) return false;
+        const d = new Date(r.next_followup); d.setHours(0,0,0,0);
+        return d <= today;
+      }
+      return true; // 'all' for clients = all clients
+    } else {
+      // PROSPECT FILTERS — based on status field
+      if (activeFilter === 'all')      return true;
+      if (activeFilter === 'new')      return !r.status || r.status === 'new';
+      if (activeFilter === 'sent')     return r.status === 'sent';
+      if (activeFilter === 'replied')  return r.status === 'replied';
+      if (activeFilter === 'waiting')  return r.status === 'waiting';
+      if (activeFilter === 'rejected') return r.status === 'rejected';
+      if (activeFilter === 'followup') {
+        if (!r.next_followup) return false;
+        const d = new Date(r.next_followup); d.setHours(0,0,0,0);
+        return d <= today;
+      }
+      return true;
     }
-    return true;
   }).sort((a,b) => {
     let vA, vB;
     const pm = {Alta:0,Media:1,Baja:2};
@@ -390,7 +404,7 @@ function renderProspectsTable(rows) {
       <td><div style="font-size:.82rem">${escH(loc)}</div></td>
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.program||'—')}</td>
       <td class="tc-date">${r.sent_date?fmtDate(r.sent_date):'<span style="font-style:italic;color:var(--ink3)">—</span>'}</td>
-      <td>${renderBadge(r.status)}</td>
+      <td>${renderBadge(r.status, false)}</td>
       <td>${renderPrio(r.priority)}</td>
       <td>${renderFollowup(r.next_followup)}</td>
       <td><div class="row-actions">
@@ -474,18 +488,42 @@ function escH(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-const STATUS_LABELS = {
-  new:'🆕 Sin contactar', sent:'📤 Enviado', replied:'✅ Respondido',
-  waiting:'⏳ Sin respuesta', negotiation:'🤝 Negociando',
-  won:'🏆 Ganado', lost:'❌ Perdido/Inactivo', rejected:'🚫 Rechazado',
+// Prospect statuses
+const PROSPECT_STATUS_LABELS = {
+  new:         '🆕 Sin contactar',
+  sent:        '📤 Enviado',
+  replied:     '✅ Respondido',
+  waiting:     '⏳ Sin respuesta',
+  negotiation: '🤝 Negociando',
+  won:         '🏆 Ganado',
+  rejected:    '🚫 Rechazado',
 };
-function renderBadge(status) {
+
+// Client statuses (incidencias)
+const CLIENT_STATUS_LABELS = {
+  ok:       '✅ Sin incidencias',
+  incident: '⚠️ Incidencia activa',
+  renewal:  '🔄 Renovación',
+  churned:  '❌ Baja',
+  lost:     '⬜ Inactivo',
+};
+
+function renderBadge(status, isClient) {
+  if (isClient) {
+    // For clients show client_status is handled separately, but if called with status show it clean
+    const s = status || 'ok';
+    const label = CLIENT_STATUS_LABELS[s] || s;
+    return `<span class="badge badge-c-${s}">${label}</span>`;
+  }
   const s = status || 'new';
-  return `<span class="badge badge-${s}">${STATUS_LABELS[s]||s}</span>`;
+  const label = PROSPECT_STATUS_LABELS[s] || s;
+  return `<span class="badge badge-${s}">${label}</span>`;
 }
+
 function renderClientStatusBadge(s) {
-  if (s === 'incident') return `<span class="badge badge-incident">⚠️ Incidencia activa</span>`;
-  return `<span class="badge badge-ok">✅ Sin incidencias</span>`;
+  const label = CLIENT_STATUS_LABELS[s] || '✅ Sin incidencias';
+  const key   = s || 'ok';
+  return `<span class="badge badge-c-${key}">${label}</span>`;
 }
 function renderPrio(p) {
   const cls = p==='Alta'?'alta':p==='Baja'?'baja':'media';
