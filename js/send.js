@@ -319,7 +319,7 @@ async function doSend() {
 
   const next = async () => {
     if (done >= total) {
-      document.getElementById('sProgLabel').textContent = '✅ Completado';
+      document.getElementById('sProgLabel').textContent = `${total} pestaña${total!==1?'s':''} de Roundcube abiertas`;
       document.getElementById('sProgPct').textContent   = '100%';
       document.getElementById('sProgBar').style.width   = '100%';
       document.getElementById('sDoneMsg').style.display = '';
