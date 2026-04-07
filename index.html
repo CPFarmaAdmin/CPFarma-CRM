@@ -267,7 +267,7 @@
             <select id="f-type" onchange="onTypeChange(this)">
               <option value="prospect">🎯 Prospecto</option>
               <option value="client">💼 Cliente</option>
-              <option value="lost">❌ Perdido / Inactivo</option>
+
             </select>
           </div>
           <!-- Prospect-only -->
@@ -325,7 +325,6 @@
           <div class="status-opt" data-v="waiting" onclick="selStatus('waiting')">⏳<span>Sin respuesta</span></div>
           <div class="status-opt" data-v="negotiation" onclick="selStatus('negotiation')">🤝<span>Negociando</span></div>
           <div class="status-opt" data-v="won" onclick="selStatus('won')">🏆<span>Ganado</span></div>
-          <div class="status-opt" data-v="lost" onclick="selStatus('lost')">❌<span>Perdido</span></div>
           <div class="status-opt" data-v="rejected" onclick="selStatus('rejected')">🚫<span>Rechazado</span></div>
         </div>
         <div id="statusSelClient" class="status-selector" style="display:none">
@@ -333,6 +332,7 @@
           <div class="status-opt" data-v="incident" onclick="selStatus('incident')">⚠️<span>Incidencia activa</span></div>
           <div class="status-opt" data-v="renewal" onclick="selStatus('renewal')">🔄<span>Renovación</span></div>
           <div class="status-opt" data-v="churned" onclick="selStatus('churned')">❌<span>Baja</span></div>
+          <div class="status-opt" data-v="lost" onclick="selStatus('lost')">⬜<span>Inactivo</span></div>
         </div>
       </div>
       <div class="form-section">

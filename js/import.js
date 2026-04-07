@@ -18,19 +18,22 @@ const PROSPECT_STATUS_MAP = {
   'negociando':'negotiation', 'negotiation':'negotiation', 'en negociacion':'negotiation',
   'ganado':'won',         'won':'won',     'cerrado':'won',
   'rechazado':'rejected', 'rejected':'rejected', 'rechaza':'rejected',
+  'perdido':'rejected',   // 'perdido' in prospects = rechazado (lost only applies to clients)
+  'no interesado':'rejected', 'no interesa':'rejected',
 };
 
 const CLIENT_STATUS_MAP = {
   'sin incidencias':'ok', 'ok':'ok', 'activo':'ok',  'active':'ok', 'normal':'ok',
   'incidencia':'incident', 'incident':'incident', 'incidencia activa':'incident', 'con incidencia':'incident',
   'renovacion':'renewal',  'renewal':'renewal',   'renovación':'renewal',
-  'baja':'churned',        'churned':'churned',
+  'baja':'churned',        'churned':'churned',   'de baja':'churned',
   'perdido':'lost',        'lost':'lost',         'inactivo':'lost', 'inactive':'lost',
+  'baja definitiva':'lost', 'inactiva':'lost',    'ex cliente':'lost',
 };
 
 // ── FIELD DEFINITIONS ─────────────────────────────────────────
 const FIELD_MAP = {
-  company:       ['empresa','company','nombre empresa','nombre de la empresa','compañia','nombre','cliente','prospecto','hospital','laboratorio','centro'],
+  company:       ['empresa','company','nombre empresa','nombre de la empresa','compañia','nombre del cliente','nombre del prospecto','hospital','laboratorio','centro','razon social','razón social','nombre clinica','nombre hospital'],
   email:         ['email','correo','e-mail','correo electrónico','mail'],
   contact:       ['contacto','contact','persona de contacto','nombre contacto','responsable','interlocutor'],
   role:          ['cargo','rol','role','puesto','posición','position','título'],
@@ -257,7 +260,7 @@ async function doImport() {
 
     // Build final record with correct defaults per type
     const r = {
-      company:       raw.company || '',
+      company:       (raw.company || '').trim(),
       email:         raw.email   || '',
       contact:       raw.contact || '',
       role:          raw.role    || '',

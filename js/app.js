@@ -393,7 +393,7 @@ function renderProspectsTable(rows) {
     <tr onclick="openEdit('${r.id}')" class="${sel?'selected-row':''}">
       <td onclick="event.stopPropagation()"><input type="checkbox" class="chk rchk" data-id="${r.id}" ${sel?'checked':''} onchange="toggleRowSel(this)"></td>
       <td>
-        <div class="tc-company">${escH(r.company)}</div>
+        <div class="tc-company">${r.company ? escH(r.company) : '<span style="color:var(--ink3);font-style:italic">Sin nombre</span>'}</div>
         ${n>0?`<div class="tc-notes">💬 ${n}</div>`:''}
         ${r.notes?`<div class="tc-sub" style="font-style:italic;color:var(--ink3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escH(r.notes)}">${escH(r.notes.slice(0,50))}${r.notes.length>50?'…':''}</div>`:''}
       </td>
@@ -497,6 +497,7 @@ const PROSPECT_STATUS_LABELS = {
   negotiation: '🤝 Negociando',
   won:         '🏆 Ganado',
   rejected:    '🚫 Rechazado',
+  // Note: 'lost' is NOT a prospect status — it only applies to clients (Inactivo)
 };
 
 // Client statuses (incidencias)
@@ -505,7 +506,7 @@ const CLIENT_STATUS_LABELS = {
   incident: '⚠️ Incidencia activa',
   renewal:  '🔄 Renovación',
   churned:  '❌ Baja',
-  lost:     '⬜ Inactivo',
+  lost:     '⬜ Inactivo',     // shown in Inactivos tab
 };
 
 function renderBadge(status, isClient) {

@@ -79,8 +79,12 @@ async function openPanel(id) {
     setVal('f-dealClose',       r.deal_close);
 
     cTags = Array.isArray(r.tags) ? [...r.tags] : [];
-    // Fix 8: clients use client_status, prospects use status
-    selStatus(isClient ? (r.client_status || 'ok') : (r.status || 'new'));
+    // Fix 8: clients use client_status for the selector, prospects use status
+    // Safety: if a prospect somehow has status='lost', show as 'rejected'
+    const statusToShow = isClient
+      ? (r.client_status || 'ok')
+      : (r.status === 'lost' ? 'rejected' : r.status || 'new');
+    selStatus(statusToShow);
 
     try { cNotes = await dbGetInteractions(id); }
     catch(e) { cNotes = []; }
@@ -261,11 +265,14 @@ async function saveRecord() {
     priority:         isClient ? null : (getVal('f-priority') || 'Media'),
     folder_id:        getVal('f-folder') || null,
     tags:             cTags,
-    // Fix 8: for clients, cStatus = client_status (ok/incident/renewal/churned/lost)
-    //          for prospects, cStatus = status (new/sent/replied/waiting/rejected/won)
+    // STATUS LOGIC:
+    // Prospects: status field = new/sent/replied/waiting/negotiation/won/rejected
+    //            (never 'lost' — that only applies to clients)
+    // Clients:   client_status field = ok/incident/renewal/churned/lost
+    //            status field = 'ok' (active) or 'lost' (inactive/churned)
     status:           isClient
-                        ? (cStatus === 'lost' ? 'lost' : 'ok')   // 'lost' marks inactive client, else 'ok'
-                        : cStatus,
+                        ? (cStatus === 'lost' || cStatus === 'churned' ? 'lost' : 'ok')
+                        : (cStatus === 'lost' ? 'rejected' : cStatus),  // safety: prospect can't be 'lost'
     client_status:    isClient ? cStatus : null,
     email_type:       getVal('f-emailType'),
     sent_date:        getVal('f-sentDate')        || null,
