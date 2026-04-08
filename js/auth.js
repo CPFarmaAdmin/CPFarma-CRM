@@ -1,11 +1,12 @@
 // ═══════════════════════════════════════════════════════════════
 // AUTH.JS — Autenticación con Supabase
+// Fix: no reinicializar la app en token_refreshed events
 // ═══════════════════════════════════════════════════════════════
 
 let currentUser = null;
+let appInitialized = false;  // prevent duplicate init on token refresh
 
 async function initAuth() {
-  // Check existing session
   const { data: { session } } = await db.auth.getSession();
   if (session?.user) {
     currentUser = session.user;
@@ -14,15 +15,23 @@ async function initAuth() {
     showLogin();
   }
 
-  // Listen for auth changes
+  // Listen for auth changes — but only reinit on actual sign in/out
   db.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
       currentUser = session.user;
-      await showApp();
+      // Only call showApp on first login, not on token refresh
+      if (!appInitialized) {
+        await showApp();
+      } else {
+        // Just update the current user silently
+        currentUser = session.user;
+      }
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
+      appInitialized = false;
       showLogin();
     }
+    // TOKEN_REFRESHED, USER_UPDATED etc → ignore, app stays as-is
   });
 }
 
@@ -47,16 +56,17 @@ async function doLogin() {
   btn.disabled = false;
 
   if (error) {
-    console.error('Supabase login error:', error);
-    showLoginError(error.message || 'Error al iniciar sesión.');
+    showLoginError(error.message || 'Email o contraseña incorrectos.');
     return;
   }
 
   currentUser = data.user;
+  appInitialized = false; // reset so showApp runs fully
   await showApp();
 }
 
 async function doLogout() {
+  appInitialized = false;
   await db.auth.signOut();
   location.reload();
 }
@@ -73,18 +83,18 @@ function showLogin() {
 }
 
 async function showApp() {
+  if (appInitialized) return; // guard against duplicate calls
+  
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = '';
 
-  // Show user email in sidebar
   const email = currentUser?.email || '';
   document.getElementById('sbUser').textContent = '👤 ' + email;
 
-  // Init the app
   await initApp();
+  appInitialized = true;
 }
 
-// Allow pressing Enter on password field
 document.getElementById('loginPassword')?.addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });

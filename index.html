@@ -10,7 +10,7 @@
 </head>
 <body>
 
-<!-- ══════════════ LOGIN ══════════════ -->
+<!-- LOGIN -->
 <div id="loginScreen" class="login-screen">
   <div class="login-card">
     <div class="login-logo">
@@ -27,15 +27,11 @@
   </div>
 </div>
 
-<!-- ══════════════ APP ══════════════ -->
+<!-- APP -->
 <div id="app" class="app" style="display:none">
-
   <aside class="sidebar">
     <div class="sb-header">
-      <div class="sb-brand">
-        <div class="sb-logo">CP</div>
-        <div><div class="sb-brand-name">CP Farma</div><div class="sb-brand-sub">CRM</div></div>
-      </div>
+      <div class="sb-brand"><div class="sb-logo">CP</div><div><div class="sb-brand-name">CP Farma</div><div class="sb-brand-sub">CRM</div></div></div>
       <div class="sb-user" id="sbUser"></div>
     </div>
     <div class="sb-stats" id="sbStats"></div>
@@ -44,7 +40,6 @@
   </aside>
 
   <main class="main-content">
-    <!-- TOPBAR -->
     <div class="topbar">
       <div class="topbar-left">
         <div class="view-tabs">
@@ -55,7 +50,7 @@
         <div class="topbar-badge" id="topbarBadge"></div>
       </div>
       <div class="topbar-right">
-<input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar…" oninput="renderBothTables()">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar…" oninput="renderBothTables()">
         <button class="btn btn-ghost btn-sm" onclick="openImport()">📥 Importar</button>
         <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇️ Exportar</button>
         <button class="btn btn-send btn-sm" onclick="openSendModal()">✉️ Enviar emails</button>
@@ -65,38 +60,38 @@
 
     <!-- FILTER BAR -->
     <div class="filterbar">
-      <!-- Prospect filters -->
       <div id="filtersProspects" class="filter-tabs">
         <button class="ftab active" data-filter="all" onclick="setFilter('all',this)">Todos</button>
         <button class="ftab" data-filter="new" onclick="setFilter('new',this)">🆕 Sin contactar</button>
-        <button class="ftab" data-filter="sent" onclick="setFilter('sent',this)">📤 Enviados</button>
-        <button class="ftab" data-filter="replied" onclick="setFilter('replied',this)">✅ Respondidos</button>
-        <button class="ftab" data-filter="waiting" onclick="setFilter('waiting',this)">⏳ Sin respuesta</button>
+        <button class="ftab" data-filter="contact_obtained" onclick="setFilter('contact_obtained',this)">📞 Datos obtenidos</button>
+        <button class="ftab" data-filter="demo_scheduled" onclick="setFilter('demo_scheduled',this)">📅 Demo agendada</button>
+        <button class="ftab" data-filter="demo_done" onclick="setFilter('demo_done',this)">✅ Demo hecha</button>
+        <button class="ftab" data-filter="budget_sent" onclick="setFilter('budget_sent',this)">💰 Presupuesto enviado</button>
+        <button class="ftab" data-filter="followup" onclick="setFilter('followup',this)">🔔 En seguimiento</button>
+        <button class="ftab" data-filter="won" onclick="setFilter('won',this)">🏆 Ganados</button>
         <button class="ftab" data-filter="rejected" onclick="setFilter('rejected',this)">🚫 Rechazados</button>
-        <button class="ftab ftab-alert" data-filter="followup" onclick="setFilter('followup',this)">🔔 Follow-up hoy</button>
+        <button class="ftab ftab-alert" data-filter="followup_today" onclick="setFilter('followup_today',this)">⏰ Follow-up hoy</button>
       </div>
-      <!-- Client filters -->
       <div id="filtersClients" class="filter-tabs" style="display:none">
         <button class="ftab active" data-filter="active" onclick="setFilter('active',this)">✅ Activos</button>
         <button class="ftab" data-filter="inactive" onclick="setFilter('inactive',this)">❌ Inactivos</button>
         <button class="ftab" data-filter="ok" onclick="setFilter('ok',this)">✅ Sin incidencias</button>
         <button class="ftab" data-filter="incident" onclick="setFilter('incident',this)">⚠️ Con incidencia</button>
-        <button class="ftab ftab-alert" data-filter="followup" onclick="setFilter('followup',this)">🔔 Follow-up hoy</button>
+        <button class="ftab ftab-alert" data-filter="followup_today" onclick="setFilter('followup_today',this)">⏰ Follow-up hoy</button>
       </div>
       <div class="filter-right">
-        <!-- Prospect extra filters -->
         <div id="extraFiltersP" style="display:contents">
+          <select class="filter-select" id="filterCountry" onchange="renderBothTables()"><option value="">País</option></select>
+          <select class="filter-select" id="filterProgram" onchange="renderBothTables()">
+            <option value="">Programa</option>
+            <option value="Galenic Plus">Galenic Plus</option>
+            <option value="Citostaticos">Citostáticos</option>
+          </select>
           <select class="filter-select" id="filterPriority" onchange="renderBothTables()">
             <option value="">Prioridad</option>
             <option value="Alta">🔴 Alta</option>
             <option value="Media">🟡 Media</option>
             <option value="Baja">🟢 Baja</option>
-          </select>
-          <select class="filter-select" id="filterCountry" onchange="renderBothTables()"><option value="">País</option></select>
-          <select class="filter-select" id="filterProgram" onchange="renderBothTables()">
-            <option value="">Programa</option>
-            <option value="Galenic Plus">Galenic Plus</option>
-            <option value="Citostaticos">Citostaticos</option>
           </select>
           <select class="filter-select" id="filterDateRange" onchange="renderBothTables()">
             <option value="">Últ. contacto</option>
@@ -106,22 +101,14 @@
             <option value="never">Sin contactar nunca</option>
           </select>
         </div>
-        <!-- Client extra filters -->
         <div id="extraFiltersC" style="display:none">
-          <select class="filter-select" id="filterClientStatus" onchange="renderBothTables()">
-            <option value="">Estado</option>
-            <option value="ok">✅ Sin incidencias</option>
-            <option value="incident">⚠️ Incidencia activa</option>
-          </select>
           <select class="filter-select" id="filterCountryC" onchange="renderBothTables()"><option value="">País</option></select>
           <select class="filter-select" id="filterProgramC" onchange="renderBothTables()">
             <option value="">Programa</option>
             <option value="Galenic Plus">Galenic Plus</option>
-            <option value="Citostaticos">Citostaticos</option>
+            <option value="Citostaticos">Citostáticos</option>
           </select>
-          <select class="filter-select" id="filterVersionC" onchange="renderBothTables()">
-            <option value="">Versión</option>
-          </select>
+          <select class="filter-select" id="filterVersionC" onchange="renderBothTables()"><option value="">Versión</option></select>
         </div>
         <span class="rcount" id="rcount"></span>
       </div>
@@ -129,10 +116,8 @@
 
     <div id="followupBanner" class="followup-banner" style="display:none"></div>
 
-    <!-- TABLES WRAP -->
+    <!-- TABLES -->
     <div class="table-wrap" id="tablesWrap" style="display:none">
-
-      <!-- PROSPECTS TABLE -->
       <div id="prospectsSection">
         <table class="contacts-table">
           <thead><tr>
@@ -142,37 +127,33 @@
             <th class="sortable" onclick="setSort('country')"><span>Ubicación</span><span class="sort-icon" id="si-country"></span></th>
             <th class="sortable" onclick="setSort('program')"><span>Programa</span><span class="sort-icon" id="si-program"></span></th>
             <th class="sortable" onclick="setSort('date')"><span>Últ. contacto</span><span class="sort-icon" id="si-date"></span></th>
-            <th>Estado</th>
+            <th>Etapa del proceso</th>
             <th class="sortable" onclick="setSort('prio')"><span>Prioridad</span><span class="sort-icon" id="si-prio"></span></th>
-            <th class="sortable" onclick="setSort('followup')"><span>Próx. follow-up</span><span class="sort-icon" id="si-followup"></span></th>
+            <th class="sortable" onclick="setSort('followup')"><span>Follow-up</span><span class="sort-icon" id="si-followup"></span></th>
             <th style="width:90px">Acciones</th>
           </tr></thead>
           <tbody id="tbodyProspects"></tbody>
         </table>
       </div>
-
-      <!-- CLIENTS TABLE -->
       <div id="clientsSection" style="display:none">
         <table class="contacts-table">
           <thead><tr>
             <th style="width:36px"><input type="checkbox" id="selAllC" onchange="toggleSelAll(this)" class="chk"></th>
-            <th class="sortable" onclick="setSort('name')"><span>Cliente</span><span class="sort-icon"></span></th>
+            <th class="sortable" onclick="setSort('name')"><span>Cliente</span></th>
             <th>Contacto · Email</th>
             <th class="sortable" onclick="setSort('country')"><span>Ubicación</span></th>
             <th class="sortable" onclick="setSort('program')"><span>Programa</span></th>
             <th>Versión</th>
             <th>Estado</th>
             <th class="sortable" onclick="setSort('date')"><span>Últ. contacto</span></th>
-            <th class="sortable" onclick="setSort('followup')"><span>Próx. follow-up</span></th>
+            <th class="sortable" onclick="setSort('followup')"><span>Follow-up</span></th>
             <th style="width:90px">Acciones</th>
           </tr></thead>
           <tbody id="tbodyClients"></tbody>
         </table>
       </div>
-
     </div>
 
-    <!-- EMPTY / LOADING -->
     <div id="emptyState" class="empty-state" style="display:none">
       <div class="empty-icon" id="emptyIcon">📭</div>
       <h3 id="emptyTitle">Sin registros</h3>
@@ -186,7 +167,6 @@
       <div class="loading-spinner"></div><p>Cargando…</p>
     </div>
 
-    <!-- BULK BAR -->
     <div class="bulk-bar" id="bulkBar" style="display:none">
       <span id="bulkCount"></span>
       <button class="btn btn-ghost btn-sm" onclick="openMoveModal()">📁 Mover</button>
@@ -197,14 +177,11 @@
   </main>
 </div>
 
-<!-- ══════════════ SIDE PANEL ══════════════ -->
+<!-- ══════ SIDE PANEL ══════ -->
 <div class="overlay" id="overlay" onclick="closePanel()"></div>
 <div class="side-panel" id="sidePanel">
   <div class="panel-header">
-    <div class="panel-header-info">
-      <h2 id="panelTitle">Nuevo prospecto</h2>
-      <div class="panel-sub" id="panelSub"></div>
-    </div>
+    <div class="panel-header-info"><h2 id="panelTitle">Nuevo prospecto</h2><div class="panel-sub" id="panelSub"></div></div>
     <button class="close-btn" onclick="closePanel()">✕</button>
   </div>
   <div class="panel-tabs">
@@ -215,20 +192,12 @@
   </div>
   <div class="panel-body">
 
-    <!-- TAB: DATOS -->
+    <!-- TAB DATOS -->
     <div class="ptab-content active" id="tab-info">
       <div class="form-section">
         <div class="form-section-title" id="infoSectionTitle">🎯 Datos del prospecto</div>
         <div class="form-grid">
-          <div class="fg-full">
-            <label id="labelCompany">Nombre del prospecto <span class="req">*</span></label>
-            <input type="text" id="f-company" placeholder="Nombre del cliente o empresa…">
-          </div>
-          <div><label>Persona de contacto</label><input type="text" id="f-contact" placeholder="Nombre y apellidos"></div>
-          <div><label>Cargo</label><input type="text" id="f-role" placeholder="CEO, Director de Compras…"></div>
-          <div><label>Correo electrónico <span class="req">*</span></label><input type="email" id="f-email" placeholder="principal@empresa.com"></div>
-          <div><label>Correo electrónico 2</label><input type="email" id="f-email2" placeholder="alternativo@empresa.com"></div>
-          <div class="fg-full"><label>Correo electrónico 3</label><input type="email" id="f-email3" placeholder="otro@empresa.com"></div>
+          <div class="fg-full"><label id="labelCompany">Nombre del prospecto <span class="req">*</span></label><input type="text" id="f-company" placeholder="Nombre del cliente o empresa…"></div>
           <div><label>Teléfono</label><input type="text" id="f-phone" placeholder="+34 600 000 000"></div>
           <div><label>País</label>
             <select id="f-country">
@@ -241,38 +210,18 @@
             </select>
           </div>
           <div><label>Ciudad</label><input type="text" id="f-city" placeholder="Madrid, Miami…"></div>
-          <div><label>Programa</label><input type="text" id="f-program" placeholder="Producto / programa de interés…"></div>
-          <!-- Client-only fields -->
-          <div class="client-only" style="display:none">
-            <label>Versión instalada</label>
-            <input type="text" id="f-version" placeholder="v2.1, 2024…">
+          <div><label>Programa</label><input type="text" id="f-program" placeholder="Galenic Plus, Citostáticos…"></div>
+          <div class="client-only" style="display:none"><label>Versión instalada</label><input type="text" id="f-version" placeholder="v2.1, 3.3.1…"></div>
+          <div><label>Tipo de cliente</label>
+            <select id="f-client-type"><option value="public">🏛️ Público</option><option value="private">🏢 Privado</option></select>
           </div>
-          <div class="client-only" style="display:none">
-            <label>Estado del cliente</label>
-            <select id="f-client-status">
-              <option value="ok">✅ Sin incidencias</option>
-              <option value="incident">⚠️ Incidencia activa</option>
-            </select>
-          </div>
-          <!-- Shared -->
-          <div>
-            <label>Tipo de cliente</label>
-            <select id="f-client-type">
-              <option value="public">🏛️ Público</option>
-              <option value="private">🏢 Privado</option>
-            </select>
-          </div>
-          <div>
-            <label>Tipo de registro</label>
+          <div><label>Tipo de registro</label>
             <select id="f-type" onchange="onTypeChange(this)">
               <option value="prospect">🎯 Prospecto</option>
               <option value="client">💼 Cliente</option>
-
             </select>
           </div>
-          <!-- Prospect-only -->
-          <div class="prospect-only">
-            <label>Prioridad</label>
+          <div class="prospect-only"><label>Prioridad</label>
             <select id="f-priority">
               <option value="Alta">🔴 Alta</option>
               <option value="Media" selected>🟡 Media</option>
@@ -280,15 +229,74 @@
             </select>
           </div>
           <div><label>Carpeta</label><select id="f-folder"></select></div>
-          <div class="fg-full">
-            <label>📝 Notas generales</label>
-            <textarea id="f-notes" rows="3" placeholder="Observaciones, contexto general, información relevante…"></textarea>
-          </div>
         </div>
+      </div>
+
+      <!-- CONTACTOS: Farmacia (principal) -->
+      <div class="form-section">
+        <div class="form-section-title">👤 Contacto Farmacia (principal)</div>
+        <div class="form-grid">
+          <div><label>Nombre</label><input type="text" id="f-contact" placeholder="Nombre y apellidos"></div>
+          <div><label>Cargo</label><input type="text" id="f-role" placeholder="Jefe de Farmacia, FEA…"></div>
+          <div><label>Correo electrónico <span class="req">*</span></label><input type="email" id="f-email" placeholder="principal@hospital.es"></div>
+          <div><label>Teléfono directo</label><input type="text" id="f-contact-phone" placeholder="+34 600…"></div>
+          <div><label>Correo 2</label><input type="email" id="f-email2" placeholder="alternativo@hospital.es"></div>
+          <div><label>Correo 3</label><input type="email" id="f-email3" placeholder="otro@hospital.es"></div>
+        </div>
+      </div>
+
+      <!-- CONTACTOS: Informática (client-only) -->
+      <div class="form-section client-only" style="display:none">
+        <div class="form-section-title">💻 Contacto Informática</div>
+        <div class="form-grid">
+          <div><label>Nombre</label><input type="text" id="f-it-contact" placeholder="Nombre y apellidos"></div>
+          <div><label>Teléfono</label><input type="text" id="f-it-phone" placeholder="+34 600…"></div>
+          <div class="fg-full"><label>Email</label><input type="email" id="f-it-email" placeholder="informatica@hospital.es"></div>
+        </div>
+      </div>
+
+      <!-- CONTACTOS: Gerencia/Administración (client-only) -->
+      <div class="form-section client-only" style="display:none">
+        <div class="form-section-title">🏢 Contacto Gerencia / Administración</div>
+        <div class="form-grid">
+          <div><label>Nombre</label><input type="text" id="f-mgmt-contact" placeholder="Nombre y apellidos"></div>
+          <div><label>Teléfono</label><input type="text" id="f-mgmt-phone" placeholder="+34 600…"></div>
+          <div class="fg-full"><label>Email</label><input type="email" id="f-mgmt-email" placeholder="gerencia@hospital.es"></div>
+        </div>
+      </div>
+
+      <!-- CLIENTE: Estado y contrato -->
+      <div class="form-section client-only" style="display:none">
+        <div class="form-section-title">📋 Estado del cliente</div>
+        <div class="form-grid">
+          <div><label>Estado del cliente</label>
+            <select id="f-client-status">
+              <option value="ok">✅ Sin incidencias</option>
+              <option value="incident">⚠️ Incidencia activa</option>
+              <option value="renewal">🔄 Renovación</option>
+              <option value="churned">❌ Baja</option>
+              <option value="lost">⬜ Inactivo</option>
+            </select>
+          </div>
+          <div><label>Mantenimiento contratado</label>
+            <select id="f-maintenance">
+              <option value="">— No indicado —</option>
+              <option value="yes">✅ Sí</option>
+              <option value="no">❌ No</option>
+            </select>
+          </div>
+          <div><label>Fecha inicio mantenimiento</label><input type="date" id="f-maintenanceDate"></div>
+        </div>
+      </div>
+
+      <!-- NOTAS -->
+      <div class="form-section">
+        <div class="form-section-title">📝 Notas generales</div>
+        <textarea id="f-notes" rows="3" placeholder="Observaciones, contexto general, información relevante…" style="width:100%"></textarea>
       </div>
     </div>
 
-    <!-- TAB: EMAIL -->
+    <!-- TAB EMAIL -->
     <div class="ptab-content" id="tab-email">
       <div class="form-section">
         <div class="form-section-title">📤 Último email enviado</div>
@@ -296,37 +304,57 @@
           <div><label>Fecha de envío</label><input type="date" id="f-sentDate"></div>
           <div><label>Tipo de email</label>
             <select id="f-emailType">
-              <option>Primer contacto</option><option>Follow-up 1</option><option>Follow-up 2</option>
-              <option>Follow-up 3</option><option>Propuesta enviada</option><option>Negociación</option>
-              <option>Soporte / Incidencia</option><option>Actualización</option>
+              <option>Primer contacto</option>
+              <option>Solicitud datos contacto</option>
+              <option>Presentación programa</option>
+              <option>Confirmación demo</option>
+              <option>Follow-up demo</option>
+              <option>Envío presupuesto</option>
+              <option>Follow-up 1</option>
+              <option>Follow-up 2</option>
+              <option>Follow-up 3</option>
+              <option>Follow-up 4</option>
+              <option>Follow-up 5</option>
+              <option>Confirmación contrato</option>
+              <option>Soporte / Incidencia</option>
+              <option>Actualización cliente</option>
             </select>
+          </div>
+          <div class="fg-full">
+            <label>Enviado a <span style="font-size:.68rem;color:var(--ink3)">(selecciona o escribe)</span></label>
+            <div style="position:relative">
+              <input type="text" id="f-sentTo" placeholder="Email o nombre del destinatario…" list="sentToList" autocomplete="off">
+              <datalist id="sentToList"></datalist>
+            </div>
           </div>
           <div class="fg-full"><label>Asunto</label><input type="text" id="f-subject" placeholder="Asunto del email…"></div>
           <div class="fg-full">
-            <div class="label-row">
-              <label>Cuerpo del email enviado</label>
-              <button class="btn-link" onclick="pasteStdText()">📋 Pegar plantilla</button>
-            </div>
-            <textarea id="f-sentText" rows="7" placeholder="Pega o escribe el email que enviaste…"></textarea>
+            <div class="label-row"><label>Cuerpo del email enviado</label><button class="btn-link" onclick="pasteStdText()">📋 Pegar plantilla</button></div>
+            <textarea id="f-sentText" rows="6" placeholder="Pega o escribe el email que enviaste…"></textarea>
           </div>
           <div class="fg-full">
-            <label>📎 Adjuntos enviados (nombres de archivos)</label>
+            <label>📎 Adjuntos enviados (nombres)</label>
             <input type="text" id="f-attachments" placeholder="catalogo.pdf, ficha_producto.pdf…">
-            <div style="font-size:.69rem;color:var(--ink3);margin-top:3px">Escribe los nombres separados por comas para tener registro de qué enviaste</div>
+            <div style="font-size:.69rem;color:var(--ink3);margin-top:3px">Nombres separados por comas</div>
           </div>
         </div>
       </div>
+
       <div class="form-section">
         <div class="form-section-title">📊 Estado del proceso</div>
-        <div id="statusSelProspect" class="status-selector">
+        <!-- PROSPECT statuses -->
+        <div id="statusSelProspect" class="status-selector status-grid-wide">
           <div class="status-opt" data-v="new" onclick="selStatus('new')">🆕<span>Sin contactar</span></div>
-          <div class="status-opt" data-v="sent" onclick="selStatus('sent')">📤<span>Enviado</span></div>
-          <div class="status-opt" data-v="replied" onclick="selStatus('replied')">✅<span>Respondido</span></div>
-          <div class="status-opt" data-v="waiting" onclick="selStatus('waiting')">⏳<span>Sin respuesta</span></div>
-          <div class="status-opt" data-v="negotiation" onclick="selStatus('negotiation')">🤝<span>Negociando</span></div>
+          <div class="status-opt" data-v="contact_obtained" onclick="selStatus('contact_obtained')">📞<span>Datos obtenidos</span></div>
+          <div class="status-opt" data-v="demo_scheduled" onclick="selStatus('demo_scheduled')">📅<span>Demo agendada</span></div>
+          <div class="status-opt" data-v="demo_done" onclick="selStatus('demo_done')">🎬<span>Demo realizada</span></div>
+          <div class="status-opt" data-v="budget_sent" onclick="selStatus('budget_sent')">💰<span>Presupuesto enviado</span></div>
+          <div class="status-opt" data-v="followup" onclick="selStatus('followup')">🔔<span>En seguimiento</span></div>
+          <div class="status-opt" data-v="waiting_approval" onclick="selStatus('waiting_approval')">⏳<span>Esperando aprobación</span></div>
           <div class="status-opt" data-v="won" onclick="selStatus('won')">🏆<span>Ganado</span></div>
           <div class="status-opt" data-v="rejected" onclick="selStatus('rejected')">🚫<span>Rechazado</span></div>
         </div>
+        <!-- CLIENT statuses -->
         <div id="statusSelClient" class="status-selector" style="display:none">
           <div class="status-opt" data-v="ok" onclick="selStatus('ok')">✅<span>Sin incidencias</span></div>
           <div class="status-opt" data-v="incident" onclick="selStatus('incident')">⚠️<span>Incidencia activa</span></div>
@@ -335,36 +363,33 @@
           <div class="status-opt" data-v="lost" onclick="selStatus('lost')">⬜<span>Inactivo</span></div>
         </div>
       </div>
+
       <div class="form-section">
         <div class="form-section-title">📥 Respuesta recibida</div>
         <div class="form-grid">
           <div><label>Fecha respuesta</label><input type="date" id="f-replyDate"></div>
           <div><label>Respondido por</label><input type="text" id="f-replyFrom" placeholder="Nombre de quien respondió"></div>
-          <div class="fg-full"><label>Texto de la respuesta</label>
-            <textarea id="f-replyText" rows="4" placeholder="Copia aquí la respuesta recibida…"></textarea>
-          </div>
+          <div class="fg-full"><label>Texto de la respuesta</label><textarea id="f-replyText" rows="4" placeholder="Copia aquí la respuesta recibida…"></textarea></div>
         </div>
       </div>
     </div>
 
-    <!-- TAB: SEGUIMIENTO -->
+    <!-- TAB SEGUIMIENTO -->
     <div class="ptab-content" id="tab-followup">
       <div class="form-section">
         <div class="form-section-title">🔔 Programar seguimiento</div>
         <div class="form-grid">
           <div><label>Follow-up nº</label><input type="text" id="f-followupNum" placeholder="1, 2, 3…"></div>
-          <div><label>Próximo follow-up</label><input type="date" id="f-nextFollowup"></div>
+          <div><label>Fecha próximo follow-up</label><input type="date" id="f-nextFollowup"></div>
           <div><label>Reunión / Llamada</label><input type="date" id="f-meetingDate"></div>
           <div><label>Plataforma</label>
             <select id="f-meetingPlatform">
               <option value="">— Ninguna —</option>
-              <option>Zoom</option><option>Google Meet</option><option>Teams</option>
-              <option>Presencial</option><option>Llamada</option>
+              <option>Teams</option><option>Zoom</option><option>Google Meet</option>
+              <option>Presencial</option><option>Llamada telefónica</option>
             </select>
           </div>
-          <div class="fg-full"><label>Notas del seguimiento</label>
-            <textarea id="f-followupNotes" rows="4" placeholder="Qué tratar, contexto, objetivos de la llamada…"></textarea>
-          </div>
+          <div class="fg-full"><label>Notas del seguimiento</label><textarea id="f-followupNotes" rows="4" placeholder="Qué tratar, objetivos, contexto de la reunión…"></textarea></div>
         </div>
       </div>
       <div class="form-section prospect-only">
@@ -378,26 +403,26 @@
       </div>
     </div>
 
-    <!-- TAB: HISTORIAL -->
+    <!-- TAB HISTORIAL -->
     <div class="ptab-content" id="tab-history">
       <div class="history-add">
         <div class="history-add-header">
           <select id="noteType" class="note-type-sel">
             <option value="comment">💬 Comentario</option>
-            <option value="reply">📥 Respuesta recibida</option>
-            <option value="followup">🔔 Seguimiento realizado</option>
+            <option value="call">📞 Llamada realizada</option>
+            <option value="meeting">🎬 Demo / Reunión</option>
             <option value="sent">📤 Email enviado</option>
-            <option value="call">📞 Llamada</option>
-            <option value="meeting">🤝 Reunión</option>
+            <option value="reply">📥 Respuesta recibida</option>
+            <option value="followup">🔔 Seguimiento</option>
             <option value="incident">⚠️ Incidencia</option>
           </select>
           <input type="date" id="noteDate" class="note-date">
         </div>
-        <textarea id="noteText" placeholder="Escribe tu nota: qué ocurrió, qué respondieron, resultado de la llamada, detalles de la incidencia…" rows="4"></textarea>
+        <textarea id="noteText" placeholder="Describe lo ocurrido: resultado de la llamada, respuesta recibida, detalles de la demo, incidencia…" rows="4"></textarea>
         <button class="btn btn-primary btn-sm" onclick="addNote()">➕ Añadir</button>
       </div>
       <div class="history-thread" id="historyThread">
-        <div style="color:var(--ink3);font-size:.82rem;font-style:italic;padding:12px 0">Abre un contacto para ver su historial completo.</div>
+        <div style="color:var(--ink3);font-size:.82rem;font-style:italic;padding:12px 0">Abre un contacto para ver su historial.</div>
       </div>
     </div>
 
@@ -411,7 +436,7 @@
   </div>
 </div>
 
-<!-- ══════════════ SEND MODAL ══════════════ -->
+<!-- SEND MODAL -->
 <div class="modal-wrap" id="sendModal">
   <div class="modal modal-xl">
     <div class="modal-header">
@@ -425,33 +450,23 @@
       <button class="close-btn" onclick="closeSendModal()">✕</button>
     </div>
     <div class="modal-body">
-
-      <!-- Step 1: Plantilla -->
       <div id="sendStep1">
         <div class="template-tabs" id="sendStdTabs"></div>
         <div class="form-group"><label>Asunto</label><input type="text" id="sendSubject" placeholder="Asunto del email…"></div>
         <div class="form-group">
-          <div class="label-row">
-            <label>Cuerpo del email</label>
-            <span class="hint">Usa <code>[Name]</code> para el nombre del cliente/prospecto</span>
-          </div>
+          <div class="label-row"><label>Cuerpo del email</label><span class="hint">Usa <code>[Name]</code> para el nombre del prospecto/cliente</span></div>
           <textarea id="sendBody" rows="10" placeholder="Escribe el email. [Name] se reemplaza por el nombre de cada destinatario."></textarea>
         </div>
-        <!-- Adjuntos guardados -->
         <div class="form-section" style="margin-top:12px">
-          <div class="form-section-title">📎 Adjuntos guardados <span style="font-weight:400;color:var(--ink3)">— activa los que quieres enviar esta vez</span></div>
+          <div class="form-section-title">📎 Adjuntos guardados <span style="font-weight:400;color:var(--ink3)">— activa los que quieres mencionar</span></div>
           <div id="savedAttachList" class="saved-attach-grid"></div>
-          <label class="add-attach-btn">
-            <input type="file" id="savedAttachInput" multiple style="display:none" onchange="saveFavAttach(this.files)">
-            + Guardar nuevo adjunto
-          </label>
-          <div style="font-size:.7rem;color:var(--ink3);margin-top:6px">Los adjuntos guardados son referencia para ti — recuerda adjuntarlos manualmente en Roundcube al confirmar el envío.</div>
+          <label class="add-attach-btn"><input type="file" id="savedAttachInput" multiple style="display:none" onchange="saveFavAttach(this.files)">+ Guardar adjunto</label>
         </div>
         <div class="sig-section">
           <div class="label-row">
             <label>✍️ Firma</label>
             <label class="toggle-label"><input type="checkbox" id="useSig"> Incluir firma</label>
-            <button class="btn-link" onclick="toggleSigEdit()">Editar firma</button>
+            <button class="btn-link" onclick="toggleSigEdit()">Editar</button>
           </div>
           <div id="sigEditArea" style="display:none">
             <textarea id="sigHtml" rows="3" placeholder="<p><strong>Tu nombre</strong> · CP Farma</p>"></textarea>
@@ -463,8 +478,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Step 2: Destinatarios -->
       <div id="sendStep2" style="display:none">
         <div class="recip-filters-grid">
           <input type="text" id="recipSearch" placeholder="🔍 Buscar…" oninput="filterRecip()">
@@ -477,17 +490,20 @@
           <select id="recipStatusFilter" onchange="filterRecip()">
             <option value="">Todos los estados</option>
             <option value="new">🆕 Sin contactar</option>
-            <option value="sent">📤 Enviado</option>
-            <option value="waiting">⏳ Sin respuesta</option>
-            <option value="replied">✅ Respondido</option>
+            <option value="contact_obtained">📞 Datos obtenidos</option>
+            <option value="demo_scheduled">📅 Demo agendada</option>
+            <option value="demo_done">🎬 Demo realizada</option>
+            <option value="budget_sent">💰 Presupuesto enviado</option>
+            <option value="followup">🔔 En seguimiento</option>
+            <option value="waiting_approval">⏳ Esperando aprobación</option>
           </select>
+          <select id="recipCountryFilter" onchange="filterRecip()"><option value="">Todos los países</option></select>
           <select id="recipPrioFilter" onchange="filterRecip()">
             <option value="">Toda prioridad</option>
             <option value="Alta">🔴 Alta</option>
             <option value="Media">🟡 Media</option>
             <option value="Baja">🟢 Baja</option>
           </select>
-          <select id="recipCountryFilter" onchange="filterRecip()"><option value="">Todos los países</option></select>
         </div>
         <div class="folder-quick-select" id="folderQuickSelect"></div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -507,8 +523,6 @@
           <div class="selected-chips" id="selChips"></div>
         </div>
       </div>
-
-      <!-- Step 3: Preview -->
       <div id="sendStep3" style="display:none">
         <div class="preview-nav">
           <button class="btn btn-ghost btn-sm" onclick="prevPrev()">← Anterior</button>
@@ -524,18 +538,15 @@
           <div class="preview-body" id="prevBody"></div>
         </div>
         <div class="info-box">
-          ℹ️ Al hacer clic en "Enviar" se abrirá Roundcube en una nueva pestaña por cada destinatario con el email ya redactado.<br>
-          <strong>Recuerda adjuntar manualmente los archivos en Roundcube.</strong><br>
+          ℹ️ Al pulsar "Abrir Roundcube" se abrirá una pestaña por destinatario con el email ya redactado. Revisa cada pestaña y confirma el envío desde tu bandeja de correo.<br>
           Asegúrate de estar logueado en <a href="https://webmail.cpfarma.es" target="_blank">webmail.cpfarma.es</a>
         </div>
       </div>
-
-      <!-- Step 4: Sending -->
       <div id="sendStep4" style="display:none">
         <div class="progress-header"><span id="sProgLabel">Preparando…</span><span id="sProgPct">0%</span></div>
         <div class="progress-bar-wrap"><div class="progress-bar" id="sProgBar" style="width:0%"></div></div>
         <div class="send-log" id="sLog"></div>
-        <div id="sDoneMsg" class="done-msg" style="display:none">📨 Pestañas de Roundcube abiertas. Revisa cada pestaña para confirmar que los emails se enviaron correctamente desde tu bandeja de salida.</div>
+        <div id="sDoneMsg" class="done-msg" style="display:none">📨 Pestañas de Roundcube abiertas. Revisa cada pestaña para confirmar que los emails se enviaron correctamente.</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -549,14 +560,8 @@
 <!-- TEMPLATES MODAL -->
 <div class="modal-wrap" id="tplModal">
   <div class="modal modal-lg">
-    <div class="modal-header">
-      <div class="modal-icon">📝</div><h3>Plantillas de email</h3>
-      <button class="close-btn" onclick="closeTplModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="tpl-list" id="tplList"></div>
-      <button class="btn btn-primary btn-sm" onclick="addTpl()" style="margin-top:12px">+ Nueva plantilla</button>
-    </div>
+    <div class="modal-header"><div class="modal-icon">📝</div><h3>Plantillas de email</h3><button class="close-btn" onclick="closeTplModal()">✕</button></div>
+    <div class="modal-body"><div class="tpl-list" id="tplList"></div><button class="btn btn-primary btn-sm" onclick="addTpl()" style="margin-top:12px">+ Nueva plantilla</button></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeTplModal()">Cerrar</button></div>
   </div>
 </div>
@@ -564,28 +569,19 @@
 <!-- FOLDER MODAL -->
 <div class="modal-wrap" id="folderModal">
   <div class="modal modal-sm">
-    <div class="modal-header">
-      <div class="modal-icon">📁</div><h3 id="folderModalTitle">Nueva carpeta</h3>
-      <button class="close-btn" onclick="closeFolderModal()">✕</button>
-    </div>
+    <div class="modal-header"><div class="modal-icon">📁</div><h3 id="folderModalTitle">Nueva carpeta</h3><button class="close-btn" onclick="closeFolderModal()">✕</button></div>
     <div class="modal-body">
       <div class="form-group"><label>Nombre</label><input type="text" id="folderName" placeholder="Nombre de la carpeta"></div>
       <div class="form-group"><label>Icono</label><div class="icon-picker" id="iconPicker"></div></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeFolderModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveFolderModal()">💾 Guardar</button>
-    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeFolderModal()">Cancelar</button><button class="btn btn-primary" onclick="saveFolderModal()">💾 Guardar</button></div>
   </div>
 </div>
 
 <!-- MOVE MODAL -->
 <div class="modal-wrap" id="moveModal">
   <div class="modal modal-sm">
-    <div class="modal-header">
-      <div class="modal-icon">📁</div><h3>Mover a carpeta</h3>
-      <button class="close-btn" onclick="closeMoveModal()">✕</button>
-    </div>
+    <div class="modal-header"><div class="modal-icon">📁</div><h3>Mover a carpeta</h3><button class="close-btn" onclick="closeMoveModal()">✕</button></div>
     <div class="modal-body"><div id="moveFolderList"></div></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeMoveModal()">Cancelar</button></div>
   </div>
@@ -594,54 +590,30 @@
 <!-- IMPORT MODAL -->
 <div class="modal-wrap" id="impModal">
   <div class="modal modal-lg">
-    <div class="modal-header">
-      <div class="modal-icon">📥</div><h3>Importar contactos</h3>
-      <button class="close-btn" onclick="closeImport()">✕</button>
-    </div>
+    <div class="modal-header"><div class="modal-icon">📥</div><h3>Importar contactos</h3><button class="close-btn" onclick="closeImport()">✕</button></div>
     <div class="modal-body">
       <div id="impWizard">
         <div id="impGuide" class="imp-guide">
           <div class="imp-guide-title">📋 Cómo preparar tu Excel</div>
           <div class="imp-guide-body">
-            <p>Debes poner en la primera fila las cabeceras. El sistema detecta las columnas automáticamente, luego seleccionarás una a una el mapeo entre la columna que has puesto y la columna real de la base de datos del programa. Solo son obligatorias <strong>Nombre</strong> y <strong>Email</strong>.</p>
+            <p>Debes poner en la primera fila las cabeceras. El sistema detecta las columnas automáticamente, luego seleccionarás el mapeo. Solo son obligatorias <strong>Nombre</strong> y <strong>Email</strong>.</p>
             <div class="imp-guide-cols">
-              <div class="imp-guide-col"><strong>Formatos aceptados:</strong>
-                <ul><li>📊 Excel (.xlsx, .xls)</li><li>📄 CSV (.csv)</li></ul>
-                <strong>Modos de importación:</strong>
-                <ul>
-                  <li><strong>Añadir</strong> — agrega sin borrar nada</li>
-                  <li><strong>Fusionar</strong> — actualiza si el email ya existe</li>
-                  <li><strong>Reemplazar</strong> — borra carpeta e importa de nuevo</li>
-                </ul>
-              </div>
-              <div class="imp-guide-col"><strong>Columnas mapeables:</strong>
-                <ul>
-                  <li>Empresa (obligatorio)</li><li>Email (obligatorio)</li>
-                  <li>Persona de contacto</li><li>Cargo</li>
-                  <li>País</li><li>Ciudad</li><li>Teléfono</li>
-                  <li>Programa</li><li>Versión</li>
-                  <li>Tipo (Prospecto / Cliente)</li>
-                  <li>Tipo cliente (Público / Privado)</li>
-                  <li>Prioridad (Alta / Media / Baja)</li><li>Notas</li>
-                </ul>
-              </div>
+              <div class="imp-guide-col"><strong>Formatos:</strong><ul><li>📊 Excel (.xlsx, .xls)</li><li>📄 CSV (.csv)</li></ul>
+                <strong>Modos:</strong><ul><li><strong>Añadir</strong> — sin borrar nada</li><li><strong>Fusionar</strong> — actualiza si email coincide</li><li><strong>Reemplazar</strong> — borra carpeta e importa</li></ul></div>
+              <div class="imp-guide-col"><strong>Columnas reconocidas:</strong>
+                <ul><li>Nombre / Empresa</li><li>Email, Email 2, Email 3</li><li>Contacto, Cargo, Teléfono</li><li>País, Ciudad, Programa, Versión</li>
+                <li>Tipo (Prospecto/Cliente)</li><li>Tipo Cliente (Activo/Baja/Perdido…)</li><li>Tipo Entidad (Público/Privado)</li>
+                <li>Estado (del proceso)</li><li>Notas, Prioridad</li><li>Fecha envío, Asunto, Adjuntos…</li></ul></div>
             </div>
           </div>
         </div>
         <div class="dropzone" id="dz" onclick="document.getElementById('fInput').click()" ondragover="dzDrag(event,true)" ondragleave="dzDrag(event,false)" ondrop="dzDrop(event)">
           <input type="file" id="fInput" accept=".xlsx,.xls,.csv" onchange="handleFile(this.files[0])" style="display:none">
-          <div class="dz-icon">📊</div>
-          <h4>Arrastra tu Excel aquí o haz clic</h4>
-          <p>.xlsx · .xls · .csv</p>
+          <div class="dz-icon">📊</div><h4>Arrastra tu Excel aquí o haz clic</h4><p>.xlsx · .xls · .csv</p>
         </div>
         <div id="impPrev" style="display:none"></div>
-        <div id="impMap" style="display:none">
-          <div class="section-label" style="margin-top:14px">Mapeo de columnas:</div>
-          <div id="mapRows" class="map-rows"></div>
-        </div>
-        <div id="impFolderWrap" style="display:none;margin-top:12px">
-          <div class="form-group"><label>Importar a carpeta</label><select id="impFolder"></select></div>
-        </div>
+        <div id="impMap" style="display:none"><div class="section-label" style="margin-top:14px">Mapeo de columnas:</div><div id="mapRows" class="map-rows"></div></div>
+        <div id="impFolderWrap" style="display:none;margin-top:12px"><div class="form-group"><label>Importar a carpeta</label><select id="impFolder"></select></div></div>
         <div id="impModeWrap" style="display:none">
           <div class="form-group"><label>Modo de importación</label>
             <div class="import-modes">
@@ -652,9 +624,7 @@
           </div>
         </div>
       </div>
-      <div id="impResult" style="display:none">
-        <div id="impResultMsg"></div>
-      </div>
+      <div id="impResult" style="display:none"><div id="impResultMsg"></div></div>
     </div>
     <div class="modal-footer" id="impModalFooter">
       <button class="btn btn-ghost" id="impCancelBtn" onclick="closeImport()">Cancelar</button>

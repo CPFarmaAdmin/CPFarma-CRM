@@ -8,15 +8,24 @@ let iRows = [];
 
 // ── ESTADOS válidos por tipo ──────────────────────────────────
 const PROSPECT_STATUS_MAP = {
-  'sin contactar':'new',      'new':'new',         'nuevo':'new',
-  'enviado':'sent',           'sent':'sent',       'enviados':'sent',
-  'respondido':'replied',     'replied':'replied', 'respondidos':'replied',
-  'sin respuesta':'waiting',  'waiting':'waiting', 'no responde':'waiting',
-  'negociando':'negotiation', 'negotiation':'negotiation',
-  'ganado':'won',             'won':'won',         'cerrado':'won',
-  'rechazado':'rejected',     'rejected':'rejected',
-  'no interesado':'rejected', 'no interesa':'rejected',
-  // NOTE: 'perdido'/'baja' do NOT appear here — those are client concepts
+  // New pipeline stages
+  'sin contactar':'new',        'new':'new',           'nuevo':'new',
+  'contactado':'contacted',     'contacted':'contacted','primer contacto':'contacted',
+  'demo agendada':'demo_scheduled', 'demo_scheduled':'demo_scheduled',
+  'demo realizada':'demo_done', 'demo hecha':'demo_done', 'demo_done':'demo_done',
+  'presupuesto enviado':'proposal_sent', 'presupuestado':'proposal_sent', 'proposal_sent':'proposal_sent',
+  'en seguimiento':'followup',  'seguimiento':'followup', 'followup':'followup',
+  'esperando decision':'waiting_decision', 'waiting_decision':'waiting_decision',
+  'confirmado':'won',           'won':'won',           'cerrado':'won', 'contratado':'won',
+  'en instalacion':'installation', 'installation':'installation',
+  'rechazado':'rejected',       'rejected':'rejected',
+  'no interesado':'rejected',   'no interesa':'rejected',
+  // Legacy (backward compat)
+  'enviado':'contacted',        'sent':'contacted',    'enviados':'contacted',
+  'respondido':'contacted',     'replied':'contacted', 'respondidos':'contacted',
+  'sin respuesta':'followup',   'waiting':'followup',  'no responde':'followup',
+  'negociando':'followup',      'negotiation':'followup',
+  'ganado':'won',
 };
 
 const CLIENT_STATUS_MAP = {

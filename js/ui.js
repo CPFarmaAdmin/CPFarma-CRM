@@ -55,6 +55,12 @@ async function openPanel(id) {
     setVal('f-program',         r.program);
     setVal('f-version',         r.version);
     setVal('f-client-status',   r.client_status || 'ok');
+    // Client contact fields (HTML uses it-contact, mgmt-contact)
+    setVal('f-it-contact',   r.it_name);   setVal('f-it-phone',  r.it_phone);  setVal('f-it-email',  r.it_email);
+    setVal('f-mgmt-contact', r.mgmt_name); setVal('f-mgmt-phone',r.mgmt_phone);setVal('f-mgmt-email',r.mgmt_email);
+    setVal('f-maintenance',      r.maintenance);
+    setVal('f-maintenanceDate', r.maintenance_date);
+    setVal('f-sentTo',          r.email_to);
     setVal('f-client-type',     r.client_type || 'public');
     setVal('f-type',            r.type || 'prospect');
     setVal('f-priority',        r.priority || 'Media');
@@ -261,6 +267,12 @@ async function saveRecord() {
     version:          getVal('f-version'),
     client_status:    isClient ? (getVal('f-client-status') || 'ok') : null,
     client_type:      getVal('f-client-type') || 'public',
+    email_to:         getVal('f-sentTo'),
+    it_name:   getVal('f-it-contact'),  it_phone:  getVal('f-it-phone'), it_email:  getVal('f-it-email'),
+    mgmt_name: getVal('f-mgmt-contact'),mgmt_phone:getVal('f-mgmt-phone'),mgmt_email:getVal('f-mgmt-email'),
+    maintenance:      getVal('f-maintenance') || null,
+    maintenance_date: getVal('f-maintenanceDate') || null,
+    email_to:         getVal('f-sentTo'),
     type:             getVal('f-type') || 'prospect',
     priority:         isClient ? null : (getVal('f-priority') || 'Media'),
     folder_id:        getVal('f-folder') || null,
@@ -339,7 +351,9 @@ function getVal(id)    { return (document.getElementById(id)?.value || '').trim(
 
 function clearForm() {
   ['f-company','f-contact','f-role','f-email','f-email2','f-email3','f-phone',
-   'f-city','f-program','f-version','f-notes',
+   'f-city','f-program','f-version','f-notes','f-sentTo',
+   'f-it-contact','f-it-phone','f-it-email',
+   'f-mgmt-contact','f-mgmt-phone','f-mgmt-email','f-maintenanceDate',
    'f-sentText','f-subject','f-attachments','f-replyDate','f-replyFrom','f-replyText',
    'f-followupNum','f-nextFollowup','f-meetingDate','f-followupNotes',
    'f-product','f-dealValue','f-dealProb','f-dealClose'].forEach(id => setVal(id, ''));
@@ -352,6 +366,30 @@ function clearForm() {
     document.getElementById('historyThread').innerHTML =
       `<div style="color:var(--ink3);font-size:.82rem;font-style:italic;padding:12px 0">Abre un contacto para ver su historial.</div>`;
   }
+}
+
+// Populate email-to datalist with contacts from current record
+function _populateEmailToList(r) {
+  const dl = document.getElementById('sentToList');
+  if (!dl) return;
+  dl.innerHTML = '';
+  if (!r) return;
+  // Collect all named contacts
+  const contacts = [
+    r.contact    ? `${r.contact} <${r.email||''}>` : null,
+    r.ph1_name   ? `${r.ph1_name} <${r.ph1_email||''}>` : (r.ph1_email || null),
+    r.ph2_name   ? `${r.ph2_name} <${r.ph2_email||''}>` : (r.ph2_email || null),
+    r.ph3_name   ? `${r.ph3_name} <${r.ph3_email||''}>` : (r.ph3_email || null),
+    r.it_name    ? `${r.it_name} <${r.it_email||''}>` : (r.it_email || null),
+    r.mgmt_name  ? `${r.mgmt_name} <${r.mgmt_email||''}>` : (r.mgmt_email || null),
+    r.email2     || null,
+    r.email3     || null,
+  ].filter(Boolean);
+  contacts.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    dl.appendChild(opt);
+  });
 }
 
 function pasteStdText() {
