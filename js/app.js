@@ -412,6 +412,11 @@ function renderClientsTable(rows) {
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.program||'—')}</td>
       <td style="font-size:.82rem;color:var(--ink3);font-family:var(--fm)">${escH(r.version||'—')}</td>
       <td>${renderClientStatusBadge(r.client_status||'ok')}</td>
+      <td style="text-align:center;font-size:.8rem">${
+        r.maintenance === 'yes' ? '<span style="color:#16a34a" title="Mantenimiento contratado">✅</span>'
+        : r.maintenance === 'no' ? '<span style="color:#dc2626" title="Sin mantenimiento">❌</span>'
+        : '<span style="color:var(--ink3)">—</span>'
+      }</td>
       <td class="tc-date">${r.sent_date?fmtDate(r.sent_date):'<span style="font-style:italic;color:var(--ink3)">—</span>'}</td>
       <td>${renderFollowup(r.next_followup)}</td>
       <td><div class="row-actions">
@@ -448,11 +453,6 @@ function fmtDate(s) {
 }
 function escH(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function renderProspectBadge(status) {
-  const s = status || 'new';
-  const label = PROSPECT_STATUS_LABELS[s] || s;
-  return `<span class="badge badge-p-${s}">${label}</span>`;
 }
 function renderProspectBadge(status) {
   const s = status || 'new';

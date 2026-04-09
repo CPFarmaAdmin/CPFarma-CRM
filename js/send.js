@@ -357,11 +357,17 @@ async function doSend() {
       const tplName  = templates.find(t => t.id === activeStdId)?.name || 'Email';
       const attachNote = activeAttachNames.length ? `\nAdjuntos: ${activeAttachNames.join(', ')}` : '';
 
+      // Only advance prospect status if currently at 'new' or unset
+      const newStatus = (r.type !== 'client' && (!r.status || r.status === 'new'))
+        ? 'contact_obtained'
+        : r.status;
       await dbSaveContact({
-        id: r.id, status: 'sent',
-        sent_date:    r.sent_date || todayStr,
+        id: r.id,
+        status:       newStatus,
+        sent_date:    todayStr,
         subject:      pSubj,
         email_type:   tplName,
+        email_to:     r.email,
         attachments:  activeAttachNames.length ? activeAttachNames.join(', ') : r.attachments,
       });
       await dbAddInteraction({

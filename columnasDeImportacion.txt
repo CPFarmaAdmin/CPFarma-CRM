@@ -1,1 +1,0 @@
-excel con empresa, email, contacto, pais, telefono, notas.

@@ -1,102 +1,69 @@
-# SQL — Ejecutar en Supabase para actualizar la base de datos
+# SQL — Script completo para Supabase
 
-Ve a **Supabase → SQL Editor → New query** y ejecuta esto:
-
-```sql
--- Añadir columnas nuevas a la tabla contacts
-ALTER TABLE contacts
-  ADD COLUMN IF NOT EXISTS program       TEXT,
-  ADD COLUMN IF NOT EXISTS version       TEXT,
-  ADD COLUMN IF NOT EXISTS client_type   TEXT DEFAULT 'public',
-  ADD COLUMN IF NOT EXISTS client_status TEXT DEFAULT 'ok',
-  ADD COLUMN IF NOT EXISTS attachments   TEXT;
-
--- Si ya tienes datos, estos campos aparecerán vacíos hasta que los rellenes
--- No se borra nada existente
-```
-
-Eso es todo. Ejecuta el SQL, recarga la web, y ya funciona.
-
----
-
-## SQL v5 — Ejecutar también este bloque (nuevas columnas)
+Ve a **Supabase → SQL Editor → New query**, pega todo este bloque y ejecuta.
+Todos los `ADD COLUMN IF NOT EXISTS` son seguros — no borra nada si la columna ya existe.
 
 ```sql
--- Añadir email2, email3 y notes a contacts
+-- ════════════════════════════════════════════
+-- TABLA: contacts — todas las columnas del CRM
+-- ════════════════════════════════════════════
+
 ALTER TABLE contacts
-  ADD COLUMN IF NOT EXISTS email2  TEXT,
-  ADD COLUMN IF NOT EXISTS email3  TEXT,
-  ADD COLUMN IF NOT EXISTS notes   TEXT;
-```
+  -- Información básica
+  ADD COLUMN IF NOT EXISTS program          TEXT,
+  ADD COLUMN IF NOT EXISTS version          TEXT,
+  ADD COLUMN IF NOT EXISTS notes            TEXT,
 
----
+  -- Tipo y estado
+  ADD COLUMN IF NOT EXISTS client_type      TEXT DEFAULT 'public',
+  ADD COLUMN IF NOT EXISTS client_status    TEXT DEFAULT 'ok',
 
-## SQL v9 — Nuevos campos para clientes
+  -- Emails adicionales
+  ADD COLUMN IF NOT EXISTS email2           TEXT,
+  ADD COLUMN IF NOT EXISTS email3           TEXT,
 
-Ejecuta en Supabase SQL Editor:
+  -- Contacto informática (para clientes)
+  ADD COLUMN IF NOT EXISTS it_name          TEXT,
+  ADD COLUMN IF NOT EXISTS it_phone         TEXT,
+  ADD COLUMN IF NOT EXISTS it_email         TEXT,
 
-```sql
--- Contactos de farmacia (3 personas)
-ALTER TABLE contacts
-  ADD COLUMN IF NOT EXISTS ph1_name  TEXT,
-  ADD COLUMN IF NOT EXISTS ph1_phone TEXT,
-  ADD COLUMN IF NOT EXISTS ph1_email TEXT,
-  ADD COLUMN IF NOT EXISTS ph2_name  TEXT,
-  ADD COLUMN IF NOT EXISTS ph2_phone TEXT,
-  ADD COLUMN IF NOT EXISTS ph2_email TEXT,
-  ADD COLUMN IF NOT EXISTS ph3_name  TEXT,
-  ADD COLUMN IF NOT EXISTS ph3_phone TEXT,
-  ADD COLUMN IF NOT EXISTS ph3_email TEXT,
-  -- Contacto informática
-  ADD COLUMN IF NOT EXISTS it_name   TEXT,
-  ADD COLUMN IF NOT EXISTS it_phone  TEXT,
-  ADD COLUMN IF NOT EXISTS it_email  TEXT,
-  -- Contacto gerencia
-  ADD COLUMN IF NOT EXISTS mgmt_name  TEXT,
-  ADD COLUMN IF NOT EXISTS mgmt_phone TEXT,
-  ADD COLUMN IF NOT EXISTS mgmt_email TEXT,
-  -- Mantenimiento
+  -- Contacto gerencia / administración (para clientes)
+  ADD COLUMN IF NOT EXISTS mgmt_name        TEXT,
+  ADD COLUMN IF NOT EXISTS mgmt_phone       TEXT,
+  ADD COLUMN IF NOT EXISTS mgmt_email       TEXT,
+
+  -- Mantenimiento (para clientes)
   ADD COLUMN IF NOT EXISTS maintenance      TEXT,
   ADD COLUMN IF NOT EXISTS maintenance_date DATE,
-  -- Enviado a (destinatario del email)
-  ADD COLUMN IF NOT EXISTS email_to TEXT;
+
+  -- Seguimiento
+  ADD COLUMN IF NOT EXISTS next_followup    DATE,
+  ADD COLUMN IF NOT EXISTS followup_num     TEXT,
+  ADD COLUMN IF NOT EXISTS followup_notes   TEXT,
+  ADD COLUMN IF NOT EXISTS meeting_date     DATE,
+  ADD COLUMN IF NOT EXISTS meeting_platform TEXT,
+
+  -- Oportunidad comercial (para prospectos)
+  ADD COLUMN IF NOT EXISTS deal_product     TEXT,
+  ADD COLUMN IF NOT EXISTS deal_value       NUMERIC,
+  ADD COLUMN IF NOT EXISTS deal_prob        INTEGER,
+  ADD COLUMN IF NOT EXISTS deal_close       DATE,
+
+  -- Email enviado
+  ADD COLUMN IF NOT EXISTS email_to         TEXT,
+  ADD COLUMN IF NOT EXISTS email_type       TEXT,
+  ADD COLUMN IF NOT EXISTS sent_date        DATE,
+  ADD COLUMN IF NOT EXISTS subject          TEXT,
+  ADD COLUMN IF NOT EXISTS sent_text        TEXT,
+  ADD COLUMN IF NOT EXISTS attachments      TEXT,
+
+  -- Respuesta recibida
+  ADD COLUMN IF NOT EXISTS reply_date       DATE,
+  ADD COLUMN IF NOT EXISTS reply_from       TEXT,
+  ADD COLUMN IF NOT EXISTS reply_text       TEXT;
 ```
 
----
+> **Nota:** Las columnas `id`, `created_at`, `updated_at`, `company`, `contact`, `role`,
+> `email`, `phone`, `city`, `country`, `type`, `status`, `priority`, `folder_id`,
+> `user_id` y `tags` ya existen en el schema base de Supabase y no necesitan añadirse.
 
-## SQL v9 — Nuevas columnas para clientes y campos de email
-
-```sql
--- Contactos de farmacia (hasta 3)
-ALTER TABLE contacts
-  ADD COLUMN IF NOT EXISTS ph1_name   TEXT,
-  ADD COLUMN IF NOT EXISTS ph1_phone  TEXT,
-  ADD COLUMN IF NOT EXISTS ph1_email  TEXT,
-  ADD COLUMN IF NOT EXISTS ph2_name   TEXT,
-  ADD COLUMN IF NOT EXISTS ph2_phone  TEXT,
-  ADD COLUMN IF NOT EXISTS ph2_email  TEXT,
-  ADD COLUMN IF NOT EXISTS ph3_name   TEXT,
-  ADD COLUMN IF NOT EXISTS ph3_phone  TEXT,
-  ADD COLUMN IF NOT EXISTS ph3_email  TEXT;
-
--- Contacto informática
-ALTER TABLE contacts
-  ADD COLUMN IF NOT EXISTS it_name    TEXT,
-  ADD COLUMN IF NOT EXISTS it_phone   TEXT,
-  ADD COLUMN IF NOT EXISTS it_email   TEXT;
-
--- Contacto gerencia
-ALTER TABLE contacts
-  ADD COLUMN IF NOT EXISTS mgmt_name  TEXT,
-  ADD COLUMN IF NOT EXISTS mgmt_phone TEXT,
-  ADD COLUMN IF NOT EXISTS mgmt_email TEXT;
-
--- Mantenimiento
-ALTER TABLE contacts
-  ADD COLUMN IF NOT EXISTS maintenance       TEXT,
-  ADD COLUMN IF NOT EXISTS maintenance_date  DATE;
-
--- Email enviado a (destinatario específico)
-ALTER TABLE contacts
-  ADD COLUMN IF NOT EXISTS email_to   TEXT;
-```

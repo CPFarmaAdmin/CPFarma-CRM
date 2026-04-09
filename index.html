@@ -145,6 +145,7 @@
             <th class="sortable" onclick="setSort('program')"><span>Programa</span></th>
             <th>Versión</th>
             <th>Estado</th>
+            <th style="width:80px">Mantenim.</th>
             <th class="sortable" onclick="setSort('date')"><span>Últ. contacto</span></th>
             <th class="sortable" onclick="setSort('followup')"><span>Follow-up</span></th>
             <th style="width:90px">Acciones</th>
@@ -302,22 +303,38 @@
         <div class="form-section-title">📤 Último email enviado</div>
         <div class="form-grid">
           <div><label>Fecha de envío</label><input type="date" id="f-sentDate"></div>
-          <div><label>Tipo de email</label>
-            <select id="f-emailType">
+          <div>
+            <label>Tipo de email</label>
+            <!-- Prospect email types -->
+            <select id="f-emailType" class="prospect-only-field">
+              <option value="">— Seleccionar —</option>
               <option>Primer contacto</option>
-              <option>Solicitud datos contacto</option>
-              <option>Presentación programa</option>
-              <option>Confirmación demo</option>
-              <option>Follow-up demo</option>
-              <option>Envío presupuesto</option>
+              <option>Solicitud datos de contacto</option>
+              <option>Presentación del programa</option>
+              <option>Confirmación de demo</option>
+              <option>Follow-up post-demo</option>
+              <option>Envío de presupuesto</option>
               <option>Follow-up 1</option>
               <option>Follow-up 2</option>
               <option>Follow-up 3</option>
               <option>Follow-up 4</option>
               <option>Follow-up 5</option>
-              <option>Confirmación contrato</option>
-              <option>Soporte / Incidencia</option>
-              <option>Actualización cliente</option>
+              <option>Confirmación de contrato</option>
+              <option>Envío de documentación</option>
+            </select>
+            <!-- Client email types -->
+            <select id="f-emailTypeClient" class="client-only-field" style="display:none">
+              <option value="">— Seleccionar —</option>
+              <option>Soporte / Incidencia abierta</option>
+              <option>Resolución de incidencia</option>
+              <option>Actualización prevista</option>
+              <option>Actualización programada</option>
+              <option>Actualización realizada</option>
+              <option>Envío de información</option>
+              <option>Revisión periódica</option>
+              <option>Renovación de contrato</option>
+              <option>Comunicación general</option>
+              <option>Formación / Onboarding</option>
             </select>
           </div>
           <div class="fg-full">

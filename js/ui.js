@@ -66,7 +66,12 @@ async function openPanel(id) {
     setVal('f-priority',        r.priority || 'Media');
     setVal('f-folder',          r.folder_id || '');
     setVal('f-sentDate',        r.sent_date);
-    setVal('f-emailType',       r.email_type);
+    // Email type: populate correct select based on record type
+    if (isClient) {
+      setVal('f-emailTypeClient', r.email_type);
+    } else {
+      setVal('f-emailType', r.email_type);
+    }
     setVal('f-subject',         r.subject);
     setVal('f-sentText',        r.sent_text);
     setVal('f-attachments',     r.attachments || '');
@@ -121,6 +126,12 @@ function _applyTypeUI(isClient) {
   const sc = document.getElementById('statusSelClient');
   if (sp) sp.style.display = isClient ? 'none' : '';
   if (sc) sc.style.display = isClient ? '' : 'none';
+
+  // Show the correct email type select
+  const etP = document.getElementById('f-emailType');
+  const etC = document.getElementById('f-emailTypeClient');
+  if (etP) etP.style.display = isClient ? 'none' : '';
+  if (etC) etC.style.display = isClient ? '' : 'none';
 }
 
 // When user changes type in the select
@@ -265,9 +276,7 @@ async function saveRecord() {
     city:             getVal('f-city'),
     program:          getVal('f-program'),
     version:          getVal('f-version'),
-    client_status:    isClient ? (getVal('f-client-status') || 'ok') : null,
     client_type:      getVal('f-client-type') || 'public',
-    email_to:         getVal('f-sentTo'),
     it_name:   getVal('f-it-contact'),  it_phone:  getVal('f-it-phone'), it_email:  getVal('f-it-email'),
     mgmt_name: getVal('f-mgmt-contact'),mgmt_phone:getVal('f-mgmt-phone'),mgmt_email:getVal('f-mgmt-email'),
     maintenance:      getVal('f-maintenance') || null,
@@ -286,7 +295,7 @@ async function saveRecord() {
                         ? (cStatus === 'lost' || cStatus === 'churned' ? 'lost' : 'ok')
                         : (cStatus === 'lost' ? 'rejected' : cStatus),  // safety: prospect can't be 'lost'
     client_status:    isClient ? cStatus : null,
-    email_type:       getVal('f-emailType'),
+    email_type:       isClient ? getVal('f-emailTypeClient') : getVal('f-emailType'),
     sent_date:        getVal('f-sentDate')        || null,
     subject:          getVal('f-subject'),
     sent_text:        getVal('f-sentText'),
@@ -358,7 +367,7 @@ function clearForm() {
    'f-followupNum','f-nextFollowup','f-meetingDate','f-followupNotes',
    'f-product','f-dealValue','f-dealProb','f-dealClose'].forEach(id => setVal(id, ''));
   setVal('f-country', ''); setVal('f-client-type', 'public');
-  setVal('f-priority', 'Media'); setVal('f-emailType', 'Primer contacto');
+  setVal('f-priority', 'Media'); setVal('f-emailType', ''); setVal('f-emailTypeClient', '');
   setVal('f-meetingPlatform', ''); setVal('f-client-status', 'ok');
   cTags = []; cNotes = [];
   if (document.getElementById('tagWrap')) renderTags();
