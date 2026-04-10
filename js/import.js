@@ -8,18 +8,42 @@ let iRows = [];
 
 // ── ESTADOS por tipo ──────────────────────────────────────────
 const PROSPECT_STATUS_MAP = {
-  'sin contactar':'new',             'new':'new',
-  'datos obtenidos':'contact_obtained', 'contactado':'contact_obtained', 'contacted':'contact_obtained',
-  'enviado':'contact_obtained',      'sent':'contact_obtained',
-  'respondido':'contact_obtained',   'replied':'contact_obtained',
+  // Sin contactar
+  'sin contactar':'new',   'new':'new',
+
+  // Primer contacto — se ha enviado el primer email, aún sin respuesta de datos
+  'primer contacto':'first_contact', 'first_contact':'first_contact',
+  'enviado':'first_contact',         'sent':'first_contact',
+  'primer email':'first_contact',    'primer email enviado':'first_contact',
+
+  // Sin responder — se envió y no respondieron
+  'sin responder':'no_response',     'no_response':'no_response',
+  'sin respuesta':'no_response',     'no responde':'no_response',
+  'waiting':'no_response',           'no reply':'no_response',
+
+  // Datos obtenidos — respondieron y tenemos los datos de contacto correctos
+  'datos obtenidos':'contact_obtained', 'contact_obtained':'contact_obtained',
+  'contactado':'contact_obtained',      'contacted':'contact_obtained',
+  'respondido':'contact_obtained',      'replied':'contact_obtained',
+
+  // Demo
   'demo agendada':'demo_scheduled',  'demo programada':'demo_scheduled',
   'demo realizada':'demo_done',      'demo hecha':'demo_done',
-  'presupuesto enviado':'budget_sent','propuesta enviada':'budget_sent', 'budget_sent':'budget_sent',
-  'en seguimiento':'followup',       'seguimiento':'followup',  'followup':'followup',
-  'sin respuesta':'followup',        'waiting':'followup',      'negociando':'followup',
+
+  // Presupuesto
+  'presupuesto enviado':'budget_sent', 'propuesta enviada':'budget_sent',
+  'budget_sent':'budget_sent',         'presupuesto':'budget_sent',
+
+  // Seguimiento
+  'en seguimiento':'followup',  'seguimiento':'followup',  'followup':'followup',
+  'negociando':'followup',
+
+  // Esperando aprobación
   'esperando aprobacion':'waiting_approval', 'esperando aprobación':'waiting_approval',
-  'ganado':'won',                    'won':'won',               'confirmado':'won',
-  'rechazado':'rejected',            'rejected':'rejected',     'no interesado':'rejected',
+
+  // Cerrados
+  'ganado':'won',    'won':'won',    'confirmado':'won',
+  'rechazado':'rejected', 'rejected':'rejected', 'no interesado':'rejected',
 };
 
 const CLIENT_STATUS_MAP = {

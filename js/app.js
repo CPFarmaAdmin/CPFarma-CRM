@@ -18,6 +18,8 @@ let realtimeSub   = null;  // track subscription to avoid duplicates
 // ── PROSPECT STATUS DEFINITIONS ───────────────────────────────
 const PROSPECT_STATUS_LABELS = {
   new:              '🆕 Sin contactar',
+  first_contact:    '📤 Primer contacto',
+  no_response:      '📭 Sin responder',
   contact_obtained: '📞 Datos obtenidos',
   demo_scheduled:   '📅 Demo agendada',
   demo_done:        '🎬 Demo realizada',
@@ -322,7 +324,10 @@ function getFilteredFor(viewType) {
 // Map legacy status values to new filter names
 function legacyStatusMatch(status, filter) {
   const legacyMap = {
-    followup: ['sent','replied','waiting','negotiation'], // group legacy "sent/replied/waiting" under followup
+    first_contact: ['sent'],                              // legacy 'sent' → Primer contacto
+    no_response:   ['waiting'],                           // legacy 'waiting' → Sin responder
+    contact_obtained: ['replied'],                        // legacy 'replied' → Datos obtenidos
+    followup:      ['negotiation'],                       // legacy 'negotiation' → En seguimiento
   };
   return legacyMap[filter]?.includes(status) || false;
 }

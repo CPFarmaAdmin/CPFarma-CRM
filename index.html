@@ -63,6 +63,8 @@
       <div id="filtersProspects" class="filter-tabs">
         <button class="ftab active" data-filter="all" onclick="setFilter('all',this)">Todos</button>
         <button class="ftab" data-filter="new" onclick="setFilter('new',this)">🆕 Sin contactar</button>
+        <button class="ftab" data-filter="first_contact" onclick="setFilter('first_contact',this)">📤 Primer contacto</button>
+        <button class="ftab" data-filter="no_response" onclick="setFilter('no_response',this)">📭 Sin responder</button>
         <button class="ftab" data-filter="contact_obtained" onclick="setFilter('contact_obtained',this)">📞 Datos obtenidos</button>
         <button class="ftab" data-filter="demo_scheduled" onclick="setFilter('demo_scheduled',this)">📅 Demo agendada</button>
         <button class="ftab" data-filter="demo_done" onclick="setFilter('demo_done',this)">✅ Demo hecha</button>
@@ -362,6 +364,8 @@
         <!-- PROSPECT statuses -->
         <div id="statusSelProspect" class="status-selector status-grid-wide">
           <div class="status-opt" data-v="new" onclick="selStatus('new')">🆕<span>Sin contactar</span></div>
+          <div class="status-opt" data-v="first_contact" onclick="selStatus('first_contact')">📤<span>Primer contacto</span></div>
+          <div class="status-opt" data-v="no_response" onclick="selStatus('no_response')">📭<span>Sin responder</span></div>
           <div class="status-opt" data-v="contact_obtained" onclick="selStatus('contact_obtained')">📞<span>Datos obtenidos</span></div>
           <div class="status-opt" data-v="demo_scheduled" onclick="selStatus('demo_scheduled')">📅<span>Demo agendada</span></div>
           <div class="status-opt" data-v="demo_done" onclick="selStatus('demo_done')">🎬<span>Demo realizada</span></div>
@@ -507,6 +511,8 @@
           <select id="recipStatusFilter" onchange="filterRecip()">
             <option value="">Todos los estados</option>
             <option value="new">🆕 Sin contactar</option>
+            <option value="first_contact">📤 Primer contacto</option>
+            <option value="no_response">📭 Sin responder</option>
             <option value="contact_obtained">📞 Datos obtenidos</option>
             <option value="demo_scheduled">📅 Demo agendada</option>
             <option value="demo_done">🎬 Demo realizada</option>

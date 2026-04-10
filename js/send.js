@@ -357,9 +357,11 @@ async function doSend() {
       const tplName  = templates.find(t => t.id === activeStdId)?.name || 'Email';
       const attachNote = activeAttachNames.length ? `\nAdjuntos: ${activeAttachNames.join(', ')}` : '';
 
-      // Only advance prospect status if currently at 'new' or unset
+      // Advance prospect status on send:
+      // new/unset → first_contact (we sent them the first email)
+      // first_contact → no_response stays at no_response (already contacted, re-sending)
       const newStatus = (r.type !== 'client' && (!r.status || r.status === 'new'))
-        ? 'contact_obtained'
+        ? 'first_contact'
         : r.status;
       await dbSaveContact({
         id: r.id,
