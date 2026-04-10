@@ -26,6 +26,10 @@ const PROSPECT_STATUS_MAP = {
   'contactado':'contact_obtained',      'contacted':'contact_obtained',
   'respondido':'contact_obtained',      'replied':'contact_obtained',
 
+  // Información enviada
+  'informacion enviada':'info_sent', 'información enviada':'info_sent',
+  'info enviada':'info_sent',        'info_sent':'info_sent',
+
   // Demo
   'demo agendada':'demo_scheduled',  'demo programada':'demo_scheduled',
   'demo realizada':'demo_done',      'demo hecha':'demo_done',

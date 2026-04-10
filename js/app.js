@@ -21,6 +21,7 @@ const PROSPECT_STATUS_LABELS = {
   first_contact:    '📤 Primer contacto',
   no_response:      '📭 Sin responder',
   contact_obtained: '📞 Datos obtenidos',
+  info_sent:        '📋 Información enviada',
   demo_scheduled:   '📅 Demo agendada',
   demo_done:        '🎬 Demo realizada',
   budget_sent:      '💰 Presupuesto enviado',

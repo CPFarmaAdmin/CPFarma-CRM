@@ -428,6 +428,7 @@ a:hover { text-decoration: underline; }
 .badge-first_contact    { background: #e0f2fe; color: #0369a1; }
 .badge-no_response      { background: #fef9c3; color: #713f12; }
 .badge-contact_obtained { background: #eff6ff; color: #1d4ed8; }
+.badge-info_sent        { background: #f0fdf4; color: #15803d; }
 .badge-demo_scheduled   { background: #faf5ff; color: #7c3aed; }
 .badge-demo_done        { background: #f3e8ff; color: #5b21b6; }
 .badge-budget_sent      { background: #fff7ed; color: #c2410c; }
