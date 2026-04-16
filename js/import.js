@@ -242,27 +242,30 @@ function normProspectStatus(v) {
 // Normalize any date to YYYY-MM-DD for Supabase
 // Accepts: dd/mm/yyyy (Spanish), yyyy-mm-dd (ISO), dd-mm-yyyy, empty, '-'
 function normDate(v) {
-  if (!v) return null;
+  if (!v && v !== 0) return null;
   const s = String(v).trim();
-  if (!s || s === '-' || s === '—') return null;
+  if (!s || s === '-' || s === '—' || s === '–') return null;
 
-  // dd/mm/yyyy or dd-mm-yyyy (Spanish / European format)
-  const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (dmy) {
-    const [, d, m, y] = dmy;
-    const date = new Date(Date.UTC(+y, +m - 1, +d));
-    return isNaN(date) ? null : date.toISOString().split('T')[0];
-  }
+  // ISO string with time component (from XLSX date cells): "2026-03-06T00:00:00.000Z"
+  if (s.match(/^\d{4}-\d{2}-\d{2}T/)) return s.slice(0, 10);
 
-  // yyyy-mm-dd or yyyy/mm/dd (ISO — already correct)
-  const ymd = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  // yyyy-mm-dd (ISO, already correct)
+  const ymd = s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/);
   if (ymd) {
     const [, y, m, d] = ymd;
     const date = new Date(Date.UTC(+y, +m - 1, +d));
     return isNaN(date) ? null : date.toISOString().split('T')[0];
   }
 
-  return null; // unknown format — skip rather than send invalid data
+  // dd/mm/yyyy or dd-mm-yyyy (Spanish/European format)
+  const dmy = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  if (dmy) {
+    const [, d, m, y] = dmy;
+    const date = new Date(Date.UTC(+y, +m - 1, +d));
+    return isNaN(date) ? null : date.toISOString().split('T')[0];
+  }
+
+  return null; // unknown format — skip to avoid sending bad data to DB
 }
 
 function normClientStatusVal(v) {
@@ -311,7 +314,7 @@ function handleFile(file) {
       else               wb = XLSX.read(e.target.result, {type:'array'});
 
       const ws   = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      const json = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false, dateNF:'yyyy-mm-dd'});
       if (!json.length) { toast('Archivo vacío','er'); return; }
 
       iCols = json[0].map(c => String(c).trim());

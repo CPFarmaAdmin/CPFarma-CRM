@@ -262,18 +262,21 @@ function getFilteredFor(viewType) {
   const activeFilter = isClient ? cFilter : cFilterP;
 
   return records.filter(r => {
-    // Type split: REJECTED prospects stay in prospects view only
+    // ── 1. TYPE SPLIT ─────────────────────────────────────────
     if (isClient  && r.type !== 'client')  return false;
     if (!isClient && r.type === 'client')  return false;
 
+    // ── 2. FOLDER ─────────────────────────────────────────────
     if (activeFolder !== 'all' && r.folder_id !== activeFolder) return false;
 
+    // ── 3. TEXT SEARCH ────────────────────────────────────────
     if (q) {
       const s = [r.company, r.contact, r.email, r.email2, r.email3,
                  r.city, r.country, r.program, r.version, r.notes].join(' ').toLowerCase();
       if (!s.includes(q)) return false;
     }
 
+    // ── 4. DROPDOWN FILTERS (always applied, regardless of tab) ──
     if (country  && r.country   !== country)  return false;
     if (program  && r.program   !== program)  return false;
     if (prio     && r.priority  !== prio)     return false;
@@ -289,23 +292,26 @@ function getFilteredFor(viewType) {
       }
     }
 
+    // ── 5. TAB / STATUS FILTER (applied last so dropdowns always work) ──
     if (isClient) {
-      if (activeFilter === 'active')       return r.status !== 'lost';
-      if (activeFilter === 'inactive')     return r.status === 'lost';
-      if (activeFilter === 'ok')           return r.status !== 'lost' && (r.client_status === 'ok' || !r.client_status);
-      if (activeFilter === 'incident')     return r.status !== 'lost' && r.client_status === 'incident';
+      // Client tab filters based on status and client_status
+      if (activeFilter === 'active')   return r.status !== 'lost';
+      if (activeFilter === 'inactive') return r.status === 'lost';
+      if (activeFilter === 'ok')       return r.status !== 'lost' && (r.client_status === 'ok' || !r.client_status);
+      if (activeFilter === 'incident') return r.status !== 'lost' && r.client_status === 'incident';
       if (activeFilter === 'followup_today') {
         if (!r.next_followup) return false;
         const d = new Date(r.next_followup); d.setHours(0,0,0,0); return d <= today;
       }
-      return true;
+      return true; // 'all' — show everything passing dropdown filters
     } else {
-      if (activeFilter === 'all')              return true;
+      // Prospect tab filters
+      if (activeFilter === 'all') return true;
       if (activeFilter === 'followup_today') {
         if (!r.next_followup) return false;
         const d = new Date(r.next_followup); d.setHours(0,0,0,0); return d <= today;
       }
-      // Status-based filters — map both new and legacy statuses
+      // Status-based: exact match or legacy alias
       return r.status === activeFilter || legacyStatusMatch(r.status, activeFilter);
     }
   }).sort((a,b) => {
