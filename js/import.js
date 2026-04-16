@@ -239,6 +239,32 @@ function normProspectStatus(v) {
   return PROSPECT_STATUS_MAP[norm(v)] || 'new';
 }
 
+// Normalize any date to YYYY-MM-DD for Supabase
+// Accepts: dd/mm/yyyy (Spanish), yyyy-mm-dd (ISO), dd-mm-yyyy, empty, '-'
+function normDate(v) {
+  if (!v) return null;
+  const s = String(v).trim();
+  if (!s || s === '-' || s === '—') return null;
+
+  // dd/mm/yyyy or dd-mm-yyyy (Spanish / European format)
+  const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (dmy) {
+    const [, d, m, y] = dmy;
+    const date = new Date(Date.UTC(+y, +m - 1, +d));
+    return isNaN(date) ? null : date.toISOString().split('T')[0];
+  }
+
+  // yyyy-mm-dd or yyyy/mm/dd (ISO — already correct)
+  const ymd = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (ymd) {
+    const [, y, m, d] = ymd;
+    const date = new Date(Date.UTC(+y, +m - 1, +d));
+    return isNaN(date) ? null : date.toISOString().split('T')[0];
+  }
+
+  return null; // unknown format — skip rather than send invalid data
+}
+
 function normClientStatusVal(v) {
   return CLIENT_STATUS_MAP[norm(v)] || 'ok';
 }
@@ -417,18 +443,18 @@ async function doImport() {
       mgmt_email:    raw.mgmt_email || null,
       // Maintenance
       maintenance:      raw.maintenance ? normMaintenance(raw.maintenance) : null,
-      maintenance_date: raw.maintenance_date || null,
-      // Email tracking
+      maintenance_date: normDate(raw.maintenance_date),
+      // Email tracking — dates normalized to YYYY-MM-DD for Supabase
       email_to:      raw.email_to   || null,
-      sent_date:     raw.sent_date  || null,
+      sent_date:     normDate(raw.sent_date),
       email_type:    raw.email_type || '',
       subject:       raw.subject    || '',
       sent_text:     raw.sent_text  || '',
-      attachments:   raw.attachments|| '',
-      reply_date:    raw.reply_date || null,
+      attachments:   (raw.attachments === '-' || raw.attachments === '—') ? '' : (raw.attachments || ''),
+      reply_date:    normDate(raw.reply_date),
       reply_from:    raw.reply_from || '',
       reply_text:    raw.reply_text || '',
-      next_followup: raw.next_followup || null,
+      next_followup: normDate(raw.next_followup),
     };
 
     // Step 4: status
@@ -451,6 +477,8 @@ async function doImport() {
       r.client_status = null;
     }
 
+    // Never send tags from import (DB expects array, we just omit it)
+    delete r.tags;
     return r;
   }).filter(r => r.company || r.email);
 
