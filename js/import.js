@@ -380,13 +380,17 @@ async function doImport() {
   btn.textContent = 'Importando…'; btn.disabled = true;
 
   const newRecords = iRows.map(row => {
-    // Step 1: collect raw values
+    // Step 1: collect raw values — sanitize placeholder text to empty
+    const PLACEHOLDERS = new Set(['-','—','–','n/a','nd','no data','sin dato',
+                                   'hay que buscarlo','buscar','pendiente','?','??']);
     const raw = {};
     iCols.forEach((col, i) => {
       const field = mapping[i];
       if (!field) return;
       const val = String(row[i]||'').trim();
-      if (val) raw[field] = val; // only set if non-empty
+      if (!val) return; // skip empty
+      if (PLACEHOLDERS.has(val.toLowerCase())) return; // skip placeholder → treats as empty
+      raw[field] = val;
     });
 
     // Step 2: determine type
