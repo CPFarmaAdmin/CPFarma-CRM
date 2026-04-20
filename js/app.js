@@ -160,8 +160,18 @@ function renderSidebar() {
     <div class="sb-stat"><div class="sb-stat-n ${fuToday>0?'red':''}">${fuToday}</div><div class="sb-stat-l">Follow-up hoy</div></div>
   `;
 
+  // Count per folder, split by type so the number matches what's visible in current view
   const fc = {};
-  records.forEach(r => { if (r.folder_id) fc[r.folder_id] = (fc[r.folder_id]||0)+1; });
+  records.forEach(r => {
+    if (!r.folder_id) return;
+    if (!fc[r.folder_id]) fc[r.folder_id] = {prospect:0, client:0};
+    if (r.type === 'client') fc[r.folder_id].client++;
+    else fc[r.folder_id].prospect++;
+  });
+  const fcCount = id => {
+    if (!fc[id]) return 0;
+    return activeView === 'clients' ? fc[id].client : fc[id].prospect;
+  };
 
   document.getElementById('sbNav').innerHTML = `
     <div class="sb-section">Vistas</div>
@@ -181,7 +191,7 @@ function renderSidebar() {
     </div>
     ${folders.map(f => `
       <button class="nb ${activeFolder===f.id?'active':''}" onclick="setFolder('${f.id}');setView(activeView)">
-        <span class="ni">${f.icon||'📁'}</span><span class="nt">${f.name}</span><span class="nk">${fc[f.id]||0}</span>
+        <span class="ni">${f.icon||'📁'}</span><span class="nt">${f.name}</span><span class="nk">${fcCount(f.id)}</span>
         <span class="folder-actions">
           <span class="folder-btn" onclick="event.stopPropagation();editFolder('${f.id}')">✏️</span>
           <span class="folder-btn" onclick="event.stopPropagation();deleteFolder('${f.id}')">🗑</span>

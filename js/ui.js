@@ -379,26 +379,33 @@ function clearForm() {
 
 // Populate email-to datalist with contacts from current record
 function _populateEmailToList(r) {
-  const dl = document.getElementById('sentToList');
-  if (!dl) return;
-  dl.innerHTML = '';
   if (!r) return;
-  // Collect all named contacts
+  // Build list of all known contacts for this record
   const contacts = [
-    r.contact    ? `${r.contact} <${r.email||''}>` : null,
-    r.ph1_name   ? `${r.ph1_name} <${r.ph1_email||''}>` : (r.ph1_email || null),
-    r.ph2_name   ? `${r.ph2_name} <${r.ph2_email||''}>` : (r.ph2_email || null),
-    r.ph3_name   ? `${r.ph3_name} <${r.ph3_email||''}>` : (r.ph3_email || null),
-    r.it_name    ? `${r.it_name} <${r.it_email||''}>` : (r.it_email || null),
-    r.mgmt_name  ? `${r.mgmt_name} <${r.mgmt_email||''}>` : (r.mgmt_email || null),
-    r.email2     || null,
-    r.email3     || null,
+    r.contact   ? `${r.contact}${r.email    ? ' <'+r.email+'>': ''}` : (r.email || null),
+    r.email2    || null,
+    r.email3    || null,
+    r.it_name   ? `${r.it_name}${r.it_email    ? ' <'+r.it_email+'>': ''}` : (r.it_email || null),
+    r.mgmt_name ? `${r.mgmt_name}${r.mgmt_email ? ' <'+r.mgmt_email+'>': ''}` : (r.mgmt_email || null),
   ].filter(Boolean);
-  contacts.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c;
-    dl.appendChild(opt);
-  });
+
+  // Populate 'Enviado a' datalist
+  const dlSent = document.getElementById('sentToList');
+  if (dlSent) {
+    dlSent.innerHTML = '';
+    contacts.forEach(c => { const o = document.createElement('option'); o.value = c; dlSent.appendChild(o); });
+  }
+  // Populate 'Respondido por' datalist (names only, no email)
+  const dlReply = document.getElementById('replyFromList');
+  if (dlReply) {
+    dlReply.innerHTML = '';
+    const names = [
+      r.contact   || null,
+      r.it_name   || null,
+      r.mgmt_name || null,
+    ].filter(Boolean);
+    names.forEach(n => { const o = document.createElement('option'); o.value = n; dlReply.appendChild(o); });
+  }
 }
 
 function pasteStdText() {

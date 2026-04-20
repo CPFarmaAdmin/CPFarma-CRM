@@ -314,16 +314,41 @@ a:hover { text-decoration: underline; }
 
 /* ── FILTER BAR ──────────────────────────────────────────────── */
 .filterbar {
-  padding: 7px 20px;
+  padding: 0 20px;
   background: var(--white);
   border-bottom: 1px solid var(--border);
   display: flex;
+  flex-direction: column;   /* stack: tabs on top, dropdowns below */
+  gap: 0;
+  flex-shrink: 0;
+}
+.filterbar-tabs-row {
+  display: flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0;
+  padding: 7px 0 5px;
+  min-height: 40px;
+}
+.filterbar-dropdowns-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 0 7px;
   flex-wrap: wrap;
 }
-.filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+.filter-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: nowrap;        /* NEVER wrap — all tabs on one line */
+  overflow-x: auto;         /* horizontal scroll if needed */
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  padding-bottom: 2px;      /* room for scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.filter-tabs::-webkit-scrollbar { height: 3px; }
+.filter-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .ftab {
   padding: 5px 12px;
   border-radius: 20px;
@@ -722,13 +747,30 @@ textarea { resize: vertical; line-height: 1.6; }
   text-align: center;
 }
 .status-opt:hover { border-color: var(--border2); color: var(--ink); }
-.status-opt.active-new { border-color: var(--c-new); background: #f9fafb; color: var(--c-new); }
-.status-opt.active-sent { border-color: var(--c-sent); background: var(--c-sent-bg); color: var(--c-sent); }
-.status-opt.active-replied { border-color: var(--c-replied); background: var(--c-replied-bg); color: var(--c-replied); }
-.status-opt.active-waiting { border-color: var(--c-waiting); background: var(--c-waiting-bg); color: var(--c-waiting); }
-.status-opt.active-negotiation { border-color: var(--c-nego); background: var(--c-nego-bg); color: var(--c-nego); }
-.status-opt.active-won { border-color: var(--c-won); background: var(--c-won-bg); color: var(--c-won); }
-.status-opt.active-lost { border-color: var(--c-lost); background: var(--c-lost-bg); color: var(--c-lost); }
+/* Prospect pipeline statuses */
+.status-opt.active-new              { border-color:#6b7280; background:#f3f4f6; color:#374151; }
+.status-opt.active-first_contact    { border-color:#0369a1; background:#e0f2fe; color:#0369a1; }
+.status-opt.active-no_response      { border-color:#a16207; background:#fef9c3; color:#a16207; }
+.status-opt.active-contact_obtained { border-color:#1d4ed8; background:#eff6ff; color:#1d4ed8; }
+.status-opt.active-info_sent        { border-color:#15803d; background:#f0fdf4; color:#15803d; }
+.status-opt.active-demo_scheduled   { border-color:#7c3aed; background:#faf5ff; color:#7c3aed; }
+.status-opt.active-demo_done        { border-color:#5b21b6; background:#f3e8ff; color:#5b21b6; }
+.status-opt.active-budget_sent      { border-color:#c2410c; background:#fff7ed; color:#c2410c; }
+.status-opt.active-followup         { border-color:#a16207; background:#fefce8; color:#a16207; }
+.status-opt.active-waiting_approval { border-color:#92400e; background:#fef3c7; color:#92400e; }
+.status-opt.active-won              { border-color:#166534; background:#f0fdf4; color:#166534; }
+.status-opt.active-rejected         { border-color:#9d174d; background:#fdf2f8; color:#9d174d; }
+/* Client statuses */
+.status-opt.active-ok               { border-color:#166534; background:#f0fdf4; color:#166534; }
+.status-opt.active-incident         { border-color:#991b1b; background:#fef2f2; color:#991b1b; }
+.status-opt.active-renewal          { border-color:#1e40af; background:#eff6ff; color:#1e40af; }
+.status-opt.active-churned          { border-color:#854d0e; background:#fef9c3; color:#854d0e; }
+.status-opt.active-lost             { border-color:#6b7280; background:#f9fafb; color:#6b7280; }
+/* Legacy */
+.status-opt.active-sent             { border-color:#0369a1; background:#e0f2fe; color:#0369a1; }
+.status-opt.active-replied          { border-color:#166534; background:#f0fdf4; color:#166534; }
+.status-opt.active-waiting          { border-color:#a16207; background:#fef9c3; color:#a16207; }
+.status-opt.active-negotiation      { border-color:#7c3aed; background:#faf5ff; color:#7c3aed; }
 
 /* History thread */
 .history-add {

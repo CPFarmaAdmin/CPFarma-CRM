@@ -103,7 +103,7 @@ function showSendStep(n) {
   bk.style.display = (n > 1 && n < 4) ? '' : 'none';
   if (n === 1) { nx.textContent = 'Siguiente →'; nx.className = 'btn btn-primary'; nx.style.display = ''; }
   else if (n === 2) { nx.textContent = `Vista previa (${sendRecipIds.length} sel.) →`; nx.className = 'btn btn-primary'; nx.style.display = ''; }
-  else if (n === 3) { nx.textContent = `✉️ Abrir Roundcube (${sendRecipIds.length})`; nx.className = 'btn btn-send'; nx.style.display = ''; }
+  else if (n === 3) { nx.textContent = `✉️ Abrir cliente de correo (${sendRecipIds.length})`; nx.className = 'btn btn-send'; nx.style.display = ''; }
   else { nx.style.display = 'none'; bk.style.display = 'none'; }
 }
 
@@ -345,12 +345,11 @@ async function doSend() {
 
     // Build Roundcube compose URL
     // Standard Roundcube format: /?_task=mail&_action=compose
-    const rcBase = webmail.endsWith('/') ? webmail.slice(0,-1) : webmail;
-    const rcUrl  = `${rcBase}/?_task=mail&_action=compose` +
-      `&_to=${encodeURIComponent(r.email)}` +
-      `&_subject=${encodeURIComponent(pSubj)}` +
-      `&_body=${encodeURIComponent(pBody)}`;
-    window.open(rcUrl, '_blank');
+    // mailto: opens OS default email client (Outlook, Thunderbird, Apple Mail…)
+    const mailtoUrl = 'mailto:' + encodeURIComponent(r.email)
+      + '?subject=' + encodeURIComponent(pSubj)
+      + '&body='    + encodeURIComponent(pBody);
+    window.open(mailtoUrl, '_blank');
 
     try {
       const todayStr = new Date().toISOString().split('T')[0];

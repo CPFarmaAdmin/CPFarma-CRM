@@ -60,6 +60,7 @@
 
     <!-- FILTER BAR -->
     <div class="filterbar">
+      <div class="filterbar-tabs-row">
       <div id="filtersProspects" class="filter-tabs">
         <button class="ftab active" data-filter="all" onclick="setFilter('all',this)">Todos</button>
         <button class="ftab" data-filter="new" onclick="setFilter('new',this)">🆕 Sin contactar</button>
@@ -82,7 +83,8 @@
         <button class="ftab" data-filter="incident" onclick="setFilter('incident',this)">⚠️ Con incidencia</button>
         <button class="ftab ftab-alert" data-filter="followup_today" onclick="setFilter('followup_today',this)">⏰ Follow-up hoy</button>
       </div>
-      <div class="filter-right">
+      </div><!-- end filterbar-tabs-row -->
+      <div class="filterbar-dropdowns-row filter-right">
         <div id="extraFiltersP" style="display:contents">
           <select class="filter-select" id="filterCountry" onchange="renderBothTables()"><option value="">País</option></select>
           <select class="filter-select" id="filterProgram" onchange="renderBothTables()">
@@ -114,7 +116,7 @@
           <select class="filter-select" id="filterVersionC" onchange="renderBothTables()"><option value="">Versión</option></select>
         </div>
         <span class="rcount" id="rcount"></span>
-      </div>
+      </div><!-- end filterbar-dropdowns-row -->
     </div>
 
     <div id="followupBanner" class="followup-banner" style="display:none"></div>
@@ -391,7 +393,11 @@
         <div class="form-section-title">📥 Respuesta recibida</div>
         <div class="form-grid">
           <div><label>Fecha respuesta</label><input type="date" id="f-replyDate"></div>
-          <div><label>Respondido por</label><input type="text" id="f-replyFrom" placeholder="Nombre de quien respondió"></div>
+          <div>
+            <label>Respondido por</label>
+            <input type="text" id="f-replyFrom" placeholder="Nombre de quien respondió" list="replyFromList" autocomplete="off">
+            <datalist id="replyFromList"></datalist>
+          </div>
           <div class="fg-full"><label>Texto de la respuesta</label><textarea id="f-replyText" rows="4" placeholder="Copia aquí la respuesta recibida…"></textarea></div>
         </div>
       </div>
@@ -564,15 +570,15 @@
           <div class="preview-body" id="prevBody"></div>
         </div>
         <div class="info-box">
-          ℹ️ Al pulsar "Abrir Roundcube" se abrirá una pestaña por destinatario con el email ya redactado. Revisa cada pestaña y confirma el envío desde tu bandeja de correo.<br>
-          Asegúrate de estar logueado en <a href="https://webmail.cpfarma.es" target="_blank">webmail.cpfarma.es</a>
+          ℹ️ Al pulsar "Enviar" se abrirá tu cliente de correo (Outlook, Thunderbird…) con el email ya rellenado por cada destinatario. Confirma el envío desde tu gestor de correo.<br>
+          Si prefieres usar webmail, cambia el modo en <strong>config.js</strong> poniendo <code>USE_MAILTO = false</code>.
         </div>
       </div>
       <div id="sendStep4" style="display:none">
         <div class="progress-header"><span id="sProgLabel">Preparando…</span><span id="sProgPct">0%</span></div>
         <div class="progress-bar-wrap"><div class="progress-bar" id="sProgBar" style="width:0%"></div></div>
         <div class="send-log" id="sLog"></div>
-        <div id="sDoneMsg" class="done-msg" style="display:none">📨 Pestañas de Roundcube abiertas. Revisa cada pestaña para confirmar que los emails se enviaron correctamente.</div>
+        <div id="sDoneMsg" class="done-msg" style="display:none">📧 Cliente de correo abierto por cada destinatario. Revisa cada ventana/pestaña y confirma el envío desde tu gestor de correo.</div>
       </div>
     </div>
     <div class="modal-footer">
