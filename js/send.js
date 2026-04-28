@@ -4,7 +4,7 @@
 
 let sendStep      = 1;
 let sendRecipIds  = [];
-let sendCcMap     = {};   // { recordId: [email, email2, ...] } — CC emails per recipient
+let sendEmailMap  = {};   // { recordId: {to: email, cc: [email, ...]} } — Para+CC per record
 let sPrevIdx      = 0;
 let sFilteredList = [];
 let activeStdId   = null;
@@ -65,7 +65,7 @@ function renderSavedAttach() {
 function openSendModal(preselectedIds, skipToStep2 = false) {
   sendStep     = 1;
   sendRecipIds = preselectedIds ? [...preselectedIds] : [];
-  sendCcMap    = {}; // reset CC selections
+  sendEmailMap = {}; // reset Para+CC selections
   sPrevIdx     = 0;
 
   loadSavedAttach();
@@ -230,43 +230,61 @@ function filterRecip() {
     const preview  = personalise(body, r).slice(0, 55) + '…';
     const contacts = getRecordContacts(r);
     const hasMulti = contacts.length > 1;
-    const ccSelected = sendCcMap[r.id] || [];
+    // sendEmailMap contains {to, cc} per record
 
-    // CC panel: only shown when record is selected and has multiple emails
-    // Show CC panel when: record is selected AND has multiple contacts
-    // Also show when it's the only pre-selected record (from quickSend)
-    const showCcPanel = hasMulti && (checked || (sendRecipIds.length === 1 && sendRecipIds[0] === r.id));
-    const ccPanel = showCcPanel ? `
-      <div class="recip-cc-panel">
-        <div class="recip-cc-title">✉️ Destinatarios para este contacto</div>
-        ${contacts.map((c, i) => `
-          <div class="recip-cc-row">
-            <label>
-              <input type="checkbox" class="chk cc-chk"
-                data-recid="${r.id}" data-email="${escH(c.email)}"
-                ${i === 0 ? 'checked disabled' : (ccSelected.includes(c.email) ? 'checked' : '')}
-                onclick="event.stopPropagation();toggleCc('${r.id}','${escH(c.email)}',this)">
-              <span>${escH(c.name)}</span>
-              <span class="cc-role">&nbsp;—&nbsp;${escH(c.role)}${i===0?' (Para)':' (CC)'}</span>
-            </label>
-          </div>`).join('')}
-      </div>` : '';
+    // ALWAYS show Para+CC panel when record has multiple emails
+    // User sees all contacts immediately, no need to check the box first
+    const showCcPanel = hasMulti;
+    const em = sendEmailMap[r.id] || { to: r.email, cc: [] };
 
-    return `<div class="recip-item ${checked?'recip-selected':''}" onclick="toggleRecip('${r.id}',event)">
-      <input type="checkbox" class="chk" ${checked} data-id="${r.id}" onclick="event.stopPropagation();toggleRecipChk(this)">
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:.75rem">${typeIcon[r.type]||'📋'}</span>
-          <span class="recip-company">${escH(r.company)}</span>
-          ${r.type!=='client'?renderBadge(r.status):''}
-          ${hasMulti?`<span style="font-size:.65rem;color:#1d4ed8;margin-left:4px">+${contacts.length-1} emails</span>`:''}
-        </div>
-        <div class="recip-email">${r.email}</div>
-        ${r.country||r.city?`<div style="font-size:.67rem;color:var(--ink3)">${[r.city,r.country].filter(Boolean).join(', ')}</div>`:''}
-        ${ccPanel || ''}
-      </div>
-      <div class="recip-preview" style="align-self:flex-start">${escH(preview)}</div>
-    </div>`;
+    // Build CC panel rows (avoid nested template literals which can fail in some browsers)
+    let ccPanelHtml = '';
+    if (showCcPanel) {
+      let rows = '';
+      // Use data attributes so no quoting issues in onclick
+      contacts.forEach(function(c) {
+        const isTo = em.to === c.email;
+        const isCc = em.cc.includes(c.email);
+        rows += '<div class="recip-cc-row">'
+          + '<input type="radio" class="chk cc-radio" name="cc-to-' + r.id + '"'
+          + ' data-rid="' + r.id + '" data-email="' + escH(c.email) + '"'
+          + (isTo ? ' checked' : '')
+          + ' onchange="ccSetTo(this)">'
+          + '<input type="checkbox" class="chk cc-chk"'
+          + ' data-rid="' + r.id + '" data-email="' + escH(c.email) + '"'
+          + (isCc ? ' checked' : '') + (isTo ? ' disabled' : '')
+          + ' onchange="ccToggleCc(this)">'
+          + '<div class="recip-cc-contact">'
+          + '<span class="recip-cc-name">' + escH(c.name) + '</span>'
+          + '<span class="cc-role">' + escH(c.role) + '</span>'
+          + '<span class="recip-cc-email">' + escH(c.email) + '</span>'
+          + '</div></div>';
+      });
+      ccPanelHtml = '<div class="recip-cc-panel" onclick="event.stopPropagation()">'
+        + '<div class="recip-cc-title">📧 Selecciona destinatarios</div>'
+        + '<div class="recip-cc-header-row">'
+        + '<span class="recip-cc-col-label">PARA</span>'
+        + '<span class="recip-cc-col-label">CC</span>'
+        + '<span></span></div>'
+        + rows + '</div>';
+    }
+
+    const locStr = [r.city,r.country].filter(Boolean).join(', ');
+    return '<div class="recip-item ' + (checked?'recip-selected':'') + '" onclick="toggleRecip(\'' + r.id + '\',event)">'
+      + '<input type="checkbox" class="chk" ' + checked + ' data-id="' + r.id + '" onclick="event.stopPropagation();toggleRecipChk(this)">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="display:flex;align-items:center;gap:5px">'
+      + '<span style="font-size:.75rem">' + (typeIcon[r.type]||'📋') + '</span>'
+      + '<span class="recip-company">' + escH(r.company) + '</span>'
+      + (r.type!=='client' ? renderBadge(r.status) : '')
+      + (hasMulti ? '<span style="font-size:.65rem;color:#1d4ed8;margin-left:4px">+' + (contacts.length-1) + ' emails</span>' : '')
+      + '</div>'
+      + '<div class="recip-email">' + r.email + '</div>'
+      + (locStr ? '<div style="font-size:.67rem;color:var(--ink3)">' + locStr + '</div>' : '')
+      + ccPanelHtml
+      + '</div>'
+      + '<div class="recip-preview" style="align-self:flex-start">' + escH(preview) + '</div>'
+      + '</div>';
   }).join('');
 
   document.querySelectorAll('#recipItems .chk').forEach(chk => {
@@ -315,12 +333,41 @@ function updateSelChips() {
 }
 function removeSR(id) { sendRecipIds = sendRecipIds.filter(x => x !== id); filterRecip(); }
 
-function toggleCc(recId, email, chk) {
-  if (!sendCcMap[recId]) sendCcMap[recId] = [];
-  if (chk.checked) {
-    if (!sendCcMap[recId].includes(email)) sendCcMap[recId].push(email);
+// Read from data attributes — no quoting issues in HTML
+function ccSetTo(input) {
+  const rid   = input.dataset.rid;
+  const email = input.dataset.email;
+  setEmailTo(rid, email);
+}
+function ccToggleCc(input) {
+  const rid   = input.dataset.rid;
+  const email = input.dataset.email;
+  toggleEmailCc(rid, email, input);
+}
+
+function setEmailTo(recId, email) {
+  // Set the "Para:" email for a record
+  if (!sendEmailMap[recId]) {
+    const r = records.find(x => x.id === recId);
+    sendEmailMap[recId] = { to: email, cc: [] };
   } else {
-    sendCcMap[recId] = sendCcMap[recId].filter(e => e !== email);
+    // Remove from CC if it was there
+    sendEmailMap[recId].cc = sendEmailMap[recId].cc.filter(e => e !== email);
+    sendEmailMap[recId].to = email;
+  }
+  // Re-render to update disabled states
+  filterRecip();
+}
+
+function toggleEmailCc(recId, email, chk) {
+  if (!sendEmailMap[recId]) {
+    const r = records.find(x => x.id === recId);
+    sendEmailMap[recId] = { to: r?.email || email, cc: [] };
+  }
+  if (chk.checked) {
+    if (!sendEmailMap[recId].cc.includes(email)) sendEmailMap[recId].cc.push(email);
+  } else {
+    sendEmailMap[recId].cc = sendEmailMap[recId].cc.filter(e => e !== email);
   }
 }
 function clearAllRecip() { sendRecipIds = []; filterRecip(); }
@@ -391,9 +438,11 @@ async function doSend() {
     let pBody = personalise(body, r);
     if (useSig && sigTxt) pBody += '\n\n-- \n' + sigTxt.replace(/<[^>]*>/g, '');
     const pSubj = personalise(subj, r);
-    // Build mailto with optional CC for additional contacts
-    const ccEmails = (sendCcMap[r.id] || []).filter(e => e !== r.email);
-    let mailtoUrl = 'mailto:' + encodeURIComponent(r.email)
+    // Build mailto using sendEmailMap (Para + CC selection)
+    const em = sendEmailMap[r.id];
+    const toEmail  = em?.to  || r.email;
+    const ccEmails = (em?.cc || []).filter(e => e !== toEmail);
+    let mailtoUrl = 'mailto:' + encodeURIComponent(toEmail)
       + '?subject=' + encodeURIComponent(pSubj)
       + '&body='    + encodeURIComponent(pBody);
     if (ccEmails.length) mailtoUrl += '&cc=' + encodeURIComponent(ccEmails.join(','));
@@ -427,13 +476,15 @@ async function doSend() {
       log.innerHTML += `<div class="sk">⊘ Sin email: ${escH(r?.company||'')}</div>`;
       return;
     }
-    const ccForRow = (sendCcMap[r.id] || []).filter(e => e !== r.email);
-    const ccLabel  = ccForRow.length ? `<span style="font-size:.67rem;color:#1d4ed8">CC: ${ccForRow.slice(0,2).join(', ')}${ccForRow.length>2?'…':''}</span>` : '';
+    const emRow   = sendEmailMap[r.id];
+    const toEmail = emRow?.to || r.email;
+    const ccForRow = (emRow?.cc || []).filter(e => e !== toEmail);
+    const ccLabel  = ccForRow.length ? `<span style="font-size:.67rem;color:#1d4ed8">&nbsp;CC: ${ccForRow.slice(0,2).join(', ')}${ccForRow.length>2?'…':''}</span>` : '';
     log.innerHTML += `
       <div class="send-item-row">
         <div style="flex:1;min-width:0">
           <div class="send-item-name">${escH(r.company)}</div>
-          <div class="send-item-email">${escH(r.email)} ${ccLabel}</div>
+          <div class="send-item-email">Para: ${escH(toEmail)} ${ccLabel}</div>
         </div>
         <a class="btn btn-send btn-sm send-mailto-btn" href="${mailtoUrl}" target="_blank"
            onclick="this.closest('.send-item-row').classList.add('sent')">

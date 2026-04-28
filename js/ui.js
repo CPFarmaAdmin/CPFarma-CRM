@@ -371,9 +371,26 @@ async function saveRecord() {
         }
       }
     }
-    await loadContacts();
+
+    // ── OPTIMISTIC UPDATE: update local records[] immediately so the table
+    //    refreshes the instant you close the panel, without waiting for a
+    //    full DB round-trip via loadContacts().
+    if (saved) {
+      const idx = records.findIndex(x => x.id === saved.id);
+      if (idx >= 0) {
+        records[idx] = { ...records[idx], ...saved };
+      } else {
+        records.push(saved);
+      }
+      renderSidebar(); renderBothTables(); renderFollowupBanner(); populateCountryFilter();
+    }
+
+    // Then reload fully from DB in the background to keep in sync
+    loadContacts().then(() => {
+      renderSidebar(); renderBothTables(); renderFollowupBanner(); populateCountryFilter();
+    }).catch(() => {});
+
     await loadFolders();
-    renderSidebar(); renderBothTables(); renderFollowupBanner(); populateCountryFilter();
     closePanel();
     toast(`✅ ${company} guardado`, 'ok');
   } catch(err) {

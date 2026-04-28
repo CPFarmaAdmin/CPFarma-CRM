@@ -30,8 +30,12 @@ async function dbGetContact(id) {
 }
 
 async function dbSaveContact(record) {
-  // Strip computed/joined fields that aren't DB columns
-  const { id, interactions, _noteCount, ...fields } = record;
+  // Strip computed/joined fields and columns that may not exist in older DB schemas
+  // Run SQL_UPDATE.md v19 to add demo_date and demo_time columns
+  const { id, interactions, _noteCount, demo_date, demo_time, ...fields } = record;
+  // Only include demo fields if they have a value (avoids schema cache error on old DBs)
+  if (record.demo_date) fields.demo_date = record.demo_date;
+  if (record.demo_time) fields.demo_time = record.demo_time;
   if (id) {
     const { data, error } = await db
       .from('contacts')

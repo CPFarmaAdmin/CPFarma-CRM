@@ -1461,39 +1461,81 @@ tr.row-inactive:hover { opacity: 1; }
 .demo-sched { background: #faf5ff; color: #7c3aed; }
 .demo-done  { background: #f3e8ff; color: #5b21b6; }
 
-/* ═══ v20: CC contact selector ══════════════════════════════════ */
+/* ═══ v22: CC contact selector — radio+checkbox ═══════════════ */
 .recip-cc-panel {
-  margin-top: 6px;
-  padding: 8px 10px;
-  background: #f8faff;
-  border: 1.5px dashed #bfdbfe;
-  border-radius: 6px;
-  font-size: .75rem;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: #f0f7ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 8px;
+  font-size: .78rem;
 }
 .recip-cc-title {
   font-weight: 700;
   color: #1d4ed8;
-  font-size: .7rem;
-  margin-bottom: 5px;
+  font-size: .72rem;
+  margin-bottom: 8px;
+  font-family: var(--fm);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.recip-cc-header-row {
+  display: grid;
+  grid-template-columns: 28px 28px 1fr;
+  gap: 6px;
+  align-items: center;
+  padding: 0 2px 4px;
+  border-bottom: 1px solid #bfdbfe;
+  margin-bottom: 4px;
+}
+.recip-cc-col-label {
+  font-size: .62rem;
+  font-weight: 700;
+  color: #1d4ed8;
   font-family: var(--fm);
   text-transform: uppercase;
   letter-spacing: .03em;
+  text-align: center;
 }
 .recip-cc-row {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 28px 28px 1fr;
   gap: 6px;
-  padding: 3px 0;
-}
-.recip-cc-row label {
-  display: flex;
   align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  color: var(--ink2);
-  font-size: .75rem;
+  padding: 5px 2px;
+  border-radius: 5px;
+  transition: background var(--transition);
 }
-.recip-cc-row .cc-role {
+.recip-cc-row:hover { background: #dbeafe; }
+.recip-cc-row input[type="radio"],
+.recip-cc-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #1d4ed8;
+  justify-self: center;
+}
+.recip-cc-row input:disabled { opacity: .35; cursor: not-allowed; }
+.recip-cc-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.recip-cc-name {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: .78rem;
+}
+.recip-cc-email {
+  font-size: .68rem;
+  color: var(--acc);
+  font-family: var(--fm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cc-role {
   font-size: .65rem;
   color: var(--ink3);
   font-family: var(--fm);
