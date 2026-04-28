@@ -258,9 +258,21 @@ async function addNote() {
 }
 
 async function deleteNote(noteId) {
-  if (String(noteId).startsWith('tmp_')) { cNotes = cNotes.filter(n => n.id !== noteId); renderHistory(); return; }
-  try { await dbDeleteInteraction(noteId); cNotes = cNotes.filter(n => n.id !== noteId); renderHistory(); }
-  catch(err) { toast('Error: ' + err.message, 'er'); }
+  if (!confirm('¿Eliminar esta entrada del historial? Esta acción no se puede deshacer.')) return;
+  if (String(noteId).startsWith('tmp_')) {
+    cNotes = cNotes.filter(n => n.id !== noteId);
+    renderHistory();
+    return;
+  }
+  try {
+    await dbDeleteInteraction(noteId);
+    cNotes = cNotes.filter(n => n.id !== noteId);
+    renderHistory();
+    toast('Entrada eliminada', 'info');
+  } catch(err) {
+    toast('Error al eliminar: ' + err.message, 'er');
+    console.error(err);
+  }
 }
 
 function renderHistory() {
@@ -276,7 +288,7 @@ function renderHistory() {
       <div class="history-item-header">
         <span class="history-item-type">${meta.label}</span>
         <span class="history-item-date">${n.date || ''}</span>
-        <button class="history-item-del" onclick="deleteNote('${n.id}')">🗑</button>
+        <button class="history-item-del" onclick="deleteNote('${n.id}')" title="Eliminar esta entrada">🗑 Eliminar</button>
       </div>
       <div class="history-item-text">${escH(n.text)}</div>
     </div>`;
@@ -384,8 +396,12 @@ async function deleteRecord(id) {
   } catch(err) { toast('Error: ' + err.message, 'er'); }
 }
 async function delFromPanel() { if (!editId) return; const id = editId; closePanel(); await deleteRecord(id); }
-function sendFromPanel() { if (!editId) return; closePanel(); openSendModal([editId]); }
-function quickSend(id) { openSendModal([id]); }
+function sendFromPanel() {
+  if (!editId) return;
+  closePanel();
+  openSendModal([editId], true); // skip to step 2 (contact selection)
+}
+function quickSend(id) { openSendModal([id], true); }
 
 // ── HELPERS ───────────────────────────────────────────────────
 function today() { return new Date().toISOString().split('T')[0]; }

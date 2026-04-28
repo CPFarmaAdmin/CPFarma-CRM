@@ -799,8 +799,23 @@ textarea { resize: vertical; line-height: 1.6; }
 .history-item-header { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
 .history-item-type { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; font-family: var(--fm); }
 .history-item-date { font-size: .65rem; color: var(--ink3); font-family: var(--fm); margin-left: auto; }
-.history-item-del { background: none; border: none; cursor: pointer; color: var(--ink4); font-size: .68rem; }
-.history-item-del:hover { color: var(--c-lost); }
+.history-item-del {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #dc2626;
+  font-size: .7rem;
+  padding: 2px 6px;
+  opacity: .6;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.history-item-del:hover {
+  opacity: 1;
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
 .history-item-text { font-size: .82rem; white-space: pre-wrap; line-height: 1.6; color: var(--ink2); }
 
 /* ── MODALS ──────────────────────────────────────────────────── */

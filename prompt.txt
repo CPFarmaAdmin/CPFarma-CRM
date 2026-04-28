@@ -1,5 +1,0 @@
-En base al ultimo zip que me diste, quiero las siguientes mejoras para la nueva versión:
-1) Que al entrar a la ficha de un prospecto / cliente, se pueda ver el historial de interacciones, de estados, etc. Una ficha completa así apenas entro a la ficha , sé que pasó , cuando, cómo, etc.
-2) En los prospectos, hay que agreagar una columna de fecha y hora para la demo, asi cuando la demo esté agendada / hecha, ya queda registrado, y también que en esos estados, se vea en la tabla visualmente la columna de fecha y hora de demo agendada/hecha.
-3) Quiero una explicación de como funciona actualmente los follow up, y quiero preparar una automatización. Por ejemplo si se mantiene 14 días en un estado, enviarle la plantilla X. Si se mantiene 2 meses en un estado, enviar plantilla Z. Cómo lo definimos? Quiero que ya quede definido para todos los estados 
-4) Exportar la tabla a CSV no sale bien, quiero que se haga un excel con las columnas que se ven en la tabla, y con los filtros que hay puestos. Pero que al abrir ese archivo luego de descargarlo, se vea bien. Ahora mismo se ve todo mal y raro.

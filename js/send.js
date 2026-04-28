@@ -62,9 +62,10 @@ function renderSavedAttach() {
 }
 
 // ── OPEN / CLOSE ──────────────────────────────────────────────
-function openSendModal(preselectedIds) {
+function openSendModal(preselectedIds, skipToStep2 = false) {
   sendStep     = 1;
   sendRecipIds = preselectedIds ? [...preselectedIds] : [];
+  sendCcMap    = {}; // reset CC selections
   sPrevIdx     = 0;
 
   loadSavedAttach();
@@ -82,9 +83,15 @@ function openSendModal(preselectedIds) {
   const sig = localStorage.getItem('cpfarma_sig') || '';
   if (sig) document.getElementById('sigHtml').value = sig;
 
-  showSendStep(1);
   populateRecipList();
   document.getElementById('sendModal').classList.add('open');
+
+  if (skipToStep2 && preselectedIds?.length === 1) {
+    // Skip directly to step 2 so user sees contact/CC selection immediately
+    showSendStep(2);
+  } else {
+    showSendStep(1);
+  }
 }
 
 function closeSendModal() {
@@ -226,7 +233,10 @@ function filterRecip() {
     const ccSelected = sendCcMap[r.id] || [];
 
     // CC panel: only shown when record is selected and has multiple emails
-    const ccPanel = (checked && hasMulti) ? `
+    // Show CC panel when: record is selected AND has multiple contacts
+    // Also show when it's the only pre-selected record (from quickSend)
+    const showCcPanel = hasMulti && (checked || (sendRecipIds.length === 1 && sendRecipIds[0] === r.id));
+    const ccPanel = showCcPanel ? `
       <div class="recip-cc-panel">
         <div class="recip-cc-title">✉️ Destinatarios para este contacto</div>
         ${contacts.map((c, i) => `
@@ -253,7 +263,7 @@ function filterRecip() {
         </div>
         <div class="recip-email">${r.email}</div>
         ${r.country||r.city?`<div style="font-size:.67rem;color:var(--ink3)">${[r.city,r.country].filter(Boolean).join(', ')}</div>`:''}
-        ${ccPanel}
+        ${ccPanel || ''}
       </div>
       <div class="recip-preview" style="align-self:flex-start">${escH(preview)}</div>
     </div>`;
