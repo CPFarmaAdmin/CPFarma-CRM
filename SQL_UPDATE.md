@@ -67,3 +67,13 @@ ALTER TABLE contacts
 > `email`, `phone`, `city`, `country`, `type`, `status`, `priority`, `folder_id`,
 > `user_id` y `tags` ya existen en el schema base de Supabase y no necesitan añadirse.
 
+
+---
+
+## SQL v19 — Columnas de demo
+
+```sql
+ALTER TABLE contacts
+  ADD COLUMN IF NOT EXISTS demo_date DATE,
+  ADD COLUMN IF NOT EXISTS demo_time TEXT;
+```

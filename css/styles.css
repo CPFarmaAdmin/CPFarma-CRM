@@ -1060,7 +1060,7 @@ textarea { resize: vertical; line-height: 1.6; }
    ═══════════════════════════════════════════════════════════════ */
 
 /* Modal XL */
-.modal-xl { max-width: 780px; }
+.modal-xl { max-width: 900px; }
 
 /* ── IMPORT GUIDE ────────────────────────────────────────────── */
 .imp-guide {
@@ -1098,14 +1098,50 @@ textarea { resize: vertical; line-height: 1.6; }
 .imp-stat-er   { display:inline-block; padding:3px 10px; background:var(--c-lost-bg); color:var(--c-lost); border-radius:20px; font-size:.82rem; font-weight:700; }
 
 /* ── SEND MODAL — recipient filters ──────────────────────────── */
-.recip-filters-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-  gap: 6px;
-  margin-bottom: 8px;
+/* Labelled filter bar in step 2 */
+.recip-filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: var(--paper2);
+  border-radius: var(--radius-sm);
 }
-.recip-filters-grid input,
-.recip-filters-grid select { font-size: .78rem; padding: 6px 8px; }
+.recip-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 110px;
+}
+.recip-filter-field.recip-filter-search { min-width: 160px; flex: 2; }
+.recip-filter-label {
+  font-size: .65rem;
+  font-weight: 700;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-family: var(--fm);
+  padding-left: 2px;
+}
+.recip-filter-field input,
+.recip-filter-field select {
+  font-size: .82rem;
+  padding: 7px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--ink);
+  width: 100%;
+  min-width: 0;
+}
+.recip-filter-field select:focus,
+.recip-filter-field input:focus {
+  border-color: var(--acc);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(15,108,189,.1);
+}
 
 .folder-quick-select {
   display: flex; flex-wrap: wrap; gap: 5px;
@@ -1376,3 +1412,77 @@ tr.row-inactive:hover { opacity: 1; }
 @media (max-width: 560px) {
   .status-grid-wide { grid-template-columns: repeat(2, 1fr) !important; }
 }
+
+/* ═══ v19 additions ═══════════════════════════════════════════ */
+
+/* Send step 4: clickable mailto rows */
+.send-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  margin-bottom: 6px;
+  background: white;
+  transition: all var(--transition);
+}
+.send-item-row.sent { border-color: #16a34a; background: #f0fdf4; }
+.send-item-name  { font-weight: 600; font-size: .82rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.send-item-email { font-size: .75rem; color: var(--acc); font-family: var(--fm); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.send-mailto-btn { white-space: nowrap; text-decoration: none !important; }
+.send-check      { color: #16a34a; font-size: 1rem; }
+.send-item-row.sent .send-mailto-btn { display: none; }
+.send-item-row.sent .send-check      { display: inline !important; }
+
+/* Demo date cell in prospects table */
+.demo-cell {
+  font-size: .72rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.demo-sched { background: #faf5ff; color: #7c3aed; }
+.demo-done  { background: #f3e8ff; color: #5b21b6; }
+
+/* ═══ v20: CC contact selector ══════════════════════════════════ */
+.recip-cc-panel {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: #f8faff;
+  border: 1.5px dashed #bfdbfe;
+  border-radius: 6px;
+  font-size: .75rem;
+}
+.recip-cc-title {
+  font-weight: 700;
+  color: #1d4ed8;
+  font-size: .7rem;
+  margin-bottom: 5px;
+  font-family: var(--fm);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.recip-cc-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+.recip-cc-row label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  color: var(--ink2);
+  font-size: .75rem;
+}
+.recip-cc-row .cc-role {
+  font-size: .65rem;
+  color: var(--ink3);
+  font-family: var(--fm);
+}
+/* Send step 4: mark sent rows */
+.send-item-row.sent .send-mailto-btn { opacity: .4; pointer-events: none; }
+.send-item-row.sent::after { content: '✅'; font-size: .9rem; margin-left: auto; }

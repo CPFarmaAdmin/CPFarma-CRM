@@ -81,6 +81,8 @@ async function openPanel(id) {
     setVal('f-followupNum',     r.followup_num);
     setVal('f-nextFollowup',    r.next_followup);
     setVal('f-meetingDate',     r.meeting_date);
+    setVal('f-demoDate',        r.demo_date);
+    setVal('f-demoTime',        r.demo_time);
     setVal('f-meetingPlatform', r.meeting_platform);
     setVal('f-followupNotes',   r.followup_notes);
     setVal('f-notes',           r.notes);
@@ -161,8 +163,38 @@ function switchPanelTab(tab, btn) {
 }
 
 // ── STATUS ────────────────────────────────────────────────────
+
+// Auto follow-up schedule (days from today) per prospect status
+const FOLLOWUP_CADENCE = {
+  first_contact:    14,   // sent first email → follow up in 2 weeks
+  no_response:      30,   // no reply to first followup → 1 month
+  contact_obtained: 7,    // got data → reach out in 1 week
+  info_sent:        14,   // sent program info → follow up in 2 weeks
+  demo_scheduled:   2,    // demo scheduled → remind 2 days before (manual)
+  demo_done:        7,    // demo done → send proposal in 1 week
+  budget_sent:      21,   // proposal sent → follow up in 3 weeks
+  followup:         14,   // in follow-up → every 2 weeks
+  waiting_approval: 30,   // waiting decision → check in 1 month
+  won:              null, // closed → no auto follow-up
+  rejected:         null, // rejected → no follow-up
+};
+
+function autoFollowupDate(status) {
+  const days = FOLLOWUP_CADENCE[status];
+  if (!days) return null;
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
 function selStatus(v) {
   cStatus = v;
+  // Auto-set next follow-up date when status changes (if field is empty)
+  const nextFu = document.getElementById('f-nextFollowup');
+  if (nextFu && !nextFu.value) {
+    const autoDate = autoFollowupDate(v);
+    if (autoDate) nextFu.value = autoDate;
+  }
   // Highlight in whichever selector is currently visible
   document.querySelectorAll('.status-opt').forEach(el => {
     el.className = 'status-opt';
@@ -306,6 +338,8 @@ async function saveRecord() {
     followup_num:     getVal('f-followupNum'),
     next_followup:    getVal('f-nextFollowup')    || null,
     meeting_date:     getVal('f-meetingDate')     || null,
+    demo_date:        getVal('f-demoDate')         || null,
+    demo_time:        getVal('f-demoTime')         || null,
     meeting_platform: getVal('f-meetingPlatform'),
     followup_notes:   getVal('f-followupNotes'),
     notes:            getVal('f-notes'),

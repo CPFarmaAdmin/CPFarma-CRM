@@ -133,6 +133,7 @@
             <th class="sortable" onclick="setSort('program')"><span>Programa</span><span class="sort-icon" id="si-program"></span></th>
             <th class="sortable" onclick="setSort('date')"><span>Últ. contacto</span><span class="sort-icon" id="si-date"></span></th>
             <th>Etapa del proceso</th>
+            <th class="sortable" onclick="setSort('demo_date')"><span>Demo</span><span class="sort-icon" id="si-demo"></span></th>
             <th class="sortable" onclick="setSort('prio')"><span>Prioridad</span><span class="sort-icon" id="si-prio"></span></th>
             <th class="sortable" onclick="setSort('followup')"><span>Follow-up</span><span class="sort-icon" id="si-followup"></span></th>
             <th style="width:90px">Acciones</th>
@@ -410,6 +411,14 @@
         <div class="form-grid">
           <div><label>Follow-up nº</label><input type="text" id="f-followupNum" placeholder="1, 2, 3…"></div>
           <div><label>Fecha próximo follow-up</label><input type="date" id="f-nextFollowup"></div>
+          <div class="prospect-only">
+            <label>📅 Fecha de demo</label>
+            <input type="date" id="f-demoDate">
+          </div>
+          <div class="prospect-only">
+            <label>🕐 Hora de demo</label>
+            <input type="time" id="f-demoTime" placeholder="10:00">
+          </div>
           <div><label>Reunión / Llamada</label><input type="date" id="f-meetingDate"></div>
           <div><label>Plataforma</label>
             <select id="f-meetingPlatform">
@@ -508,34 +517,52 @@
         </div>
       </div>
       <div id="sendStep2" style="display:none">
-        <div class="recip-filters-grid">
-          <input type="text" id="recipSearch" placeholder="🔍 Buscar…" oninput="filterRecip()">
-          <select id="recipFolderFilter" onchange="filterRecip()"><option value="">📬 Todas las carpetas</option></select>
-          <select id="recipTypeFilter" onchange="filterRecip()">
-            <option value="">Prospectos y clientes</option>
-            <option value="prospect">🎯 Solo prospectos</option>
-            <option value="client">💼 Solo clientes</option>
-          </select>
-          <select id="recipStatusFilter" onchange="filterRecip()">
-            <option value="">Todos los estados</option>
-            <option value="new">🆕 Sin contactar</option>
-            <option value="first_contact">📤 Primer contacto</option>
-            <option value="no_response">📭 Sin responder</option>
-            <option value="contact_obtained">📞 Datos obtenidos</option>
-            <option value="info_sent">📋 Info enviada</option>
-            <option value="demo_scheduled">📅 Demo agendada</option>
-            <option value="demo_done">🎬 Demo realizada</option>
-            <option value="budget_sent">💰 Presupuesto enviado</option>
-            <option value="followup">🔔 En seguimiento</option>
-            <option value="waiting_approval">⏳ Esperando aprobación</option>
-          </select>
-          <select id="recipCountryFilter" onchange="filterRecip()"><option value="">Todos los países</option></select>
-          <select id="recipPrioFilter" onchange="filterRecip()">
-            <option value="">Toda prioridad</option>
-            <option value="Alta">🔴 Alta</option>
-            <option value="Media">🟡 Media</option>
-            <option value="Baja">🟢 Baja</option>
-          </select>
+        <div class="recip-filters-bar">
+          <div class="recip-filter-field recip-filter-search">
+            <label class="recip-filter-label">Buscar</label>
+            <input type="text" id="recipSearch" placeholder="🔍 Nombre, email…" oninput="filterRecip()">
+          </div>
+          <div class="recip-filter-field">
+            <label class="recip-filter-label">Carpeta</label>
+            <select id="recipFolderFilter" onchange="filterRecip()"><option value="">Todas las carpetas</option></select>
+          </div>
+          <div class="recip-filter-field">
+            <label class="recip-filter-label">Tipo</label>
+            <select id="recipTypeFilter" onchange="filterRecip()">
+              <option value="">Todos</option>
+              <option value="prospect">🎯 Prospectos</option>
+              <option value="client">💼 Clientes</option>
+            </select>
+          </div>
+          <div class="recip-filter-field">
+            <label class="recip-filter-label">Estado</label>
+            <select id="recipStatusFilter" onchange="filterRecip()">
+              <option value="">Todos los estados</option>
+              <option value="new">🆕 Sin contactar</option>
+              <option value="first_contact">📤 Primer contacto</option>
+              <option value="no_response">📭 Sin responder</option>
+              <option value="contact_obtained">📞 Datos obtenidos</option>
+              <option value="info_sent">📋 Info enviada</option>
+              <option value="demo_scheduled">📅 Demo agendada</option>
+              <option value="demo_done">🎬 Demo realizada</option>
+              <option value="budget_sent">💰 Presupuesto enviado</option>
+              <option value="followup">🔔 En seguimiento</option>
+              <option value="waiting_approval">⏳ Esperando aprobación</option>
+            </select>
+          </div>
+          <div class="recip-filter-field">
+            <label class="recip-filter-label">País</label>
+            <select id="recipCountryFilter" onchange="filterRecip()"><option value="">Todos los países</option></select>
+          </div>
+          <div class="recip-filter-field">
+            <label class="recip-filter-label">Prioridad</label>
+            <select id="recipPrioFilter" onchange="filterRecip()">
+              <option value="">Toda prioridad</option>
+              <option value="Alta">🔴 Alta</option>
+              <option value="Media">🟡 Media</option>
+              <option value="Baja">🟢 Baja</option>
+            </select>
+          </div>
         </div>
         <div class="folder-quick-select" id="folderQuickSelect"></div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -557,9 +584,9 @@
       </div>
       <div id="sendStep3" style="display:none">
         <div class="preview-nav">
-          <button class="btn btn-ghost btn-sm" onclick="prevPrev()">← Anterior</button>
+          <button class="btn btn-ghost btn-sm" id="prevPrevBtn" onclick="prevPrev()">‹ Anterior</button>
           <span id="prevIdx" class="preview-idx"></span>
-          <button class="btn btn-ghost btn-sm" onclick="prevNext()">Siguiente →</button>
+          <button class="btn btn-ghost btn-sm" id="prevNextBtn" onclick="prevNext()">Siguiente →</button>
         </div>
         <div class="preview-card">
           <div class="preview-meta">

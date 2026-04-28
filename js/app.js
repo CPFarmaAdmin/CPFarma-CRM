@@ -201,7 +201,7 @@ function renderSidebar() {
     <button class="nb" onclick="openSendModal()"><span class="ni">✉️</span><span class="nt">Enviar emails</span></button>
     <button class="nb" onclick="openTplModal()"><span class="ni">📝</span><span class="nt">Plantillas</span></button>
     <button class="nb" onclick="openImport()"><span class="ni">📥</span><span class="nt">Importar Excel</span></button>
-    <button class="nb" onclick="exportCSV()"><span class="ni">⬇️</span><span class="nt">Exportar CSV</span></button>
+    <button class="nb" onclick="exportCSV()"><span class="ni">⬇️</span><span class="nt">Exportar Excel</span></button>
   `;
 }
 
@@ -399,6 +399,10 @@ function renderProspectsTable(rows) {
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.program||'—')}</td>
       <td class="tc-date">${r.sent_date?fmtDate(r.sent_date):'<span style="font-style:italic;color:var(--ink3)">—</span>'}</td>
       <td>${renderProspectBadge(r.status)}</td>
+      <td>${r.demo_date
+        ? `<div class="demo-cell ${r.status==='demo_done'?'demo-done':'demo-sched'}">📅 ${fmtDate(r.demo_date)}${r.demo_time?' '+r.demo_time:''}</div>`
+        : '<span style="color:var(--ink3);font-size:.72rem">—</span>'
+      }</td>
       <td>${renderPrio(r.priority)}</td>
       <td>${renderFollowup(r.next_followup)}</td>
       <td><div class="row-actions">
@@ -543,13 +547,95 @@ async function doMove(folderId,ids){try{await dbMoveContacts(ids,folderId);await
 
 // ── EXPORT ────────────────────────────────────────────────────
 function exportCSV(){
-  const rows=getFilteredFor(activeView);
-  const H=['ID','Nombre','Contacto','Email','Email2','Email3','Cargo','País','Ciudad','Programa','Versión','Tipo','Tipo cliente','Prioridad','Estado','Estado cliente','Fecha Envío','Asunto','Próx. Follow-up','Notas','Carpeta'];
-  const esc=v=>`"${String(v||'').replace(/"/g,'""')}"`;
-  const fn=id=>folders.find(f=>f.id===id)?.name||'';
-  const csv=[H.join(','),...rows.map(r=>[r.id,r.company,r.contact,r.email,r.email2||'',r.email3||'',r.role,r.country,r.city,r.program,r.version,r.type,r.client_type,r.priority,r.status,r.client_status,r.sent_date,r.subject,r.next_followup,r.notes,fn(r.folder_id)].map(esc).join(','))].join('\n');
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download=`cpfarma_${activeView}_${new Date().toISOString().slice(0,10)}.csv`;a.click();
-  toast('📥 CSV exportado','info');
+  const rows = getFilteredFor(activeView);
+  const fn   = id => folders.find(f=>f.id===id)?.name || '';
+  const isP  = activeView === 'prospects';
+
+  // Human-readable labels for status values
+  const statusLabel = s => {
+    const all = {...PROSPECT_STATUS_LABELS, ...CLIENT_STATUS_LABELS};
+    return all[s] || s || '';
+  };
+
+  // Build rows matching the visible table columns
+  let headers, data;
+  if (isP) {
+    headers = ['Prospecto','Contacto','Email','Email 2','Email 3','Ubicación','Programa',
+               'Etapa del proceso','Prioridad','Últ. contacto','Próx. follow-up',
+               'Fecha demo','Hora demo','Asunto último email','Notas','Carpeta'];
+    data = rows.map(r => [
+      r.company       || '',
+      r.contact       || '',
+      r.email         || '',
+      r.email2        || '',
+      r.email3        || '',
+      [r.city,r.country].filter(Boolean).join(', '),
+      r.program       || '',
+      statusLabel(r.status),
+      r.priority      || '',
+      r.sent_date     || '',
+      r.next_followup || '',
+      r.demo_date     || '',
+      r.demo_time     || '',
+      r.subject       || '',
+      r.notes         || '',
+      fn(r.folder_id),
+    ]);
+  } else {
+    headers = ['Cliente','Contacto','Email','Email 2','Ubicación','Programa','Versión',
+               'Estado','Mantenim.','Últ. contacto','Próx. follow-up',
+               'Contacto IT','Email IT','Contacto Gerencia','Email Gerencia','Notas','Carpeta'];
+    data = rows.map(r => [
+      r.company         || '',
+      r.contact         || '',
+      r.email           || '',
+      r.email2          || '',
+      [r.city,r.country].filter(Boolean).join(', '),
+      r.program         || '',
+      r.version         || '',
+      statusLabel(r.client_status||'ok'),
+      r.maintenance === 'yes' ? 'Sí' : r.maintenance === 'no' ? 'No' : '',
+      r.sent_date       || '',
+      r.next_followup   || '',
+      r.it_name         || '',
+      r.it_email        || '',
+      r.mgmt_name       || '',
+      r.mgmt_email      || '',
+      r.notes           || '',
+      fn(r.folder_id),
+    ]);
+  }
+
+  try {
+    // Use SheetJS to generate a proper Excel file
+    const wsData = [headers, ...data];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Auto column widths based on content
+    const colWidths = headers.map((h, i) => {
+      const maxLen = Math.max(h.length, ...data.map(row => String(row[i]||'').length));
+      return { wch: Math.min(maxLen + 2, 50) };
+    });
+    ws['!cols'] = colWidths;
+
+    // Freeze header row
+    ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, isP ? 'Prospectos' : 'Clientes');
+    XLSX.writeFile(wb, `CPFarma_${isP?'Prospectos':'Clientes'}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    toast('📊 Excel exportado','ok');
+  } catch(err) {
+    // Fallback to CSV with BOM for Excel UTF-8 compatibility
+    const BOM = '\uFEFF';
+    const esc = v => `"${String(v||'').replace(/"/g,'""')}"`;
+    const csv = BOM + [headers, ...data].map(row => row.map(esc).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+    a.download = `CPFarma_${isP?'Prospectos':'Clientes'}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    toast('📥 CSV exportado (fallback)','info');
+  }
 }
 
 window.addEventListener('DOMContentLoaded', () => initAuth());

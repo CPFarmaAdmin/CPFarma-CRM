@@ -4,10 +4,11 @@
 
 let sendStep      = 1;
 let sendRecipIds  = [];
+let sendCcMap     = {};   // { recordId: [email, email2, ...] } — CC emails per recipient
 let sPrevIdx      = 0;
 let sFilteredList = [];
 let activeStdId   = null;
-let savedAttach   = [];   // { id, name, size, active }
+let savedAttach   = [];
 
 // ── SAVED ATTACHMENTS ─────────────────────────────────────────
 function loadSavedAttach() {
@@ -103,8 +104,14 @@ function showSendStep(n) {
   bk.style.display = (n > 1 && n < 4) ? '' : 'none';
   if (n === 1) { nx.textContent = 'Siguiente →'; nx.className = 'btn btn-primary'; nx.style.display = ''; }
   else if (n === 2) { nx.textContent = `Vista previa (${sendRecipIds.length} sel.) →`; nx.className = 'btn btn-primary'; nx.style.display = ''; }
-  else if (n === 3) { nx.textContent = `✉️ Abrir cliente de correo (${sendRecipIds.length})`; nx.className = 'btn btn-send'; nx.style.display = ''; }
-  else { nx.style.display = 'none'; bk.style.display = 'none'; }
+  else if (n === 3) { nx.textContent = `✉️ Preparar envíos (${sendRecipIds.length})`; nx.className = 'btn btn-send'; nx.style.display = ''; }
+  else {
+    nx.style.display = 'none';
+    bk.style.display = 'none';
+    // Replace Cancelar with Cerrar in step 4
+    const cancelBtn = document.querySelector('#sendModal .modal-footer .btn-ghost');
+    if (cancelBtn) cancelBtn.textContent = 'Cerrar';
+  }
 }
 
 function sBack() { if (sendStep > 1) showSendStep(sendStep - 1); }
@@ -212,20 +219,43 @@ function filterRecip() {
 
   const typeIcon = { prospect:'🎯', client:'💼' };
   document.getElementById('recipItems').innerHTML = sFilteredList.map(r => {
-    const checked = sendRecipIds.includes(r.id) ? 'checked' : '';
-    const preview = personalise(body, r).slice(0, 55) + '…';
-    return `<div class="recip-item" onclick="toggleRecip('${r.id}',event)">
+    const checked  = sendRecipIds.includes(r.id) ? 'checked' : '';
+    const preview  = personalise(body, r).slice(0, 55) + '…';
+    const contacts = getRecordContacts(r);
+    const hasMulti = contacts.length > 1;
+    const ccSelected = sendCcMap[r.id] || [];
+
+    // CC panel: only shown when record is selected and has multiple emails
+    const ccPanel = (checked && hasMulti) ? `
+      <div class="recip-cc-panel">
+        <div class="recip-cc-title">✉️ Destinatarios para este contacto</div>
+        ${contacts.map((c, i) => `
+          <div class="recip-cc-row">
+            <label>
+              <input type="checkbox" class="chk cc-chk"
+                data-recid="${r.id}" data-email="${escH(c.email)}"
+                ${i === 0 ? 'checked disabled' : (ccSelected.includes(c.email) ? 'checked' : '')}
+                onclick="event.stopPropagation();toggleCc('${r.id}','${escH(c.email)}',this)">
+              <span>${escH(c.name)}</span>
+              <span class="cc-role">&nbsp;—&nbsp;${escH(c.role)}${i===0?' (Para)':' (CC)'}</span>
+            </label>
+          </div>`).join('')}
+      </div>` : '';
+
+    return `<div class="recip-item ${checked?'recip-selected':''}" onclick="toggleRecip('${r.id}',event)">
       <input type="checkbox" class="chk" ${checked} data-id="${r.id}" onclick="event.stopPropagation();toggleRecipChk(this)">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:5px">
           <span style="font-size:.75rem">${typeIcon[r.type]||'📋'}</span>
           <span class="recip-company">${escH(r.company)}</span>
           ${r.type!=='client'?renderBadge(r.status):''}
+          ${hasMulti?`<span style="font-size:.65rem;color:#1d4ed8;margin-left:4px">+${contacts.length-1} emails</span>`:''}
         </div>
         <div class="recip-email">${r.email}</div>
         ${r.country||r.city?`<div style="font-size:.67rem;color:var(--ink3)">${[r.city,r.country].filter(Boolean).join(', ')}</div>`:''}
+        ${ccPanel}
       </div>
-      <div class="recip-preview">${escH(preview)}</div>
+      <div class="recip-preview" style="align-self:flex-start">${escH(preview)}</div>
     </div>`;
   }).join('');
 
@@ -274,6 +304,15 @@ function updateSelChips() {
   }).join('');
 }
 function removeSR(id) { sendRecipIds = sendRecipIds.filter(x => x !== id); filterRecip(); }
+
+function toggleCc(recId, email, chk) {
+  if (!sendCcMap[recId]) sendCcMap[recId] = [];
+  if (chk.checked) {
+    if (!sendCcMap[recId].includes(email)) sendCcMap[recId].push(email);
+  } else {
+    sendCcMap[recId] = sendCcMap[recId].filter(e => e !== email);
+  }
+}
 function clearAllRecip() { sendRecipIds = []; filterRecip(); }
 function updateSelCount() {
   const el = document.getElementById('selCount');
@@ -285,7 +324,16 @@ function updateSelCount() {
 }
 
 // ── PREVIEW ───────────────────────────────────────────────────
-function renderPreview() { sPrevIdx = 0; showPreviewItem(); }
+function renderPreview() {
+  sPrevIdx = 0;
+  showPreviewItem();
+  // Hide nav arrows when only 1 recipient
+  const single = sendRecipIds.length <= 1;
+  const prevBtn = document.getElementById('prevPrevBtn');
+  const nextBtn = document.getElementById('prevNextBtn');
+  if (prevBtn) prevBtn.style.visibility = single ? 'hidden' : '';
+  if (nextBtn) nextBtn.style.visibility = single ? 'hidden' : '';
+}
 function showPreviewItem() {
   const r = records.find(x => x.id === sendRecipIds[sPrevIdx]);
   if (!r) return;
@@ -309,82 +357,99 @@ async function doSend() {
   const subj    = document.getElementById('sendSubject').value;
   const useSig  = document.getElementById('useSig')?.checked;
   const sigTxt  = document.getElementById('sigHtml')?.value || '';
-  const webmail = (WEBMAIL_URL || 'https://webmail.cpfarma.es').replace(/\/login$/, '');
   const activeAttachNames = getActiveAttachNames();
+  const todayStr = new Date().toISOString().split('T')[0];
+  const tplName  = templates.find(t => t.id === activeStdId)?.name || 'Email';
 
   const total = sendRecipIds.length;
-  let done = 0;
-  const log = document.getElementById('sLog');
+  const log   = document.getElementById('sLog');
   log.innerHTML = '';
 
-  const next = async () => {
-    if (done >= total) {
-      document.getElementById('sProgLabel').textContent = `${total} pestaña${total!==1?'s':''} de Roundcube abiertas`;
-      document.getElementById('sProgPct').textContent   = '100%';
-      document.getElementById('sProgBar').style.width   = '100%';
-      document.getElementById('sDoneMsg').style.display = '';
-      await loadContacts();
-      renderBothTables(); renderSidebar(); renderFollowupBanner();
-      return;
-    }
-    const id  = sendRecipIds[done];
-    const r   = records.find(x => x.id === id);
-    const pct = Math.round((done / total) * 100);
-    document.getElementById('sProgLabel').textContent = `Enviando ${done+1} de ${total}…`;
-    document.getElementById('sProgPct').textContent   = pct + '%';
-    document.getElementById('sProgBar').style.width   = pct + '%';
+  // Prepare all mailto links and save to DB upfront
+  // We render each as a clickable link — the user clicks each one manually.
+  // This bypasses browser popup blockers which block multiple window.open() calls.
+  const items = [];
+  for (const id of sendRecipIds) {
+    const r = records.find(x => x.id === id);
+    if (!r) continue;
 
-    if (!r?.email) {
-      log.innerHTML += `<div class="sk">⊘ Sin email: ${escH(r?.company||id)}</div>`;
-      done++; setTimeout(next, 50); return;
+    if (!r.email) {
+      items.push({ r, mailtoUrl: null, pSubj: '', pBody: '' });
+      continue;
     }
 
     let pBody = personalise(body, r);
     if (useSig && sigTxt) pBody += '\n\n-- \n' + sigTxt.replace(/<[^>]*>/g, '');
     const pSubj = personalise(subj, r);
-
-    // Build Roundcube compose URL
-    // Standard Roundcube format: /?_task=mail&_action=compose
-    // mailto: opens OS default email client (Outlook, Thunderbird, Apple Mail…)
-    const mailtoUrl = 'mailto:' + encodeURIComponent(r.email)
+    // Build mailto with optional CC for additional contacts
+    const ccEmails = (sendCcMap[r.id] || []).filter(e => e !== r.email);
+    let mailtoUrl = 'mailto:' + encodeURIComponent(r.email)
       + '?subject=' + encodeURIComponent(pSubj)
       + '&body='    + encodeURIComponent(pBody);
-    window.open(mailtoUrl, '_blank');
+    if (ccEmails.length) mailtoUrl += '&cc=' + encodeURIComponent(ccEmails.join(','));
+    items.push({ r, mailtoUrl, pSubj, pBody });
 
+    // Save to DB immediately (mark as sent, save date, add history)
     try {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const tplName  = templates.find(t => t.id === activeStdId)?.name || 'Email';
-      const attachNote = activeAttachNames.length ? `\nAdjuntos: ${activeAttachNames.join(', ')}` : '';
-
-      // Advance prospect status on send:
-      // new/unset → first_contact (we sent them the first email)
-      // first_contact → no_response stays at no_response (already contacted, re-sending)
       const newStatus = (r.type !== 'client' && (!r.status || r.status === 'new'))
-        ? 'first_contact'
-        : r.status;
+        ? 'first_contact' : r.status;
       await dbSaveContact({
-        id: r.id,
-        status:       newStatus,
-        sent_date:    todayStr,
-        subject:      pSubj,
-        email_type:   tplName,
-        email_to:     r.email,
-        attachments:  activeAttachNames.length ? activeAttachNames.join(', ') : r.attachments,
+        id: r.id, status: newStatus, sent_date: todayStr,
+        subject: pSubj, email_type: tplName, email_to: r.email,
+        attachments: activeAttachNames.length ? activeAttachNames.join(', ') : r.attachments,
       });
       await dbAddInteraction({
         contact_id: r.id, type: 'sent', date: todayStr,
-        text: `Plantilla: ${tplName}\nAsunto: ${pSubj}${attachNote}`,
+        text: `Plantilla: ${tplName}\nAsunto: ${pSubj}${activeAttachNames.length ? '\nAdjuntos: '+activeAttachNames.join(', ') : ''}`,
         user_id: currentUser?.id,
       });
-      log.innerHTML += `<div class="ok">✅ ${escH(r.company)} — ${r.email}</div>`;
-    } catch(err) {
-      log.innerHTML += `<div class="er">⚠️ ${escH(r.company)} — error estado</div>`;
+    } catch(err) { console.error('DB save error', err); }
+  }
+
+  // Render clickable mailto links in the log
+  // User clicks each button to open their email client for that recipient
+  document.getElementById('sProgLabel').textContent = `${items.filter(i=>i.mailtoUrl).length} emails preparados — haz clic en cada uno para abrirlo`;
+  document.getElementById('sProgPct').textContent   = '100%';
+  document.getElementById('sProgBar').style.width   = '100%';
+
+  items.forEach(({ r, mailtoUrl }) => {
+    if (!mailtoUrl) {
+      log.innerHTML += `<div class="sk">⊘ Sin email: ${escH(r?.company||'')}</div>`;
+      return;
     }
-    log.scrollTop = log.scrollHeight;
-    done++;
-    setTimeout(next, 900);
-  };
-  next();
+    const ccForRow = (sendCcMap[r.id] || []).filter(e => e !== r.email);
+    const ccLabel  = ccForRow.length ? `<span style="font-size:.67rem;color:#1d4ed8">CC: ${ccForRow.slice(0,2).join(', ')}${ccForRow.length>2?'…':''}</span>` : '';
+    log.innerHTML += `
+      <div class="send-item-row">
+        <div style="flex:1;min-width:0">
+          <div class="send-item-name">${escH(r.company)}</div>
+          <div class="send-item-email">${escH(r.email)} ${ccLabel}</div>
+        </div>
+        <a class="btn btn-send btn-sm send-mailto-btn" href="${mailtoUrl}" target="_blank"
+           onclick="this.closest('.send-item-row').classList.add('sent')">
+          ✉️ Abrir en correo
+        </a>
+        <span class="send-check" style="display:none">✅</span>
+      </div>`;
+  });
+
+  // When all links are rendered show the done message
+  document.getElementById('sDoneMsg').style.display = '';
+  log.scrollTop = log.scrollHeight;
+
+  await loadContacts();
+  renderBothTables(); renderSidebar(); renderFollowupBanner();
+}
+
+// Get all email contacts for a record as [{email, name, role}]
+function getRecordContacts(r) {
+  const contacts = [];
+  if (r.email)      contacts.push({ email: r.email,     name: r.contact  || r.company, role: 'Principal' });
+  if (r.email2)     contacts.push({ email: r.email2,    name: r.company,               role: 'Email 2' });
+  if (r.email3)     contacts.push({ email: r.email3,    name: r.company,               role: 'Email 3' });
+  if (r.it_email)   contacts.push({ email: r.it_email,  name: r.it_name  || 'Informática', role: 'Informática' });
+  if (r.mgmt_email) contacts.push({ email: r.mgmt_email,name: r.mgmt_name|| 'Gerencia',    role: 'Gerencia' });
+  return contacts;
 }
 
 function personalise(text, r) {
