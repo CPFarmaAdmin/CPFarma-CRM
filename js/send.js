@@ -287,7 +287,8 @@ function filterRecip() {
       + '</div>';
   }).join('');
 
-  document.querySelectorAll('#recipItems .chk').forEach(chk => {
+  // Only sync the main row checkboxes (have data-id), NOT the cc-radio/cc-chk inputs
+  document.querySelectorAll('#recipItems input[data-id]').forEach(chk => {
     chk.checked = sendRecipIds.includes(chk.dataset.id);
   });
   updateSelChips();
@@ -306,14 +307,30 @@ function toggleFolderSel(fid) {
 function toggleRecip(id, e) {
   if (e?.target?.type === 'checkbox') return;
   const i = sendRecipIds.indexOf(id);
-  if (i >= 0) sendRecipIds.splice(i, 1); else sendRecipIds.push(id);
+  if (i >= 0) {
+    sendRecipIds.splice(i, 1);
+  } else {
+    sendRecipIds.push(id);
+    // Initialize sendEmailMap with default Para: = primary email
+    if (!sendEmailMap[id]) {
+      const r = records.find(x => x.id === id);
+      if (r) sendEmailMap[id] = { to: r.email, cc: [] };
+    }
+  }
   filterRecip();
 }
 function toggleRecipChk(chk) {
   const id = chk.dataset.id;
   const i  = sendRecipIds.indexOf(id);
-  if (chk.checked && i < 0) sendRecipIds.push(id);
-  else if (!chk.checked && i >= 0) sendRecipIds.splice(i, 1);
+  if (chk.checked && i < 0) {
+    sendRecipIds.push(id);
+    if (!sendEmailMap[id]) {
+      const r = records.find(x => x.id === id);
+      if (r) sendEmailMap[id] = { to: r.email, cc: [] };
+    }
+  } else if (!chk.checked && i >= 0) {
+    sendRecipIds.splice(i, 1);
+  }
   updateSelChips(); updateSelCount();
 }
 function toggleSelAllRecip(chk) {
@@ -324,11 +341,21 @@ function toggleSelAllRecip(chk) {
 function updateSelChips() {
   const el = document.getElementById('selChips');
   if (!el) return;
-  if (!sendRecipIds.length) { el.innerHTML = '<span style="font-size:.73rem;color:var(--ink3)">Ninguno</span>'; return; }
+  if (!sendRecipIds.length) {
+    el.innerHTML = '<span style="font-size:.73rem;color:var(--ink3)">Ninguno</span>';
+    return;
+  }
   el.innerHTML = sendRecipIds.map(id => {
     const r = records.find(x => x.id === id);
     if (!r) return '';
-    return `<div class="sel-chip">${escH(r.company)}<span class="sel-chip-remove" onclick="removeSR('${id}')">✕</span></div>`;
+    // Show: "Company (email)" — use sendEmailMap to get the selected Para: email
+    const em = sendEmailMap[id];
+    const toEmail = em?.to || r.email;
+    const label = escH(r.company) + ' <span style="color:var(--acc);font-weight:400">(' + escH(toEmail) + ')</span>';
+    return '<div class="sel-chip">'
+      + label
+      + '<span class="sel-chip-remove" onclick="removeSR(\'' + id + '\')">✕</span>'
+      + '</div>';
   }).join('');
 }
 function removeSR(id) { sendRecipIds = sendRecipIds.filter(x => x !== id); filterRecip(); }
