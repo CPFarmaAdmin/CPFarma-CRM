@@ -1038,7 +1038,9 @@ textarea { resize: vertical; line-height: 1.6; }
 
 /* ── TOAST ───────────────────────────────────────────────────── */
 .toast-container {
-  position: fixed; bottom: 20px; right: 20px;
+  position: fixed;
+  top: 20px;        /* top-right: never overlaps bottom footer buttons */
+  right: 20px;
   z-index: 9999;
   display: flex; flex-direction: column; gap: 6px;
 }
@@ -1056,7 +1058,7 @@ textarea { resize: vertical; line-height: 1.6; }
 .toast.ok { background: #166534; }
 .toast.er { background: #991b1b; }
 .toast.info { background: #1e40af; }
-@keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 
 /* ── RESPONSIVE ──────────────────────────────────────────────── */
 @media (max-width: 860px) {

@@ -5,6 +5,17 @@
 let sendStep      = 1;
 let sendRecipIds  = [];
 let sendEmailMap  = {};   // { recordId: {to: email, cc: [email, ...]} } — Para+CC per record
+
+const SEND_FOLLOWUP_CADENCE = {
+  first_contact:14, no_response:30, contact_obtained:7, info_sent:14,
+  demo_scheduled:2, demo_done:7, budget_sent:21, followup:14, waiting_approval:30,
+};
+function calcFollowupDate(status) {
+  const days = SEND_FOLLOWUP_CADENCE[status];
+  if (!days) return null;
+  const d = new Date(); d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
 let sPrevIdx      = 0;
 let sFilteredList = [];
 let activeStdId   = null;
@@ -479,10 +490,13 @@ async function doSend() {
     try {
       const newStatus = (r.type !== 'client' && (!r.status || r.status === 'new'))
         ? 'first_contact' : r.status;
+      // Auto-set next_followup if not already set
+      const autoNextFollowup = (!r.next_followup) ? calcFollowupDate(newStatus) : null;
       await dbSaveContact({
         id: r.id, status: newStatus, sent_date: todayStr,
         subject: pSubj, email_type: tplName, email_to: r.email,
         attachments: activeAttachNames.length ? activeAttachNames.join(', ') : r.attachments,
+        ...(autoNextFollowup ? { next_followup: autoNextFollowup } : {}),
       });
       await dbAddInteraction({
         contact_id: r.id, type: 'sent', date: todayStr,
