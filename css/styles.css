@@ -1545,3 +1545,7 @@ tr.row-inactive:hover { opacity: 1; }
 /* Send step 4: mark sent rows */
 .send-item-row.sent .send-mailto-btn { opacity: .4; pointer-events: none; }
 .send-item-row.sent::after { content: '✅'; font-size: .9rem; margin-left: auto; }
+
+/* ═══ Website field ═══════════════════════════════════════════ */
+#f-website { font-family: var(--fm); color: var(--acc); }
+#f-website:placeholder-shown { color: var(--ink3); font-family: inherit; }
