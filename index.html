@@ -397,8 +397,9 @@
           <div><label>Fecha respuesta</label><input type="date" id="f-replyDate"></div>
           <div>
             <label>Respondido por</label>
-            <input type="text" id="f-replyFrom" placeholder="Nombre de quien respondió" list="replyFromList" autocomplete="off">
-            <datalist id="replyFromList"></datalist>
+            <select id="f-replyFrom">
+              <option value="">— Seleccionar o escribir —</option>
+            </select>
           </div>
           <div class="fg-full"><label>Texto de la respuesta</label><textarea id="f-replyText" rows="4" placeholder="Copia aquí la respuesta recibida…"></textarea></div>
         </div>

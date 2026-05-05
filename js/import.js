@@ -103,6 +103,7 @@ const FIELD_MAP = {
                   'email administracion','correo administracion'],
 
   // ── CLIENTE: versión y mantenimiento ─────────────────────────
+  website:       ['web','pagina web','página web','website','url','sitio web','web del centro'],
   version:       ['version','versión','ver'],
   maintenance:   ['mantenimiento','maintenance','mant'],
   maintenance_date: ['fecha inicio mantenimiento','fecha mantenimiento',
@@ -138,6 +139,7 @@ const FIELD_LABELS = {
   city:             'Ciudad',
   phone:            'Teléfono',
   program:          'Programa',
+  website:          'Página web (URL)',
   version:          'Versión instalada',
   notes:            'Notas generales',
   type:             'Tipo de registro (Prospecto/Cliente)',
@@ -436,6 +438,7 @@ async function doImport() {
       program:       raw.program || '',
       version:       raw.version || '',
       notes:         raw.notes   || '',
+      website:       raw.website  || null,
       type:          resolvedType,
       client_type:   raw.client_type ? normClientType(raw.client_type) : 'public',
       priority:      raw.priority ? normPriority(raw.priority) : (isClient ? null : 'Media'),
@@ -500,9 +503,11 @@ async function doImport() {
 
     for (const rec of newRecords) {
       try {
-        if (iMode === 'merge' && rec.email) {
+        if (iMode === 'merge' && rec.company) {
+          // Match by company name (trimmed, case-insensitive) — NOT by email
+          const normName = s => (s||'').trim().toLowerCase();
           const existing = records.find(r =>
-            r.email?.toLowerCase() === rec.email?.toLowerCase()
+            normName(r.company) === normName(rec.company)
           );
           if (existing) {
             await dbSaveContact({...rec, id:existing.id});

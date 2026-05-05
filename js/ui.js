@@ -464,16 +464,21 @@ function _populateEmailToList(r) {
     dlSent.innerHTML = '';
     contacts.forEach(c => { const o = document.createElement('option'); o.value = c; dlSent.appendChild(o); });
   }
-  // Populate 'Respondido por' datalist (names only, no email)
-  const dlReply = document.getElementById('replyFromList');
-  if (dlReply) {
-    dlReply.innerHTML = '';
-    const names = [
-      r.contact   || null,
-      r.it_name   || null,
-      r.mgmt_name || null,
+  // Populate 'Respondido por' select with all email contacts of this record
+  const selReply = document.getElementById('f-replyFrom');
+  if (selReply) {
+    const currentVal = selReply.value; // preserve current selection
+    const emailContacts = [
+      r.email      ? { label: (r.contact||r.company||'Principal') + ' — ' + r.email, value: r.email } : null,
+      r.email2     ? { label: r.company + ' — ' + r.email2, value: r.email2 } : null,
+      r.email3     ? { label: r.company + ' — ' + r.email3, value: r.email3 } : null,
+      r.it_email   ? { label: (r.it_name||'Informática') + ' — ' + r.it_email, value: r.it_email } : null,
+      r.mgmt_email ? { label: (r.mgmt_name||'Gerencia') + ' — ' + r.mgmt_email, value: r.mgmt_email } : null,
     ].filter(Boolean);
-    names.forEach(n => { const o = document.createElement('option'); o.value = n; dlReply.appendChild(o); });
+    selReply.innerHTML = '<option value="">— Seleccionar —</option>'
+      + emailContacts.map(c => `<option value="${escH(c.value)}" ${currentVal===c.value?'selected':''}>${escH(c.label)}</option>`).join('');
+    // Re-apply saved value if it exists
+    if (r.reply_from) selReply.value = r.reply_from;
   }
 }
 

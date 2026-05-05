@@ -489,7 +489,7 @@ async function doSend() {
     // Save to DB immediately (mark as sent, save date, add history)
     try {
       const newStatus = (r.type !== 'client' && (!r.status || r.status === 'new'))
-        ? 'first_contact' : r.status;
+        ? 'no_response' : r.status;  // first send → 'Sin responder' (user sets manually when they reply)
       // Auto-set next_followup if not already set
       const autoNextFollowup = (!r.next_followup) ? calcFollowupDate(newStatus) : null;
       await dbSaveContact({

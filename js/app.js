@@ -249,7 +249,7 @@ function populateCountryFilter() {
 function setSort(col) {
   cSortDir = cSort === col ? (cSortDir==='asc'?'desc':'asc') : 'asc';
   cSort = col;
-  ['name','country','date','prio','followup','program'].forEach(c => {
+  ['name','country','date','prio','followup','program','demo_date','version'].forEach(c => {
     const el = document.getElementById('si-'+c);
     if (!el) return;
     el.textContent = cSort===c ? (cSortDir==='asc'?'↑':'↓') : '';
@@ -327,14 +327,17 @@ function getFilteredFor(viewType) {
   }).sort((a,b) => {
     let vA, vB;
     const pm = {Alta:0,Media:1,Baja:2};
-    if (cSort==='name')     { vA=a.company||''; vB=b.company||''; }
-    if (cSort==='prio')     { vA=pm[a.priority]??1; vB=pm[b.priority]??1; }
-    if (cSort==='followup') { vA=a.next_followup||'9999'; vB=b.next_followup||'9999'; }
-    if (cSort==='country')  { vA=a.country||''; vB=b.country||''; }
-    if (cSort==='program')  { vA=a.program||''; vB=b.program||''; }
-    if (cSort==='date')     { vA=a.sent_date||a.created_at||''; vB=b.sent_date||b.created_at||''; }
+    if (cSort==='name')      { vA=a.company||''; vB=b.company||''; }
+    else if (cSort==='prio')      { vA=pm[a.priority]??1; vB=pm[b.priority]??1; }
+    else if (cSort==='followup')  { vA=a.next_followup||'9999'; vB=b.next_followup||'9999'; }
+    else if (cSort==='country')   { vA=(a.country||'')+(a.city||''); vB=(b.country||'')+(b.city||''); }
+    else if (cSort==='program')   { vA=a.program||''; vB=b.program||''; }
+    else if (cSort==='date')      { vA=a.sent_date||a.created_at||''; vB=b.sent_date||b.created_at||''; }
+    else if (cSort==='demo_date') { vA=a.demo_date||'9999'; vB=b.demo_date||'9999'; }
+    else if (cSort==='version')   { vA=a.version||''; vB=b.version||''; }
+    else { vA=a.company||''; vB=b.company||''; }  // fallback to name
     if (typeof vA === 'number') return cSortDir==='asc' ? vA-vB : vB-vA;
-    return cSortDir==='asc' ? (vA||'').localeCompare(vB||'') : (vB||'').localeCompare(vA||'');
+    return cSortDir==='asc' ? (vA||'').localeCompare(vB||'','es',{numeric:true}) : (vB||'').localeCompare(vA||'','es',{numeric:true});
   });
 }
 
