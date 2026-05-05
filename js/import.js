@@ -510,7 +510,15 @@ async function doImport() {
             normName(r.company) === normName(rec.company)
           );
           if (existing) {
-            await dbSaveContact({...rec, id:existing.id});
+            // Smart merge: only overwrite fields that have a real value in the imported row.
+            // Empty/null fields in the import keep the existing data intact.
+            const patch = {};
+            for (const [k, v] of Object.entries(rec)) {
+              if (k === 'company') continue; // never overwrite the name used to match
+              if (v === null || v === undefined || v === '') continue; // skip empty → keep existing
+              patch[k] = v;
+            }
+            await dbSaveContact({ ...existing, ...patch, id: existing.id });
             merged++; continue;
           }
         }
