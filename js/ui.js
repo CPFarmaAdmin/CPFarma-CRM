@@ -6,14 +6,16 @@ let editId    = null;
 let cTags     = [];
 let cStatus   = 'new';
 let cNotes    = [];
+let origReply = { text: '', from: '', date: '' }; // snapshot of reply when panel opens
 let activeTab = 'info';
 
 // ── PANEL ─────────────────────────────────────────────────────
 async function openPanel(id) {
   editId  = id || null;
   cTags   = [];
-  cStatus = 'new';
-  cNotes  = [];
+  cStatus    = 'new';
+  cNotes     = [];
+  origReply  = { text: '', from: '', date: '' };
 
   const r        = id ? records.find(x => x.id === id) : null;
   const isClient = r ? r.type === 'client' : activeView === 'clients';
@@ -96,6 +98,13 @@ async function openPanel(id) {
     _populateEmailToList(r);
     // Re-apply reply_from AFTER the select is populated with options
     if (r.reply_from) setVal('f-replyFrom', r.reply_from);
+
+    // Snapshot current reply state so we can detect new replies on save
+    origReply = {
+      text: r.reply_text  || '',
+      from: r.reply_from  || '',
+      date: r.reply_date  || '',
+    };
 
     cTags = Array.isArray(r.tags) ? [...r.tags] : [];
     // Fix 8: clients use client_status for the selector, prospects use status
@@ -378,6 +387,28 @@ async function saveRecord() {
         }
       }
     }
+
+    // ── AUTO-HISTORY: if reply_text is new or changed, add interaction ─────
+    const savedReplyText = record.reply_text || '';
+    const savedReplyFrom = record.reply_from || '';
+    const savedReplyDate = record.reply_date || '';
+    const replyChanged   = savedReplyText && savedReplyText !== origReply.text;
+
+    if (replyChanged && saved?.id) {
+      const fromLabel = savedReplyFrom ? ` de ${savedReplyFrom}` : '';
+      await dbAddInteraction({
+        contact_id: saved.id,
+        type:       'reply',
+        date:       savedReplyDate || new Date().toISOString().split('T')[0],
+        text:       `Respuesta recibida${fromLabel}:\n${savedReplyText}`,
+        user_id:    currentUser?.id,
+      });
+      // Update snapshot so re-saving doesn't duplicate the interaction
+      origReply = { text: savedReplyText, from: savedReplyFrom, date: savedReplyDate };
+      // Reload interactions to show the new entry immediately
+      try { cNotes = await dbGetInteractions(saved.id); } catch(e) {}
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     // ── OPTIMISTIC UPDATE: update local records[] immediately so the table
     //    refreshes the instant you close the panel, without waiting for a
