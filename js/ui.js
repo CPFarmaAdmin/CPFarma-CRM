@@ -77,7 +77,7 @@ async function openPanel(id) {
     setVal('f-sentText',        r.sent_text);
     setVal('f-attachments',     r.attachments || '');
     setVal('f-replyDate',       r.reply_date);
-    setVal('f-replyFrom',       r.reply_from);
+    // f-replyFrom is set after _populateEmailToList (see below)
     setVal('f-replyText',       r.reply_text);
     setVal('f-followupNum',     r.followup_num);
     setVal('f-nextFollowup',    r.next_followup);
@@ -91,6 +91,11 @@ async function openPanel(id) {
     setVal('f-dealValue',       r.deal_value);
     setVal('f-dealProb',        r.deal_prob);
     setVal('f-dealClose',       r.deal_close);
+
+    // Populate datalists and selects that depend on record data
+    _populateEmailToList(r);
+    // Re-apply reply_from AFTER the select is populated with options
+    if (r.reply_from) setVal('f-replyFrom', r.reply_from);
 
     cTags = Array.isArray(r.tags) ? [...r.tags] : [];
     // Fix 8: clients use client_status for the selector, prospects use status
