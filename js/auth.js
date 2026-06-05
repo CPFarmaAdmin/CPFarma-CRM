@@ -84,7 +84,16 @@ function showLogin() {
 
 async function showApp() {
   if (appInitialized) return; // guard against duplicate calls
-  
+
+  // Load role profile (creates one on first login; first ever user becomes admin)
+  const profile = await loadCurrentUserProfile();
+
+  // Block suspended users before showing the app
+  if (profile && profile.is_active === false) {
+    showInactiveScreen();
+    return;
+  }
+
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = '';
 
@@ -92,6 +101,7 @@ async function showApp() {
   document.getElementById('sbUser').textContent = '👤 ' + email;
 
   await initApp();
+  applyRoleRestrictions();
   appInitialized = true;
 }
 

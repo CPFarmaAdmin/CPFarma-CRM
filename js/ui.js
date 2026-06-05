@@ -11,6 +11,8 @@ let activeTab = 'info';
 
 // ── PANEL ─────────────────────────────────────────────────────
 async function openPanel(id) {
+  // Viewers can't open the edit panel
+  if (id && isViewer()) { toast('👁️ Modo solo lectura — no puedes editar registros.', ''); return; }
   editId  = id || null;
   cTags   = [];
   cStatus    = 'new';
@@ -312,6 +314,7 @@ function renderHistory() {
 
 // ── SAVE ──────────────────────────────────────────────────────
 async function saveRecord() {
+  if (!canEdit()) { toast('No tienes permisos para guardar registros.', 'er'); return; }
   const company = getVal('f-company');
   const email   = getVal('f-email');
   if (!company) { toast('❌ El nombre es obligatorio', 'er'); return; }
@@ -440,6 +443,7 @@ async function saveRecord() {
 
 // ── DELETE ────────────────────────────────────────────────────
 async function deleteRecord(id) {
+  if (!canEdit()) { toast('No tienes permisos para eliminar registros.', 'er'); return; }
   const r = records.find(x => x.id === id);
   if (!r) return;
   if (!confirm(`¿Eliminar "${r.company}"? Esta acción no se puede deshacer.`)) return;

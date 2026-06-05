@@ -1549,3 +1549,174 @@ tr.row-inactive:hover { opacity: 1; }
 /* ═══ Website field ═══════════════════════════════════════════ */
 #f-website { font-family: var(--fm); color: var(--acc); }
 #f-website:placeholder-shown { color: var(--ink3); font-family: inherit; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ROLES & USERS PANEL
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Sidebar role badge ──────────────────────────────────────── */
+.sb-role-wrap {
+  padding: 6px 12px 2px;
+}
+.sb-role-badge {
+  display: inline-block;
+  font-size: .62rem;
+  font-family: var(--fm);
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.sb-role-admin     { background: rgba(59,130,246,.22);  color: #93c5fd; }
+.sb-role-comercial { background: rgba(16,185,129,.18);  color: #6ee7b7; }
+.sb-role-viewer    { background: rgba(255,255,255,.08); color: rgba(255,255,255,.38); }
+
+/* ── Viewer read-only banner ─────────────────────────────────── */
+.viewer-banner {
+  background: #fefce8;
+  border: 1px solid #fde047;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: .8rem;
+  color: #713f12;
+  margin: 4px 0 2px;
+}
+
+/* ── Users modal — list ──────────────────────────────────────── */
+.users-list { margin-bottom: 14px; }
+
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: white;
+  margin-bottom: 6px;
+  transition: border-color var(--transition);
+}
+.user-row:hover { border-color: var(--border2); }
+.user-row.user-inactive { opacity: .55; background: var(--paper2); }
+
+/* Avatar circle */
+.user-avatar {
+  width: 38px; height: 38px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fh); font-weight: 700; font-size: .9rem;
+  color: white;
+  flex-shrink: 0;
+  letter-spacing: -.02em;
+}
+.uav-admin     { background: #3b82f6; }
+.uav-comercial { background: #10b981; }
+.uav-viewer    { background: #6b7280; }
+
+/* User info */
+.user-info { flex: 1; min-width: 0; }
+.user-name {
+  font-weight: 600;
+  font-size: .84rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.user-email {
+  font-size: .73rem;
+  color: var(--ink3);
+  font-family: var(--fm);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Inline badges inside user name */
+.user-you {
+  font-size: .6rem; font-weight: 700;
+  background: var(--acc-l); color: var(--acc);
+  padding: 1px 7px; border-radius: 20px;
+  font-family: var(--fm);
+}
+.user-suspended {
+  font-size: .6rem; font-weight: 700;
+  background: #fef2f2; color: var(--c-lost);
+  padding: 1px 7px; border-radius: 20px;
+  font-family: var(--fm);
+}
+
+/* Role selector cell */
+.user-role-cell { min-width: 155px; }
+.user-role-select {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  font-size: .8rem;
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+.user-role-select:hover  { border-color: var(--border2); }
+.user-role-select:focus  { border-color: var(--acc); outline: none; }
+
+/* Action buttons cell */
+.user-actions-cell {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.user-btn-suspend { color: var(--c-lost) !important; }
+
+/* Role tags (used inline in list and legend) */
+.role-tag {
+  display: inline-block;
+  font-size: .75rem; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.role-tag.role-admin     { background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; }
+.role-tag.role-comercial { background: #f0fdf4; color: #15803d; border: 1.5px solid #bbf7d0; }
+.role-tag.role-viewer    { background: var(--paper2); color: var(--ink3); border: 1.5px solid var(--border); }
+
+/* ── Roles legend ────────────────────────────────────────────── */
+.roles-legend {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--paper);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.roles-legend-title {
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  margin-bottom: 10px;
+  font-family: var(--fm);
+}
+.role-legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: .78rem;
+  color: var(--ink2);
+  line-height: 1.45;
+  margin-bottom: 7px;
+}
+.role-legend-item:last-child { margin-bottom: 0; }
+
+/* ── Invite / create form ────────────────────────────────────── */
+.invite-form-section {
+  background: var(--paper);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}

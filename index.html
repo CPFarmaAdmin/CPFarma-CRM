@@ -27,6 +27,20 @@
   </div>
 </div>
 
+<!-- SUSPENDED / INACTIVE SCREEN -->
+<div id="inactiveScreen" class="login-screen" style="display:none">
+  <div class="login-card" style="text-align:center">
+    <div class="login-logo" style="justify-content:center;margin-bottom:20px">
+      <div class="login-logo-mark">CP</div>
+      <div><span class="login-brand">CP Farma</span><span class="login-sub">CRM · Outreach</span></div>
+    </div>
+    <div style="font-size:2.5rem;margin-bottom:12px">🔒</div>
+    <h2 style="font-family:var(--fh);font-size:1.25rem;margin-bottom:10px">Acceso suspendido</h2>
+    <p style="color:var(--ink3);line-height:1.6;margin-bottom:24px">Tu cuenta está suspendida o pendiente de activación.<br>Contacta con el administrador para recuperar el acceso.</p>
+    <button class="btn btn-ghost btn-full" onclick="doLogout()">⎋ Volver al inicio</button>
+  </div>
+</div>
+
 <!-- APP -->
 <div id="app" class="app" style="display:none">
   <aside class="sidebar">
@@ -36,7 +50,13 @@
     </div>
     <div class="sb-stats" id="sbStats"></div>
     <nav class="sb-nav" id="sbNav"></nav>
-    <div class="sb-footer"><button class="sb-logout" onclick="doLogout()">⎋ Cerrar sesión</button></div>
+    <div class="sb-footer">
+      <div class="sb-role-wrap"><span id="sbRoleBadge" class="sb-role-badge"></span></div>
+      <button class="nb role-admin" onclick="openUsersPanel()" style="display:none">
+        <span class="ni">👥</span><span class="nt">Gestionar usuarios</span>
+      </button>
+      <button class="sb-logout" onclick="doLogout()">⎋ Cerrar sesión</button>
+    </div>
   </aside>
 
   <main class="main-content">
@@ -51,10 +71,10 @@
       </div>
       <div class="topbar-right">
         <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar…" oninput="renderBothTables()">
-        <button class="btn btn-ghost btn-sm" onclick="openImport()">📥 Importar</button>
+        <button class="btn btn-ghost btn-sm role-edit" onclick="openImport()" style="display:none">📥 Importar</button>
         <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇️ Exportar</button>
-        <button class="btn btn-send btn-sm" onclick="openSendModal()">✉️ Enviar emails</button>
-        <button class="btn btn-primary btn-sm" id="btnNew" onclick="openPanel()">+ Nuevo</button>
+        <button class="btn btn-send btn-sm role-edit" onclick="openSendModal()" style="display:none">✉️ Enviar emails</button>
+        <button class="btn btn-primary btn-sm role-edit" id="btnNew" onclick="openPanel()" style="display:none">+ Nuevo</button>
       </div>
     </div>
 
@@ -119,6 +139,9 @@
       </div><!-- end filterbar-dropdowns-row -->
     </div>
 
+    <div id="viewerBanner" class="viewer-banner" style="display:none">
+      👁️ <strong>Modo solo lectura</strong> — Puedes ver y filtrar registros, pero no editarlos. Contacta con el administrador si necesitas acceso de edición.
+    </div>
     <div id="followupBanner" class="followup-banner" style="display:none"></div>
 
     <!-- TABLES -->
@@ -176,9 +199,9 @@
 
     <div class="bulk-bar" id="bulkBar" style="display:none">
       <span id="bulkCount"></span>
-      <button class="btn btn-ghost btn-sm" onclick="openMoveModal()">📁 Mover</button>
-      <button class="btn btn-send btn-sm" onclick="bulkSend()">✉️ Email</button>
-      <button class="btn btn-danger btn-sm" onclick="bulkDelete()">🗑 Eliminar</button>
+      <button class="btn btn-ghost btn-sm role-edit" onclick="openMoveModal()" style="display:none">📁 Mover</button>
+      <button class="btn btn-send btn-sm role-edit" onclick="bulkSend()" style="display:none">✉️ Email</button>
+      <button class="btn btn-danger btn-sm role-edit" onclick="bulkDelete()" style="display:none">🗑 Eliminar</button>
       <button class="btn btn-ghost btn-sm" onclick="clearSelection()">✕</button>
     </div>
   </main>
@@ -709,6 +732,72 @@
   </div>
 </div>
 
+<!-- USERS MODAL -->
+<div class="modal-wrap" id="usersModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-icon">👥</div>
+      <h3>Gestión de usuarios</h3>
+      <button class="close-btn" onclick="closeUsersPanel()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Invite / create form (hidden by default) -->
+      <div id="inviteForm" class="invite-form-section" style="display:none">
+        <div class="form-section-title" style="margin-bottom:12px">➕ Crear nuevo usuario</div>
+        <div class="form-grid">
+          <div><label>Nombre</label><input type="text" id="inviteName" placeholder="Nombre del usuario"></div>
+          <div><label>Email <span class="req">*</span></label><input type="email" id="inviteEmail" placeholder="usuario@empresa.com"></div>
+          <div><label>Contraseña temporal <span class="req">*</span></label><input type="password" id="invitePassword" placeholder="Mínimo 6 caracteres"></div>
+          <div><label>Rol</label>
+            <select id="inviteRole">
+              <option value="admin">🔑 Administrador</option>
+              <option value="comercial" selected>💼 Comercial</option>
+              <option value="viewer">👁️ Solo lectura</option>
+            </select>
+          </div>
+        </div>
+        <div id="inviteError" class="login-error" style="display:none;margin-top:8px"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-primary btn-sm" id="inviteBtn" onclick="doInviteUser()">+ Crear usuario</button>
+          <button class="btn btn-ghost btn-sm" onclick="closeInviteUser()">Cancelar</button>
+        </div>
+        <div class="info-box" style="margin-top:10px;font-size:.78rem">
+          ℹ️ El usuario podrá iniciar sesión con estas credenciales inmediatamente. Comparte los datos de acceso de forma segura.<br>
+          Para evitar que tu sesión se interrumpa al crear usuarios, asegúrate de tener activado <strong>"Confirm email"</strong> en Supabase → Authentication → Settings.
+        </div>
+        <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)">
+      </div>
+
+      <!-- Users list -->
+      <div class="users-list" id="usersList"></div>
+
+      <!-- Roles legend -->
+      <div class="roles-legend">
+        <div class="roles-legend-title">Descripción de roles</div>
+        <div class="role-legend-item">
+          <span class="role-tag role-admin">🔑 Administrador</span>
+          <span>Acceso total. Puede gestionar usuarios, cambiar roles y realizar todas las acciones.</span>
+        </div>
+        <div class="role-legend-item">
+          <span class="role-tag role-comercial">💼 Comercial</span>
+          <span>Puede crear, editar y eliminar contactos, enviar emails e importar datos. No gestiona usuarios.</span>
+        </div>
+        <div class="role-legend-item">
+          <span class="role-tag role-viewer">👁️ Solo lectura</span>
+          <span>Solo puede ver, buscar y filtrar registros. No puede editar ni crear nada.</span>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary btn-sm" onclick="openInviteUser()">👤 + Nuevo usuario</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost" onclick="closeUsersPanel()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- IMPORT MODAL -->
 <div class="modal-wrap" id="impModal">
   <div class="modal modal-lg">
@@ -763,6 +852,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
 <script src="js/db.js"></script>
+<script src="js/users.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
 <script src="js/ui.js"></script>

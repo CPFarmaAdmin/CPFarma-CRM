@@ -187,20 +187,22 @@ function renderSidebar() {
     </button>
     <div class="sb-section" style="margin-top:8px">
       Carpetas
-      <button onclick="openFolderModal()" style="float:right;background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);border-radius:3px;padding:1px 6px;cursor:pointer;font-size:.62rem">+ Nueva</button>
+      ${canEdit() ? `<button onclick="openFolderModal()" style="float:right;background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.6);border-radius:3px;padding:1px 6px;cursor:pointer;font-size:.62rem">+ Nueva</button>` : ''}
     </div>
     ${folders.map(f => `
       <button class="nb ${activeFolder===f.id?'active':''}" onclick="setFolder('${f.id}');setView(activeView)">
         <span class="ni">${f.icon||'📁'}</span><span class="nt">${f.name}</span><span class="nk">${fcCount(f.id)}</span>
-        <span class="folder-actions">
+        ${canEdit() ? `<span class="folder-actions">
           <span class="folder-btn" onclick="event.stopPropagation();editFolder('${f.id}')">✏️</span>
           <span class="folder-btn" onclick="event.stopPropagation();deleteFolder('${f.id}')">🗑</span>
-        </span>
+        </span>` : ''}
       </button>`).join('')}
     <div class="sb-section" style="margin-top:8px">Herramientas</div>
+    ${canEdit() ? `
     <button class="nb" onclick="openSendModal()"><span class="ni">✉️</span><span class="nt">Enviar emails</span></button>
     <button class="nb" onclick="openTplModal()"><span class="ni">📝</span><span class="nt">Plantillas</span></button>
     <button class="nb" onclick="openImport()"><span class="ni">📥</span><span class="nt">Importar Excel</span></button>
+    ` : ''}
     <button class="nb" onclick="exportCSV()"><span class="ni">⬇️</span><span class="nt">Exportar Excel</span></button>
   `;
 }
@@ -408,11 +410,11 @@ function renderProspectsTable(rows) {
       }</td>
       <td>${renderPrio(r.priority)}</td>
       <td>${renderFollowup(r.next_followup)}</td>
-      <td><div class="row-actions">
+      <td>${canEdit() ? `<div class="row-actions">
         <button class="row-btn" onclick="event.stopPropagation();quickSend('${r.id}')" title="Enviar">✉️</button>
         <button class="row-btn" onclick="event.stopPropagation();openEdit('${r.id}')">✏️</button>
         <button class="row-btn danger" onclick="event.stopPropagation();deleteRecord('${r.id}')">🗑</button>
-      </div></td>
+      </div>` : ''}</td>
     </tr>`;
   }).join('');
 }
@@ -448,11 +450,11 @@ function renderClientsTable(rows) {
       }</td>
       <td class="tc-date">${r.sent_date?fmtDate(r.sent_date):'<span style="font-style:italic;color:var(--ink3)">—</span>'}</td>
       <td>${renderFollowup(r.next_followup)}</td>
-      <td><div class="row-actions">
+      <td>${canEdit() ? `<div class="row-actions">
         <button class="row-btn" onclick="event.stopPropagation();quickSend('${r.id}')" title="Enviar">✉️</button>
         <button class="row-btn" onclick="event.stopPropagation();openEdit('${r.id}')">✏️</button>
         <button class="row-btn danger" onclick="event.stopPropagation();deleteRecord('${r.id}')">🗑</button>
-      </div></td>
+      </div>` : ''}</td>
     </tr>`;
   }).join('');
 }
@@ -529,6 +531,7 @@ function updateBulkBar() {
   document.getElementById('bulkCount').textContent=`${n} seleccionado${n!==1?'s':''}`;
 }
 async function bulkDelete() {
+  if (!canEdit()) { toast('No tienes permisos para eliminar.', 'er'); return; }
   if(!selectedIds.size)return;if(!confirm(`¿Eliminar ${selectedIds.size} contactos?`))return;
   try{await dbDeleteContacts([...selectedIds]);await loadContacts();selectedIds.clear();renderSidebar();renderBothTables();renderFollowupBanner();toast('🗑 Eliminados','er');}
   catch(err){toast('Error: '+err.message,'er');}
