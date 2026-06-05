@@ -181,6 +181,11 @@ function _renderUsersList() {
         }
       </div>
       <div class="user-actions-cell">
+        <button class="btn btn-ghost btn-sm pwd-btn"
+          onclick="openPasswordModal('${u.user_id}','${escH(u.email||'')}')"
+          title="${isMe ? 'Cambiar mi contraseña' : 'Enviar email de recuperación'}">
+          🔑
+        </button>
         ${!isActive
           ? `<button class="btn btn-primary btn-sm" onclick="activateUser('${u.user_id}')">✅ Activar</button>`
           : (!isMe ? `<button class="btn btn-ghost btn-sm user-btn-suspend" onclick="suspendUser('${u.user_id}','${escH(u.name || u.email || '')}')">🚫 Suspender</button>` : '')
@@ -256,6 +261,78 @@ async function deleteUserProfile(userId, name) {
   } catch (err) {
     toast('Error: ' + err.message, 'er');
   }
+}
+
+// ── CHANGE / RESET PASSWORD ───────────────────────────────────
+
+function openPasswordModal(targetUserId, targetEmail) {
+  // targetUserId === currentUser.id → own password change (direct)
+  // else → send recovery email to that user
+  const isMe = !targetUserId || targetUserId === currentUser.id;
+  const modal = document.getElementById('passwordModal');
+  document.getElementById('pwdError').style.display = 'none';
+  document.getElementById('pwdNewWrap').style.display = isMe ? '' : 'none';
+  document.getElementById('pwdConfirmWrap').style.display = isMe ? '' : 'none';
+  document.getElementById('pwdEmailInfo').style.display = isMe ? 'none' : '';
+  document.getElementById('pwdNew').value = '';
+  document.getElementById('pwdConfirm').value = '';
+  if (!isMe) {
+    document.getElementById('pwdEmailText').textContent = targetEmail || '';
+  }
+  modal.dataset.targetUser  = targetUserId  || '';
+  modal.dataset.targetEmail = targetEmail   || '';
+  modal.dataset.isMe        = isMe ? '1' : '0';
+  modal.classList.add('open');
+  if (isMe) setTimeout(() => document.getElementById('pwdNew').focus(), 50);
+}
+
+function closePasswordModal() {
+  document.getElementById('passwordModal').classList.remove('open');
+}
+
+async function doChangePassword() {
+  const modal  = document.getElementById('passwordModal');
+  const isMe   = modal.dataset.isMe === '1';
+  const email  = modal.dataset.targetEmail;
+  const errEl  = document.getElementById('pwdError');
+  const btn    = document.getElementById('pwdBtn');
+
+  errEl.style.display = 'none';
+
+  if (isMe) {
+    const np = document.getElementById('pwdNew').value;
+    const cp = document.getElementById('pwdConfirm').value;
+    if (!np || np.length < 6) {
+      errEl.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+      errEl.style.display = ''; return;
+    }
+    if (np !== cp) {
+      errEl.textContent = 'Las contraseñas no coinciden.';
+      errEl.style.display = ''; return;
+    }
+    btn.textContent = 'Guardando…'; btn.disabled = true;
+    try {
+      const { error } = await db.auth.updateUser({ password: np });
+      if (error) throw error;
+      closePasswordModal();
+      toast('✅ Contraseña actualizada', 'ok');
+    } catch(err) {
+      errEl.textContent = err.message; errEl.style.display = '';
+    }
+  } else {
+    btn.textContent = 'Enviando…'; btn.disabled = true;
+    try {
+      const { error } = await db.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + window.location.pathname,
+      });
+      if (error) throw error;
+      closePasswordModal();
+      toast(`📧 Email de recuperación enviado a ${email}`, 'ok');
+    } catch(err) {
+      errEl.textContent = err.message; errEl.style.display = '';
+    }
+  }
+  btn.textContent = 'Confirmar'; btn.disabled = false;
 }
 
 // ── INVITE / CREATE USER ──────────────────────────────────────

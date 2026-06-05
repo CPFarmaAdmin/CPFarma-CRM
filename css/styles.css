@@ -1712,6 +1712,16 @@ tr.row-inactive:hover { opacity: 1; }
 }
 .role-legend-item:last-child { margin-bottom: 0; }
 
+/* ── Password button in user rows ───────────────────────────── */
+.pwd-btn {
+  padding: 4px 8px !important;
+  font-size: .85rem;
+  min-width: 32px;
+  color: var(--ink3) !important;
+  border-color: var(--border) !important;
+}
+.pwd-btn:hover { color: var(--acc) !important; border-color: var(--acc) !important; }
+
 /* ── Modal entity name subtitle ──────────────────────────────── */
 .modal-entity-name {
   font-size: .75rem;

@@ -55,6 +55,9 @@
       <button class="nb role-admin" onclick="openUsersPanel()" style="display:none">
         <span class="ni">👥</span><span class="nt">Gestionar usuarios</span>
       </button>
+      <button class="nb" onclick="openPasswordModal()">
+        <span class="ni">🔑</span><span class="nt">Cambiar contraseña</span>
+      </button>
       <button class="sb-logout" onclick="doLogout()">⎋ Cerrar sesión</button>
     </div>
   </aside>
@@ -729,6 +732,43 @@
     <div class="modal-header"><div class="modal-icon">📁</div><h3>Mover a carpeta</h3><button class="close-btn" onclick="closeMoveModal()">✕</button></div>
     <div class="modal-body"><div id="moveFolderList"></div></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeMoveModal()">Cancelar</button></div>
+  </div>
+</div>
+
+<!-- PASSWORD MODAL -->
+<div class="modal-wrap" id="passwordModal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-icon">🔑</div>
+      <h3>Contraseña</h3>
+      <button class="close-btn" onclick="closePasswordModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Own password: direct change -->
+      <div id="pwdNewWrap" class="form-group">
+        <label>Nueva contraseña <span class="req">*</span></label>
+        <input type="password" id="pwdNew" placeholder="Mínimo 6 caracteres"
+          onkeydown="if(event.key==='Enter')document.getElementById('pwdConfirm').focus()">
+      </div>
+      <div id="pwdConfirmWrap" class="form-group">
+        <label>Confirmar contraseña <span class="req">*</span></label>
+        <input type="password" id="pwdConfirm" placeholder="Repite la contraseña"
+          onkeydown="if(event.key==='Enter')doChangePassword()">
+      </div>
+      <!-- Other user: recovery email -->
+      <div id="pwdEmailInfo" style="display:none">
+        <div class="info-box">
+          📧 Se enviará un enlace de recuperación de contraseña a:<br>
+          <strong id="pwdEmailText" style="font-family:var(--fm);color:var(--acc)"></strong><br><br>
+          El usuario recibirá un email con un enlace para establecer su nueva contraseña.
+        </div>
+      </div>
+      <div id="pwdError" class="login-error" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closePasswordModal()">Cancelar</button>
+      <button class="btn btn-primary" id="pwdBtn" onclick="doChangePassword()">Confirmar</button>
+    </div>
   </div>
 </div>
 
