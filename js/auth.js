@@ -100,16 +100,10 @@ async function showApp() {
   const email = currentUser?.email || '';
   document.getElementById('sbUser').textContent = '👤 ' + email;
 
-  // Brand name and logo from config
-  if (typeof ORG_NAME !== 'undefined') {
-    const nameEl = document.getElementById('sbBrandName');
-    const logoEl = document.getElementById('sbLogo');
-    if (nameEl) nameEl.textContent = ORG_NAME;
-    if (logoEl) logoEl.textContent = typeof ORG_LOGO !== 'undefined' ? ORG_LOGO : ORG_NAME.slice(0, 2).toUpperCase();
-  }
-
   await initApp();
   applyRoleRestrictions();
+  // Load org name from DB (overrides config.js value if set)
+  loadOrgName();
   appInitialized = true;
 }
 

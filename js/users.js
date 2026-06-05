@@ -107,27 +107,81 @@ function showInactiveScreen() {
   if (s) s.style.display = '';
 }
 
-// ── OPEN / CLOSE USERS PANEL ──────────────────────────────────
+// ── ORG SETTINGS ──────────────────────────────────────────────
+let _currentOrgName = '';
+
+async function loadOrgName() {
+  try {
+    const settings = await dbGetOrgSettings();
+    const name = settings?.name || (typeof ORG_NAME !== 'undefined' ? ORG_NAME : 'Mi Empresa');
+    _currentOrgName = name;
+    _applyOrgName(name);
+  } catch(e) {
+    _currentOrgName = typeof ORG_NAME !== 'undefined' ? ORG_NAME : 'Mi Empresa';
+  }
+}
+
+function _applyOrgName(name) {
+  const brandEl = document.getElementById('sbBrandName');
+  const logoEl  = document.getElementById('sbLogo');
+  if (brandEl) brandEl.textContent = name;
+  if (logoEl)  logoEl.textContent  = name.slice(0, 2).toUpperCase();
+}
+
+async function saveOrgName() {
+  const input = document.getElementById('orgNameInput');
+  const name  = input?.value?.trim();
+  const errEl = document.getElementById('orgNameError');
+  errEl.style.display = 'none';
+  if (!name) { errEl.textContent = 'El nombre no puede estar vacío.'; errEl.style.display = ''; return; }
+  const btn = document.getElementById('orgNameBtn');
+  btn.textContent = 'Guardando…'; btn.disabled = true;
+  try {
+    await dbSaveOrgSettings(name);
+    _currentOrgName = name;
+    _applyOrgName(name);
+    _updateModalOrgHeader();
+    dbLogActivity('org_name_changed', 'org', null, name, { name });
+    toast(`✅ Nombre actualizado a "${name}"`, 'ok');
+  } catch(err) {
+    errEl.textContent = err.message; errEl.style.display = '';
+  }
+  btn.textContent = '💾 Guardar'; btn.disabled = false;
+}
+
+function _updateModalOrgHeader() {
+  const orgEl = document.getElementById('usersModalOrg');
+  if (orgEl) {
+    orgEl.innerHTML = _currentOrgName
+      ? `🏢 <strong>${escH(_currentOrgName)}</strong> · <span style="color:var(--ink3)">Admin: ${escH(currentUser?.email || '')}</span>`
+      : '';
+  }
+}
+
+// ── OPEN / CLOSE CONTROL PANEL ────────────────────────────────
 async function openUsersPanel() {
   if (!isAdmin()) { toast('Solo los administradores pueden gestionar usuarios.', 'er'); return; }
   document.getElementById('usersModal').classList.add('open');
-
-  // Show entity name + current admin in modal header
-  const orgEl = document.getElementById('usersModalOrg');
-  if (orgEl) {
-    const orgName = typeof ORG_NAME !== 'undefined' ? ORG_NAME : '';
-    orgEl.innerHTML = orgName
-      ? `🏢 <strong>${escH(orgName)}</strong> · <span style="color:var(--ink3)">Administrando como ${escH(currentUser?.email || '')}</span>`
-      : '';
-  }
-
-  await _loadAllUsers();
+  _updateModalOrgHeader();
+  switchControlTab('users');
 }
 
 function closeUsersPanel() {
   document.getElementById('usersModal').classList.remove('open');
   const f = document.getElementById('inviteForm');
   if (f) f.style.display = 'none';
+}
+
+// ── CONTROL PANEL TABS ────────────────────────────────────────
+function switchControlTab(tab) {
+  document.querySelectorAll('.ctrl-tab-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.ctrl-tab-pane').forEach(p =>
+    p.style.display = p.dataset.pane === tab ? '' : 'none');
+
+  if (tab === 'users')  _loadAllUsers();
+  if (tab === 'logs')   loadLogsTab();
+  if (tab === 'config') _loadConfigTab();
 }
 
 // ── LOAD & RENDER USERS LIST ──────────────────────────────────
@@ -208,8 +262,11 @@ async function changeUserRole(userId, newRole) {
       .eq('user_id', userId);
     if (error) throw error;
     const u = allUserProfiles.find(x => x.user_id === userId);
+    const oldRole = u?.role;
     if (u) u.role = newRole;
     _renderUsersList();
+    dbLogActivity('user_role_changed', 'user', userId, u?.email||'',
+      { from: oldRole, to: newRole });
     toast(`✅ Rol cambiado a ${ROLE_LABELS_FULL[newRole]}`, 'ok');
   } catch (err) {
     toast('Error al cambiar rol: ' + err.message, 'er');
@@ -227,6 +284,7 @@ async function activateUser(userId) {
     const u = allUserProfiles.find(x => x.user_id === userId);
     if (u) u.is_active = true;
     _renderUsersList();
+    dbLogActivity('user_activated', 'user', userId, u?.email||'');
     toast('✅ Usuario activado', 'ok');
   } catch (err) {
     toast('Error: ' + err.message, 'er');
@@ -244,6 +302,7 @@ async function suspendUser(userId, name) {
     const u = allUserProfiles.find(x => x.user_id === userId);
     if (u) u.is_active = false;
     _renderUsersList();
+    dbLogActivity('user_suspended', 'user', userId, u?.email||name);
     toast('🚫 Usuario suspendido', 'info');
   } catch (err) {
     toast('Error: ' + err.message, 'er');
@@ -255,6 +314,7 @@ async function deleteUserProfile(userId, name) {
   try {
     const { error } = await db.from('user_profiles').delete().eq('user_id', userId);
     if (error) throw error;
+    dbLogActivity('user_profile_deleted', 'user', userId, name);
     allUserProfiles = allUserProfiles.filter(u => u.user_id !== userId);
     _renderUsersList();
     toast('🗑 Acceso eliminado', 'er');
@@ -348,6 +408,154 @@ async function doChangePassword() {
     }
   }
   btn.textContent = 'Confirmar'; btn.disabled = false;
+}
+
+// ── LOGS VIEWER ───────────────────────────────────────────────
+const LOG_META = {
+  contact_created:      { label: 'Creó registro',             icon: '✅', cls: 'lm-create' },
+  contact_updated:      { label: 'Editó registro',            icon: '✏️', cls: 'lm-update' },
+  status_changed:       { label: 'Cambió estado',             icon: '🔄', cls: 'lm-status' },
+  contact_deleted:      { label: 'Eliminó registro',          icon: '🗑️', cls: 'lm-delete' },
+  contacts_deleted:     { label: 'Eliminación masiva',        icon: '🗑️', cls: 'lm-delete' },
+  email_sent:           { label: 'Envió emails',              icon: '📤', cls: 'lm-email'  },
+  contacts_imported:    { label: 'Importó contactos',         icon: '📥', cls: 'lm-import' },
+  user_created:         { label: 'Creó usuario',              icon: '👤', cls: 'lm-admin'  },
+  user_role_changed:    { label: 'Cambió rol',                icon: '🔑', cls: 'lm-admin'  },
+  user_suspended:       { label: 'Suspendió usuario',         icon: '🚫', cls: 'lm-admin'  },
+  user_activated:       { label: 'Activó usuario',            icon: '✅', cls: 'lm-admin'  },
+  user_profile_deleted: { label: 'Eliminó acceso',            icon: '❌', cls: 'lm-admin'  },
+  password_changed:     { label: 'Cambió contraseña',         icon: '🔑', cls: 'lm-admin'  },
+  org_name_changed:     { label: 'Cambió nombre de empresa',  icon: '🏢', cls: 'lm-admin'  },
+};
+
+let _logsOffset = 0;
+let _logsUserFilter   = '';
+let _logsActionFilter = '';
+let _logsData = [];
+
+async function loadLogsTab(reset = true) {
+  if (reset) { _logsOffset = 0; _logsData = []; }
+
+  const wrap = document.getElementById('logsTableWrap');
+  const more = document.getElementById('logsLoadMore');
+  if (wrap) wrap.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3);font-style:italic">Cargando…</div>';
+
+  // Populate user filter dropdown
+  _populateLogsUserFilter();
+
+  try {
+    _logsUserFilter   = document.getElementById('logsFilterUser')?.value   || '';
+    _logsActionFilter = document.getElementById('logsFilterAction')?.value || '';
+
+    const rows = await dbGetActivityLogs({
+      limit:  50,
+      offset: _logsOffset,
+      userId: _logsUserFilter || null,
+      action: _logsActionFilter || null,
+    });
+
+    if (reset) _logsData = rows;
+    else        _logsData = [..._logsData, ...rows];
+
+    _renderLogsTable();
+    if (more) more.style.display = rows.length === 50 ? '' : 'none';
+    _logsOffset += rows.length;
+  } catch(err) {
+    if (wrap) wrap.innerHTML = `<div style="padding:20px;color:var(--c-lost)">Error: ${escH(err.message)}</div>`;
+  }
+}
+
+function _populateLogsUserFilter() {
+  const sel = document.getElementById('logsFilterUser');
+  if (!sel || sel.dataset.populated) return;
+  sel.innerHTML = '<option value="">Todos los usuarios</option>'
+    + allUserProfiles.map(u =>
+        `<option value="${u.user_id}">${escH(u.name || u.email)}</option>`
+      ).join('');
+  sel.dataset.populated = '1';
+}
+
+function _renderLogsTable() {
+  const wrap = document.getElementById('logsTableWrap');
+  if (!wrap) return;
+  if (!_logsData.length) {
+    wrap.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3);font-style:italic">Sin actividad registrada aún.</div>';
+    return;
+  }
+
+  wrap.innerHTML = `
+    <table class="logs-table">
+      <thead><tr>
+        <th>Fecha</th>
+        <th>Usuario</th>
+        <th>Acción</th>
+        <th>Registro</th>
+        <th>Detalles</th>
+      </tr></thead>
+      <tbody>${_logsData.map(_renderLogRow).join('')}</tbody>
+    </table>`;
+}
+
+function _renderLogRow(log) {
+  const meta = LOG_META[log.action] || { label: log.action, icon: '•', cls: '' };
+  const date = log.created_at ? _fmtLogDate(log.created_at) : '—';
+  const user = escH(log.user_email?.split('@')[0] || '—');
+  const name = escH(log.entity_name || '—');
+  const det  = _renderLogDetails(log);
+  return `<tr>
+    <td class="log-date">${date}</td>
+    <td class="log-user" title="${escH(log.user_email||'')}">${user}</td>
+    <td><span class="log-action-badge ${meta.cls}">${meta.icon} ${meta.label}</span></td>
+    <td class="log-name">${name}</td>
+    <td class="log-detail">${det}</td>
+  </tr>`;
+}
+
+function _renderLogDetails(log) {
+  const d = log.details;
+  if (!d) return '';
+  if (log.action === 'status_changed') {
+    const from = _statusLabel(d.from, d.type);
+    const to   = _statusLabel(d.to,   d.type);
+    return `${from} → ${to}`;
+  }
+  if (log.action === 'email_sent')      return `${d.count || 0} destinatarios · ${escH(d.subject||'')}`.slice(0, 60);
+  if (log.action === 'contacts_imported') return `+${d.added||0} nuevos, ${d.merged||0} actualizados`;
+  if (log.action === 'contacts_deleted')  return `${d.count||0} registros`;
+  if (log.action === 'user_role_changed') return `${d.from} → ${d.to}`;
+  if (log.action === 'user_created')      return `Rol: ${d.role||''}`;
+  if (log.action === 'org_name_changed')  return escH(d.name||'');
+  return '';
+}
+
+function _statusLabel(s, type) {
+  if (!s) return '—';
+  const allLabels = {
+    new:'Sin contactar', first_contact:'Primer contacto', no_response:'Sin responder',
+    contact_obtained:'Datos obtenidos', info_sent:'Info enviada', demo_scheduled:'Demo agendada',
+    demo_done:'Demo realizada', budget_sent:'Presupuesto enviado', followup:'Seguimiento',
+    waiting_approval:'Esperando aprobación', won:'Ganado', rejected:'Rechazado',
+    ok:'Sin incidencias', incident:'Incidencia', renewal:'Renovación', churned:'Baja', lost:'Inactivo',
+  };
+  return allLabels[s] || s;
+}
+
+function _fmtLogDate(iso) {
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2,'0');
+  return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+async function loadMoreLogs() {
+  await loadLogsTab(false);
+}
+
+// ── CONFIG TAB ────────────────────────────────────────────────
+function _loadConfigTab() {
+  const input = document.getElementById('orgNameInput');
+  if (input) input.value = _currentOrgName;
+  const errEl = document.getElementById('orgNameError');
+  if (errEl) errEl.style.display = 'none';
 }
 
 // ── INVITE / CREATE USER ──────────────────────────────────────
@@ -444,6 +652,7 @@ async function doInviteUser() {
 
     if (profileError) throw profileError;
 
+    dbLogActivity('user_created', 'user', authData.user.id, email, { role });
     closeInviteUser();
     await _loadAllUsers();
     toast(`✅ Usuario ${email} creado como ${ROLE_LABELS_FULL[role]}`, 'ok');

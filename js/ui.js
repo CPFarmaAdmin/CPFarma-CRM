@@ -317,6 +317,8 @@ async function saveRecord() {
   if (!canEdit()) { toast('No tienes permisos para guardar registros.', 'er'); return; }
   const company = getVal('f-company');
   const email   = getVal('f-email');
+  // Snapshot old status before building the new record (for log comparison)
+  const _oldRecord = editId ? records.find(r => r.id === editId) : null;
   if (!company) { toast('❌ El nombre es obligatorio', 'er'); return; }
   if (!email)   { toast('❌ El email es obligatorio', 'er'); return; }
 
@@ -413,6 +415,20 @@ async function saveRecord() {
     }
     // ─────────────────────────────────────────────────────────────────────────
 
+    // ── ACTIVITY LOG ─────────────────────────────────────────────
+    const _isClient  = record.type === 'client';
+    const _newStatus = _isClient ? record.client_status : record.status;
+    const _oldStatus = _oldRecord ? (_isClient ? _oldRecord.client_status : _oldRecord.status) : null;
+    if (!editId) {
+      dbLogActivity('contact_created', 'contact', saved.id, company, { type: record.type });
+    } else if (_oldStatus && _oldStatus !== _newStatus) {
+      dbLogActivity('status_changed', 'contact', saved.id, company,
+        { from: _oldStatus, to: _newStatus, type: record.type });
+    } else {
+      dbLogActivity('contact_updated', 'contact', saved.id, company, { type: record.type });
+    }
+    // ─────────────────────────────────────────────────────────────
+
     // ── OPTIMISTIC UPDATE: update local records[] immediately so the table
     //    refreshes the instant you close the panel, without waiting for a
     //    full DB round-trip via loadContacts().
@@ -449,6 +465,7 @@ async function deleteRecord(id) {
   if (!confirm(`¿Eliminar "${r.company}"? Esta acción no se puede deshacer.`)) return;
   try {
     await dbDeleteContact(id);
+    dbLogActivity('contact_deleted', 'contact', id, r.company, { type: r.type });
     records = records.filter(x => x.id !== id);
     renderSidebar(); renderBothTables(); renderFollowupBanner();
     toast('🗑 Eliminado', 'er');

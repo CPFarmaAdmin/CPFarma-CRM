@@ -53,7 +53,7 @@
     <div class="sb-footer">
       <div class="sb-role-wrap"><span id="sbRoleBadge" class="sb-role-badge"></span></div>
       <button class="nb role-admin" onclick="openUsersPanel()" style="display:none">
-        <span class="ni">👥</span><span class="nt">Gestionar usuarios</span>
+        <span class="ni">🎛️</span><span class="nt">Panel de control</span>
       </button>
       <button class="nb" onclick="openPasswordModal()">
         <span class="ni">🔑</span><span class="nt">Cambiar contraseña</span>
@@ -772,69 +772,113 @@
   </div>
 </div>
 
-<!-- USERS MODAL -->
+<!-- CONTROL PANEL MODAL (Usuarios + Actividad + Configuración) -->
 <div class="modal-wrap" id="usersModal">
-  <div class="modal modal-lg">
+  <div class="modal modal-xl">
     <div class="modal-header">
-      <div class="modal-icon">👥</div>
+      <div class="modal-icon">🎛️</div>
       <div style="flex:1;min-width:0">
-        <h3 style="margin:0">Gestión de usuarios</h3>
+        <h3 style="margin:0">Panel de control</h3>
         <div class="modal-entity-name" id="usersModalOrg"></div>
       </div>
       <button class="close-btn" onclick="closeUsersPanel()">✕</button>
     </div>
-    <div class="modal-body">
 
-      <!-- Invite / create form (hidden by default) -->
-      <div id="inviteForm" class="invite-form-section" style="display:none">
-        <div class="form-section-title" style="margin-bottom:12px">➕ Crear nuevo usuario</div>
-        <div class="form-grid">
-          <div><label>Nombre</label><input type="text" id="inviteName" placeholder="Nombre del usuario"></div>
-          <div><label>Email <span class="req">*</span></label><input type="email" id="inviteEmail" placeholder="usuario@empresa.com"></div>
-          <div><label>Contraseña temporal <span class="req">*</span></label><input type="password" id="invitePassword" placeholder="Mínimo 6 caracteres"></div>
-          <div><label>Rol</label>
-            <select id="inviteRole">
-              <option value="admin">🔑 Administrador</option>
-              <option value="comercial" selected>💼 Comercial</option>
-              <option value="viewer">👁️ Solo lectura</option>
-            </select>
+    <!-- Tab bar -->
+    <div class="ctrl-tabs">
+      <button class="ctrl-tab-btn active" data-tab="users"  onclick="switchControlTab('users')">👥 Usuarios</button>
+      <button class="ctrl-tab-btn"        data-tab="logs"   onclick="switchControlTab('logs')">📋 Actividad</button>
+      <button class="ctrl-tab-btn"        data-tab="config" onclick="switchControlTab('config')">⚙️ Configuración</button>
+    </div>
+
+    <div class="modal-body ctrl-modal-body">
+
+      <!-- ── TAB USUARIOS ── -->
+      <div class="ctrl-tab-pane" data-pane="users">
+        <div id="inviteForm" class="invite-form-section" style="display:none">
+          <div class="form-section-title" style="margin-bottom:12px">➕ Crear nuevo usuario</div>
+          <div class="form-grid">
+            <div><label>Nombre</label><input type="text" id="inviteName" placeholder="Nombre del usuario"></div>
+            <div><label>Email <span class="req">*</span></label><input type="email" id="inviteEmail" placeholder="usuario@empresa.com"></div>
+            <div><label>Contraseña temporal <span class="req">*</span></label><input type="password" id="invitePassword" placeholder="Mínimo 6 caracteres"></div>
+            <div><label>Rol</label>
+              <select id="inviteRole">
+                <option value="admin">🔑 Administrador</option>
+                <option value="comercial" selected>💼 Comercial</option>
+                <option value="viewer">👁️ Solo lectura</option>
+              </select>
+            </div>
           </div>
+          <div id="inviteError" class="login-error" style="display:none;margin-top:8px"></div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn btn-primary btn-sm" id="inviteBtn" onclick="doInviteUser()">+ Crear usuario</button>
+            <button class="btn btn-ghost btn-sm" onclick="closeInviteUser()">Cancelar</button>
+          </div>
+          <div class="info-box" style="margin-top:10px;font-size:.78rem">
+            ℹ️ Para no perder tu sesión al crear usuarios activa <strong>"Confirm email"</strong> en Supabase → Authentication → Settings.
+          </div>
+          <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)">
         </div>
-        <div id="inviteError" class="login-error" style="display:none;margin-top:8px"></div>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn btn-primary btn-sm" id="inviteBtn" onclick="doInviteUser()">+ Crear usuario</button>
-          <button class="btn btn-ghost btn-sm" onclick="closeInviteUser()">Cancelar</button>
+        <div class="users-list" id="usersList"></div>
+        <div class="roles-legend">
+          <div class="roles-legend-title">Descripción de roles</div>
+          <div class="role-legend-item"><span class="role-tag role-admin">🔑 Administrador</span><span>Acceso total + panel de control.</span></div>
+          <div class="role-legend-item"><span class="role-tag role-comercial">💼 Comercial</span><span>Crear, editar, eliminar, enviar emails e importar. Sin panel de control.</span></div>
+          <div class="role-legend-item"><span class="role-tag role-viewer">👁️ Solo lectura</span><span>Solo ver y filtrar registros.</span></div>
         </div>
-        <div class="info-box" style="margin-top:10px;font-size:.78rem">
-          ℹ️ El usuario podrá iniciar sesión con estas credenciales inmediatamente. Comparte los datos de acceso de forma segura.<br>
-          Para evitar que tu sesión se interrumpa al crear usuarios, asegúrate de tener activado <strong>"Confirm email"</strong> en Supabase → Authentication → Settings.
-        </div>
-        <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)">
       </div>
 
-      <!-- Users list -->
-      <div class="users-list" id="usersList"></div>
+      <!-- ── TAB ACTIVIDAD (LOGS) ── -->
+      <div class="ctrl-tab-pane" data-pane="logs" style="display:none">
+        <div class="logs-filters">
+          <select class="filter-select" id="logsFilterUser" onchange="loadLogsTab()">
+            <option value="">Todos los usuarios</option>
+          </select>
+          <select class="filter-select" id="logsFilterAction" onchange="loadLogsTab()">
+            <option value="">Todas las acciones</option>
+            <option value="contact_created">✅ Creó registro</option>
+            <option value="contact_updated">✏️ Editó registro</option>
+            <option value="status_changed">🔄 Cambió estado</option>
+            <option value="contact_deleted">🗑️ Eliminó registro</option>
+            <option value="contacts_deleted">🗑️ Eliminación masiva</option>
+            <option value="email_sent">📤 Envió emails</option>
+            <option value="contacts_imported">📥 Importó contactos</option>
+            <option value="user_created">👤 Creó usuario</option>
+            <option value="user_role_changed">🔑 Cambió rol</option>
+            <option value="user_suspended">🚫 Suspendió usuario</option>
+            <option value="org_name_changed">🏢 Cambió nombre empresa</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('logsFilterUser').value='';document.getElementById('logsFilterUser').dataset.populated='';document.getElementById('logsFilterAction').value='';loadLogsTab()">✕ Limpiar</button>
+          <span style="margin-left:auto;font-size:.72rem;color:var(--ink3);font-family:var(--fm)">Máx. 50 por carga</span>
+        </div>
+        <div id="logsTableWrap" class="logs-table-wrap"></div>
+        <div style="text-align:center;margin-top:10px">
+          <button class="btn btn-ghost btn-sm" id="logsLoadMore" onclick="loadMoreLogs()" style="display:none">Cargar más →</button>
+        </div>
+      </div>
 
-      <!-- Roles legend -->
-      <div class="roles-legend">
-        <div class="roles-legend-title">Descripción de roles</div>
-        <div class="role-legend-item">
-          <span class="role-tag role-admin">🔑 Administrador</span>
-          <span>Acceso total. Puede gestionar usuarios, cambiar roles y realizar todas las acciones.</span>
-        </div>
-        <div class="role-legend-item">
-          <span class="role-tag role-comercial">💼 Comercial</span>
-          <span>Puede crear, editar y eliminar contactos, enviar emails e importar datos. No gestiona usuarios.</span>
-        </div>
-        <div class="role-legend-item">
-          <span class="role-tag role-viewer">👁️ Solo lectura</span>
-          <span>Solo puede ver, buscar y filtrar registros. No puede editar ni crear nada.</span>
+      <!-- ── TAB CONFIGURACIÓN ── -->
+      <div class="ctrl-tab-pane" data-pane="config" style="display:none">
+        <div class="form-section">
+          <div class="form-section-title">🏢 Identidad de la empresa</div>
+          <div class="form-grid" style="margin-top:12px">
+            <div class="fg-full">
+              <label>Nombre de la empresa</label>
+              <input type="text" id="orgNameInput" placeholder="CP Farma, Clínica XYZ…">
+              <div style="font-size:.72rem;color:var(--ink3);margin-top:4px">Aparece en el sidebar y en la cabecera del panel de control.</div>
+            </div>
+          </div>
+          <div id="orgNameError" class="login-error" style="display:none;margin-top:8px"></div>
+          <div style="margin-top:14px">
+            <button class="btn btn-primary btn-sm" id="orgNameBtn" onclick="saveOrgName()">💾 Guardar nombre</button>
+          </div>
         </div>
       </div>
 
     </div>
+
     <div class="modal-footer">
-      <button class="btn btn-primary btn-sm" onclick="openInviteUser()">👤 + Nuevo usuario</button>
+      <button class="btn btn-primary btn-sm" onclick="switchControlTab('users');openInviteUser()">👤 + Nuevo usuario</button>
       <div style="flex:1"></div>
       <button class="btn btn-ghost" onclick="closeUsersPanel()">Cerrar</button>
     </div>

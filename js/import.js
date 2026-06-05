@@ -551,6 +551,9 @@ async function doImport() {
       </div>
       ${errors>0?`<div style="font-size:.75rem;color:var(--ink3);margin-top:6px">Errores: ${errorList.slice(0,5).join(', ')}${errorList.length>5?'…':''}</div>`:''}`;
 
+    dbLogActivity('contacts_imported', 'contact', null, null,
+      { added, merged, errors, mode: impMode });
+
   } catch(err) {
     toast('Error al importar: '+err.message,'er');
     console.error(err);

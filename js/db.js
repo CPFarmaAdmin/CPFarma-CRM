@@ -173,6 +173,53 @@ async function dbSaveSettings(userId, settings) {
   if (error) throw error;
 }
 
+// ── ACTIVITY LOGS ─────────────────────────────────────────────
+
+// Fire-and-forget: call without await to avoid blocking UI actions
+async function dbLogActivity(action, entityType, entityId, entityName, details) {
+  if (!currentUser) return;
+  try {
+    await db.from('activity_logs').insert({
+      user_id:     currentUser.id,
+      user_email:  currentUser.email,
+      action,
+      entity_type: entityType || null,
+      entity_id:   entityId   || null,
+      entity_name: entityName || null,
+      details:     details    || null,
+    });
+  } catch(e) {
+    console.warn('Log failed:', e.message);
+  }
+}
+
+async function dbGetActivityLogs({ limit = 60, offset = 0, userId = null, action = null } = {}) {
+  let q = db
+    .from('activity_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (userId) q = q.eq('user_id', userId);
+  if (action) q = q.eq('action', action);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data || [];
+}
+
+// ── ORG SETTINGS ──────────────────────────────────────────────
+
+async function dbGetOrgSettings() {
+  const { data } = await db.from('org_settings').select('*').eq('id', 1).maybeSingle();
+  return data;
+}
+
+async function dbSaveOrgSettings(name) {
+  const { error } = await db
+    .from('org_settings')
+    .upsert({ id: 1, name, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
 // ── REALTIME ──────────────────────────────────────────────────
 
 function subscribeToContacts(callback) {

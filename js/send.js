@@ -539,6 +539,10 @@ async function doSend() {
   document.getElementById('sDoneMsg').style.display = '';
   log.scrollTop = log.scrollHeight;
 
+  // Log the send action
+  const _subject = document.getElementById('sendSubject')?.value || '';
+  dbLogActivity('email_sent', 'contact', null, null, { count: total, subject: _subject });
+
   await loadContacts();
   renderBothTables(); renderSidebar(); renderFollowupBanner();
 }

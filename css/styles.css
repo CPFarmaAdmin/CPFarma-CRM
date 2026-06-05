@@ -1712,6 +1712,108 @@ tr.row-inactive:hover { opacity: 1; }
 }
 .role-legend-item:last-child { margin-bottom: 0; }
 
+/* ═══════════════════════════════════════════════════════════════
+   PANEL DE CONTROL — TABS, LOGS, CONFIG
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Control panel tab bar ───────────────────────────────────── */
+.ctrl-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border);
+  padding: 0 20px;
+  gap: 0;
+  background: var(--paper);
+  flex-shrink: 0;
+}
+.ctrl-tab-btn {
+  padding: 10px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--ink3);
+  cursor: pointer;
+  font-family: var(--fh);
+  transition: all var(--transition);
+}
+.ctrl-tab-btn:hover  { color: var(--ink); }
+.ctrl-tab-btn.active { color: var(--acc); border-bottom-color: var(--acc); }
+
+.ctrl-modal-body { padding: 16px 20px; }
+.ctrl-tab-pane   { min-height: 200px; }
+
+/* ── Logs filters row ────────────────────────────────────────── */
+.logs-filters {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Logs table ──────────────────────────────────────────────── */
+.logs-table-wrap {
+  overflow-x: auto;
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.logs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .78rem;
+}
+.logs-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--paper2);
+  padding: 8px 10px;
+  text-align: left;
+  font-family: var(--fm);
+  font-size: .65rem;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--ink3);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.logs-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+.logs-table tbody tr:hover  { background: var(--paper); }
+.logs-table tbody tr:last-child { border-bottom: none; }
+.logs-table td { padding: 7px 10px; vertical-align: middle; }
+
+.log-date   { font-family: var(--fm); font-size: .72rem; color: var(--ink3); white-space: nowrap; }
+.log-user   { font-weight: 600; color: var(--ink2); white-space: nowrap; }
+.log-name   { color: var(--ink); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-detail { color: var(--ink3); font-size: .73rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Log action badges ───────────────────────────────────────── */
+.log-action-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: .72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.lm-create { background: #f0fdf4; color: #15803d; }
+.lm-update { background: #eff6ff; color: #1d4ed8; }
+.lm-status { background: #faf5ff; color: #7c3aed; }
+.lm-delete { background: #fef2f2; color: #dc2626; }
+.lm-email  { background: #fffbeb; color: #92400e; }
+.lm-import { background: #f0f9ff; color: #0369a1; }
+.lm-admin  { background: var(--paper2); color: var(--ink3); }
+
 /* ── Password button in user rows ───────────────────────────── */
 .pwd-btn {
   padding: 4px 8px !important;
