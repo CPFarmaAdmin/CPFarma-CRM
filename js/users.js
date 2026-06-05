@@ -266,24 +266,39 @@ async function deleteUserProfile(userId, name) {
 // ── CHANGE / RESET PASSWORD ───────────────────────────────────
 
 function openPasswordModal(targetUserId, targetEmail) {
-  // targetUserId === currentUser.id → own password change (direct)
-  // else → send recovery email to that user
-  const isMe = !targetUserId || targetUserId === currentUser.id;
-  const modal = document.getElementById('passwordModal');
-  document.getElementById('pwdError').style.display = 'none';
-  document.getElementById('pwdNewWrap').style.display = isMe ? '' : 'none';
-  document.getElementById('pwdConfirmWrap').style.display = isMe ? '' : 'none';
-  document.getElementById('pwdEmailInfo').style.display = isMe ? 'none' : '';
-  document.getElementById('pwdNew').value = '';
-  document.getElementById('pwdConfirm').value = '';
-  if (!isMe) {
-    document.getElementById('pwdEmailText').textContent = targetEmail || '';
+  try {
+    const modal = document.getElementById('passwordModal');
+    if (!modal) { toast('Error interno: modal no encontrado', 'er'); return; }
+
+    // isMe = true when called with no args (sidebar button) OR when targetUserId matches current user
+    const isMe = !targetUserId || (currentUser && targetUserId === currentUser.id);
+
+    // Show/hide sections safely
+    const _show = (id, visible) => { const el = document.getElementById(id); if (el) el.style.display = visible ? '' : 'none'; };
+    const _val  = (id, v)       => { const el = document.getElementById(id); if (el) el.value = v; };
+
+    _show('pwdError', false);
+    _show('pwdNewWrap', isMe);
+    _show('pwdConfirmWrap', isMe);
+    _show('pwdEmailInfo', !isMe);
+    _val('pwdNew', '');
+    _val('pwdConfirm', '');
+
+    if (!isMe) {
+      const emailEl = document.getElementById('pwdEmailText');
+      if (emailEl) emailEl.textContent = targetEmail || '';
+    }
+
+    modal.dataset.targetUser  = targetUserId  || '';
+    modal.dataset.targetEmail = targetEmail   || '';
+    modal.dataset.isMe        = isMe ? '1' : '0';
+    modal.classList.add('open');
+
+    if (isMe) setTimeout(() => { const el = document.getElementById('pwdNew'); if (el) el.focus(); }, 60);
+  } catch (err) {
+    console.error('openPasswordModal:', err);
+    toast('Error al abrir el formulario: ' + err.message, 'er');
   }
-  modal.dataset.targetUser  = targetUserId  || '';
-  modal.dataset.targetEmail = targetEmail   || '';
-  modal.dataset.isMe        = isMe ? '1' : '0';
-  modal.classList.add('open');
-  if (isMe) setTimeout(() => document.getElementById('pwdNew').focus(), 50);
 }
 
 function closePasswordModal() {
