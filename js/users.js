@@ -308,6 +308,17 @@ async function doInviteUser() {
     if (authError) throw authError;
     if (!authData.user) throw new Error('Supabase no devolvió el usuario creado.');
 
+    // Detect fake user response: Supabase returns identities=[] when the email
+    // already exists in auth.users (prevents email enumeration).
+    // In this case the returned user.id is fake and the FK insert will fail.
+    if (!authData.user.identities || authData.user.identities.length === 0) {
+      throw new Error(
+        'Este email ya tiene cuenta en Supabase. ' +
+        'Pídele que inicie sesión directamente — su perfil se creará automáticamente con rol Comercial. ' +
+        'Después puedes cambiarle el rol desde este panel.'
+      );
+    }
+
     // Detect session replacement (email confirmation disabled)
     const { data: { user: nowUser } } = await db.auth.getUser();
     if (nowUser && nowUser.id !== adminId) {
