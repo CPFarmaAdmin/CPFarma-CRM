@@ -45,7 +45,7 @@
 <div id="app" class="app" style="display:none">
   <aside class="sidebar">
     <div class="sb-header">
-      <div class="sb-brand"><div class="sb-logo">CP</div><div><div class="sb-brand-name">CP Farma</div><div class="sb-brand-sub">CRM</div></div></div>
+      <div class="sb-brand"><div class="sb-logo" id="sbLogo">CP</div><div><div class="sb-brand-name" id="sbBrandName">CP Farma</div><div class="sb-brand-sub">CRM</div></div></div>
       <div class="sb-user" id="sbUser"></div>
     </div>
     <div class="sb-stats" id="sbStats"></div>
@@ -737,7 +737,10 @@
   <div class="modal modal-lg">
     <div class="modal-header">
       <div class="modal-icon">👥</div>
-      <h3>Gestión de usuarios</h3>
+      <div style="flex:1;min-width:0">
+        <h3 style="margin:0">Gestión de usuarios</h3>
+        <div class="modal-entity-name" id="usersModalOrg"></div>
+      </div>
       <button class="close-btn" onclick="closeUsersPanel()">✕</button>
     </div>
     <div class="modal-body">

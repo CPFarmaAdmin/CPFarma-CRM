@@ -111,6 +111,16 @@ function showInactiveScreen() {
 async function openUsersPanel() {
   if (!isAdmin()) { toast('Solo los administradores pueden gestionar usuarios.', 'er'); return; }
   document.getElementById('usersModal').classList.add('open');
+
+  // Show entity name + current admin in modal header
+  const orgEl = document.getElementById('usersModalOrg');
+  if (orgEl) {
+    const orgName = typeof ORG_NAME !== 'undefined' ? ORG_NAME : '';
+    orgEl.innerHTML = orgName
+      ? `🏢 <strong>${escH(orgName)}</strong> · <span style="color:var(--ink3)">Administrando como ${escH(currentUser?.email || '')}</span>`
+      : '';
+  }
+
   await _loadAllUsers();
 }
 

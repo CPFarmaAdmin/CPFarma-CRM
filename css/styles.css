@@ -1712,6 +1712,15 @@ tr.row-inactive:hover { opacity: 1; }
 }
 .role-legend-item:last-child { margin-bottom: 0; }
 
+/* ── Modal entity name subtitle ──────────────────────────────── */
+.modal-entity-name {
+  font-size: .75rem;
+  color: var(--ink3);
+  margin-top: 2px;
+  font-family: var(--fm);
+}
+.modal-entity-name strong { color: var(--ink2); }
+
 /* ── Invite / create form ────────────────────────────────────── */
 .invite-form-section {
   background: var(--paper);
