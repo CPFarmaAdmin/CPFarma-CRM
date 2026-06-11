@@ -182,6 +182,7 @@ function switchControlTab(tab) {
   if (tab === 'users')  _loadAllUsers();
   if (tab === 'logs')   loadLogsTab();
   if (tab === 'config') _loadConfigTab();
+  if (tab === 'email')  loadEmailTab();
 }
 
 // ── LOAD & RENDER USERS LIST ──────────────────────────────────
@@ -664,4 +665,169 @@ async function doInviteUser() {
 
   btn.textContent = '+ Crear usuario';
   btn.disabled    = false;
+}
+
+// ── EMAIL ACCOUNTS (Panel de Control → tab Correos) ───────────
+
+let _emailAccounts = [];
+let _eaEditId      = null;
+
+async function loadEmailTab() {
+  if (!isAdmin()) return;
+  const wrap = document.getElementById('ea-list');
+  if (!wrap) return;
+  wrap.innerHTML = '<div style="color:var(--ink3);font-size:.82rem;padding:12px 0">Cargando…</div>';
+  try {
+    const { data, error } = await db.from('email_accounts').select('*').order('created_at');
+    if (error) throw error;
+    _emailAccounts = data || [];
+    _renderEmailAccounts();
+  } catch (e) {
+    wrap.innerHTML = `<div style="color:var(--c-lost);font-size:.82rem;padding:12px 0">Error: ${escH(e.message)}</div>`;
+  }
+}
+
+function _renderEmailAccounts() {
+  const wrap = document.getElementById('ea-list');
+  if (!wrap) return;
+  if (!_emailAccounts.length) {
+    wrap.innerHTML = '<div class="ea-empty">No hay cuentas configuradas. Añade la primera abajo.</div>';
+    return;
+  }
+  const fmt = iso => iso
+    ? new Date(iso).toLocaleString('es-ES', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
+    : '—';
+  wrap.innerHTML = _emailAccounts.map((a, i) => `
+    <div class="ea-row${!a.is_active ? ' ea-inactive' : ''}">
+      <div class="ea-dot">${a.is_active ? '🟢' : '⚪'}</div>
+      <div class="ea-info">
+        <div class="ea-name">${escH(a.display_name)} <span class="ea-badge">${escH(a.email)}</span></div>
+        <div class="ea-meta">${escH(a.imap_host)}:${a.imap_port || 993} · ${fmt(a.last_check_at)}${a.last_error ? ' · <span class="ea-err">⚠ ' + escH(a.last_error.slice(0, 55)) + '</span>' : ''}</div>
+      </div>
+      <div class="ea-btns">
+        <button class="btn btn-ghost btn-sm" onclick="_eaEdit(${i})" title="Editar">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="eaToggle('${a.id}',${!a.is_active})" title="${a.is_active ? 'Desactivar' : 'Activar'}">${a.is_active ? '⏸' : '▶️'}</button>
+        <button class="btn btn-danger btn-sm" onclick="eaDelete('${a.id}')" title="Eliminar">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function eaShowForm(editIdx) {
+  editIdx = (editIdx === undefined || editIdx === null) ? -1 : editIdx;
+  _eaEditId = editIdx >= 0 ? (_emailAccounts[editIdx]?.id || null) : null;
+
+  const form  = document.getElementById('ea-form');
+  const title = document.getElementById('ea-form-title');
+  const passEl = document.getElementById('ea-f-pass');
+  if (!form) return;
+
+  if (editIdx >= 0 && _emailAccounts[editIdx]) {
+    const a = _emailAccounts[editIdx];
+    document.getElementById('ea-f-name').value  = a.display_name || '';
+    document.getElementById('ea-f-email').value = a.email        || '';
+    document.getElementById('ea-f-host').value  = a.imap_host    || '';
+    document.getElementById('ea-f-port').value  = a.imap_port    || 993;
+    passEl.value       = '';
+    passEl.placeholder = '(sin cambios — déjalo vacío para mantener la actual)';
+    title.textContent  = '✏️ Editar cuenta de correo';
+  } else {
+    ['ea-f-name','ea-f-email','ea-f-host','ea-f-pass'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('ea-f-port').value = '993';
+    passEl.placeholder = '••••••••';
+    title.textContent  = '➕ Añadir cuenta de correo';
+  }
+
+  document.getElementById('ea-form-err').style.display = 'none';
+  form.style.display = '';
+  document.getElementById('ea-f-name').focus();
+}
+
+function _eaEdit(idx) { eaShowForm(idx); }
+
+function eaHideForm() {
+  const form = document.getElementById('ea-form');
+  if (form) form.style.display = 'none';
+  _eaEditId = null;
+}
+
+function eaAutoFillHost(input) {
+  const hostEl = document.getElementById('ea-f-host');
+  if (!hostEl || hostEl.value) return; // don't override if user already typed
+  const domain = (input.value.toLowerCase().split('@')[1] || '').trim();
+  if (!domain) return;
+  if (domain === 'gmail.com')                                                  hostEl.value = 'imap.gmail.com';
+  else if (['outlook.com','hotmail.com','live.com'].includes(domain))          hostEl.value = 'outlook.office365.com';
+  else if (domain === 'yahoo.com' || domain === 'yahoo.es')                    hostEl.value = 'imap.mail.yahoo.com';
+  else                                                                         hostEl.value = 'imap.hostinger.com';
+}
+
+async function eaSave() {
+  const name  = document.getElementById('ea-f-name').value.trim();
+  const email = document.getElementById('ea-f-email').value.trim();
+  const host  = document.getElementById('ea-f-host').value.trim();
+  const port  = parseInt(document.getElementById('ea-f-port').value, 10) || 993;
+  const pass  = document.getElementById('ea-f-pass').value;
+  const errEl = document.getElementById('ea-form-err');
+  const btn   = document.getElementById('ea-save-btn');
+
+  errEl.style.display = 'none';
+
+  if (!name || !email || !host) {
+    errEl.textContent = 'Nombre, email y servidor IMAP son obligatorios.';
+    errEl.style.display = ''; return;
+  }
+  if (!_eaEditId && !pass) {
+    errEl.textContent = 'La contraseña es obligatoria para añadir una cuenta.';
+    errEl.style.display = ''; return;
+  }
+
+  btn.textContent = 'Guardando…'; btn.disabled = true;
+
+  try {
+    const fields = { display_name: name, email, imap_host: host, imap_port: port };
+    if (pass) fields.password = pass;
+
+    if (_eaEditId) {
+      const { error } = await db.from('email_accounts').update(fields).eq('id', _eaEditId);
+      if (error) throw error;
+    } else {
+      const { error } = await db.from('email_accounts').insert({ ...fields, is_active: true });
+      if (error) throw error;
+    }
+
+    eaHideForm();
+    await loadEmailTab();
+    toast(`✅ Cuenta ${_eaEditId ? 'actualizada' : 'añadida'}: ${email}`, 'ok');
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = '';
+  }
+
+  btn.textContent = '💾 Guardar'; btn.disabled = false;
+}
+
+async function eaToggle(id, active) {
+  try {
+    const { error } = await db.from('email_accounts').update({ is_active: active }).eq('id', id);
+    if (error) throw error;
+    await loadEmailTab();
+    toast(active ? '✅ Cuenta activada' : '⏸ Cuenta desactivada', 'ok');
+  } catch (e) {
+    toast('Error: ' + e.message, 'er');
+  }
+}
+
+async function eaDelete(id) {
+  const acc = _emailAccounts.find(a => a.id === id);
+  if (!confirm(`¿Eliminar la cuenta "${acc?.email || id}"?\nEl historial de respuestas ya capturado se conservará.`)) return;
+  try {
+    const { error } = await db.from('email_accounts').delete().eq('id', id);
+    if (error) throw error;
+    await loadEmailTab();
+    toast('Cuenta de correo eliminada', 'ok');
+  } catch (e) {
+    toast('Error: ' + e.message, 'er');
+  }
 }

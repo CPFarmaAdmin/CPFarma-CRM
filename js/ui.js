@@ -299,10 +299,13 @@ function renderHistory() {
     return;
   }
   el.innerHTML = cNotes.map(n => {
-    const meta = NOTE_META[n.type] || NOTE_META.comment;
+    const meta      = NOTE_META[n.type] || NOTE_META.comment;
+    const autoBadge = n.auto_detected
+      ? '<span class="auto-badge" title="Capturado automáticamente vía IMAP">🤖 Auto</span>'
+      : '';
     return `<div class="history-item ${meta.cls}">
       <div class="history-item-header">
-        <span class="history-item-type">${meta.label}</span>
+        <span class="history-item-type">${meta.label}${autoBadge}</span>
         <span class="history-item-date">${n.date || ''}</span>
         <button class="history-item-del" onclick="deleteNote('${n.id}')" title="Eliminar esta entrada">🗑 Eliminar</button>
       </div>

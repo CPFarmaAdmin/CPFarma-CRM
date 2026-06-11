@@ -1851,3 +1851,18 @@ tr.row-inactive:hover { opacity: 1; }
 .file-btns { display:flex; gap:4px; flex-shrink:0; }
 .files-empty { text-align:center; color:var(--ink3); font-size:.83rem; padding:28px 0; font-style:italic; }
 .file-upload-label { cursor:pointer !important; display:inline-flex; align-items:center; gap:6px; }
+
+/* ── Email accounts tab (Panel de Control → Correos) ─────────── */
+.ea-row      { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; border:1px solid var(--border); margin-bottom:7px; background:var(--surface); transition:opacity .15s; }
+.ea-inactive { opacity:.5; }
+.ea-dot      { font-size:.9rem; flex-shrink:0; }
+.ea-info     { flex:1; min-width:0; }
+.ea-name     { font-size:.85rem; font-weight:600; color:var(--ink1); }
+.ea-badge    { font-size:.72rem; font-weight:400; color:var(--ink3); background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:1px 5px; margin-left:5px; }
+.ea-meta     { font-size:.72rem; color:var(--ink3); margin-top:2px; }
+.ea-err      { color:var(--c-lost); }
+.ea-btns     { display:flex; gap:4px; flex-shrink:0; }
+.ea-empty    { text-align:center; color:var(--ink3); font-size:.83rem; padding:24px 0; font-style:italic; }
+
+/* ── Auto-detected reply badge in history ────────────────────── */
+.auto-badge  { font-size:.69rem; background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:1px 5px; margin-left:5px; color:var(--ink3); }

@@ -806,6 +806,7 @@
       <button class="ctrl-tab-btn active" data-tab="users"  onclick="switchControlTab('users')">👥 Usuarios</button>
       <button class="ctrl-tab-btn"        data-tab="logs"   onclick="switchControlTab('logs')">📋 Actividad</button>
       <button class="ctrl-tab-btn"        data-tab="config" onclick="switchControlTab('config')">⚙️ Configuración</button>
+      <button class="ctrl-tab-btn"        data-tab="email"  onclick="switchControlTab('email')">📧 Correos</button>
     </div>
 
     <div class="modal-body ctrl-modal-body">
@@ -892,6 +893,57 @@
         </div>
       </div>
 
+      <!-- ── TAB CORREOS (cuentas IMAP para captura automática de respuestas) ── -->
+      <div class="ctrl-tab-pane" data-pane="email" style="display:none">
+
+        <!-- Formulario añadir / editar -->
+        <div id="ea-form" class="invite-form-section" style="display:none">
+          <div class="form-section-title" id="ea-form-title" style="margin-bottom:12px">➕ Añadir cuenta de correo</div>
+          <div class="form-grid">
+            <div>
+              <label>Nombre de la cuenta <span class="req">*</span></label>
+              <input type="text" id="ea-f-name" placeholder="Principal, Seguimiento, Argentina…">
+            </div>
+            <div>
+              <label>Dirección de correo <span class="req">*</span></label>
+              <input type="email" id="ea-f-email" placeholder="tu@dominio.com" oninput="eaAutoFillHost(this)">
+            </div>
+            <div>
+              <label>Servidor IMAP <span class="req">*</span></label>
+              <input type="text" id="ea-f-host" placeholder="imap.hostinger.com">
+            </div>
+            <div>
+              <label>Puerto</label>
+              <input type="number" id="ea-f-port" value="993" min="1" max="65535">
+            </div>
+            <div class="fg-full">
+              <label>Contraseña IMAP <span class="req">*</span></label>
+              <input type="password" id="ea-f-pass" placeholder="••••••••">
+            </div>
+          </div>
+          <div id="ea-form-err" class="login-error" style="display:none;margin-top:8px"></div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn btn-primary btn-sm" id="ea-save-btn" onclick="eaSave()">💾 Guardar</button>
+            <button class="btn btn-ghost btn-sm" onclick="eaHideForm()">Cancelar</button>
+          </div>
+          <div class="info-box" style="margin-top:10px;font-size:.78rem">
+            ℹ️ La contraseña se guarda en la base de datos. Usa una contraseña de aplicación si tu proveedor lo permite (Gmail, Outlook). Para Hostinger usa la contraseña del correo directamente.
+          </div>
+          <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)">
+        </div>
+
+        <!-- Lista de cuentas -->
+        <div id="ea-list"></div>
+
+        <div style="margin-top:14px">
+          <button class="btn btn-primary btn-sm" onclick="eaShowForm()">📧 + Añadir cuenta</button>
+        </div>
+
+        <div class="info-box" style="margin-top:16px;font-size:.78rem">
+          <strong>¿Cómo funciona?</strong> Una función programada revisa cada bandeja cada 10 minutos. Si un email entrante es de un contacto del CRM (por cualquiera de sus emails), se registra automáticamente como "Respuesta recibida" en su historial. Requiere desplegar la Edge Function — ver <code>supabase/functions/check-inbox/</code>.
+        </div>
+      </div>
+
     </div>
 
     <div class="modal-footer">
@@ -954,13 +1006,13 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=2.1"></script>
-<script src="js/db.js?v=2.1"></script>
-<script src="js/users.js?v=2.1"></script>
-<script src="js/auth.js?v=2.1"></script>
-<script src="js/app.js?v=2.1"></script>
-<script src="js/ui.js?v=2.1"></script>
-<script src="js/send.js?v=2.1"></script>
-<script src="js/import.js?v=2.1"></script>
+<script src="js/config.js?v=2.2"></script>
+<script src="js/db.js?v=2.2"></script>
+<script src="js/users.js?v=2.2"></script>
+<script src="js/auth.js?v=2.2"></script>
+<script src="js/app.js?v=2.2"></script>
+<script src="js/ui.js?v=2.2"></script>
+<script src="js/send.js?v=2.2"></script>
+<script src="js/import.js?v=2.2"></script>
 </body>
 </html>
