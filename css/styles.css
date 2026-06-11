@@ -1895,11 +1895,10 @@ tr.row-inactive:hover { opacity: 1; }
 .notif-empty    { text-align:center; color:var(--ink3); font-size:.83rem; padding:32px 16px; font-style:italic; }
 
 /* ── Config tab — status editor ──────────────────────────────── */
-.cfg-status-hdr  { display:grid; grid-template-columns:52px 1fr 150px 32px; gap:6px; padding:0 2px 4px; font-size:.69rem; font-weight:600; color:var(--ink3); text-transform:uppercase; letter-spacing:.04em; }
-.cfg-status-row  { display:grid; grid-template-columns:52px 1fr 150px 32px; gap:6px; align-items:center; margin-bottom:5px; }
+.cfg-status-hdr  { display:grid; grid-template-columns:52px 1fr 32px; gap:6px; padding:0 2px 4px; font-size:.69rem; font-weight:600; color:var(--ink3); text-transform:uppercase; letter-spacing:.04em; }
+.cfg-status-row  { display:grid; grid-template-columns:52px 1fr 32px; gap:6px; align-items:center; margin-bottom:5px; }
 .cfg-status-emoji { text-align:center; font-size:1.05rem; padding:5px 4px; border:1px solid var(--border); border-radius:6px; background:var(--surface); }
 .cfg-status-label { font-weight:500; }
-.cfg-status-value { font-size:.72rem; font-family:var(--mono); color:var(--ink3); }
 .cfg-btn-del  { background:none; border:1px solid var(--border); border-radius:6px; cursor:pointer; color:var(--ink3); padding:4px 6px; font-size:.75rem; transition:background .12s,color .12s; }
 .cfg-btn-del:hover { background:#fee2e2; color:#b91c1c; border-color:#fca5a5; }
 .cfg-btn-add  { display:inline-flex; align-items:center; gap:4px; margin-top:6px; padding:5px 12px; font-size:.78rem; background:var(--bg); border:1px dashed var(--border); border-radius:6px; cursor:pointer; color:var(--ink2); transition:background .12s; }

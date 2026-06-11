@@ -573,7 +573,7 @@ function _renderStatusEditor(type) {
     ? orgConfig.prospect_statuses
     : orgConfig.client_statuses;
   const header = `<div class="cfg-status-hdr">
-    <span>Emoji</span><span>Nombre visible</span><span>Clave interna</span><span></span>
+    <span>Emoji</span><span>Nombre visible</span><span></span>
   </div>`;
   const rows = statuses.map((s, i) => `
     <div class="cfg-status-row" data-i="${i}">
@@ -581,9 +581,6 @@ function _renderStatusEditor(type) {
         oninput="_statusFieldChange('${type}',${i},'emoji',this.value)" placeholder="🔔">
       <input class="cfg-status-label" type="text" value="${escH(s.label)}"
         oninput="_statusFieldChange('${type}',${i},'label',this.value)" placeholder="Ej: Primer contacto">
-      <input class="cfg-status-value" type="text" value="${escH(s.value)}"
-        oninput="_statusFieldChange('${type}',${i},'value',this.value)" placeholder="primer_contacto"
-        title="${['won','rejected','lost','churned'].includes(s.value)?'Estado reservado del sistema':'Clave única sin espacios'}">
       <button class="cfg-btn-del" onclick="_deleteStatus('${type}',${i})" title="Eliminar">✕</button>
     </div>`).join('');
   wrap.innerHTML = header + rows +
@@ -600,7 +597,7 @@ function _statusFieldChange(type, idx, field, val) {
 
 function _addStatus(type) {
   const list = type === 'prospect' ? orgConfig.prospect_statuses : orgConfig.client_statuses;
-  list.push({ value: 'nuevo_estado_' + Date.now(), label: 'Nuevo estado', emoji: '🔵' });
+  list.push({ value: '_new_' + Date.now(), label: 'Nuevo estado', emoji: '🔵' });
   _renderStatusEditor(type);
 }
 
@@ -617,15 +614,22 @@ function _deleteStatus(type, idx) {
 
 async function _saveStatuses(type) {
   const list = type === 'prospect' ? orgConfig.prospect_statuses : orgConfig.client_statuses;
-  // Validate: all must have value and label
-  if (list.some(s => !s.value.trim() || !s.label.trim())) {
-    toast('Todos los estados deben tener clave y nombre.', 'er'); return;
+  if (list.some(s => !s.label.trim())) {
+    toast('Todos los estados deben tener nombre.', 'er'); return;
   }
-  // Ensure unique values
-  const values = list.map(s => s.value.trim());
-  if (new Set(values).size !== values.length) {
-    toast('Las claves internas deben ser únicas.', 'er'); return;
-  }
+  // Auto-generate value from label for new statuses (those with _new_ prefix)
+  const used = new Set();
+  list.forEach(s => {
+    if (s.value.startsWith('_new_')) {
+      let base = s.label.toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'estado';
+      let key = base, n = 2;
+      while (used.has(key)) key = base + '_' + n++;
+      s.value = key;
+    }
+    used.add(s.value);
+  });
   try {
     const patch = type === 'prospect'
       ? { prospect_statuses: list }
