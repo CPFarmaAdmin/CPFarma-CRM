@@ -159,13 +159,31 @@ async function processAccount(
           try {
             const parsed = await simpleParser(msg.source as any);
             bodyText = (parsed.text ?? '').trim();
-            // Quitar líneas de cita ("> ") para quedarnos con el mensaje nuevo
+
+            // Cortar en el primer separador de cadena de respuesta
+            const separators = [
+              /^_{5,}/m,                          // Outlook: ___________
+              /^-{5,}\s*(original message|mensaje original)/im,
+              /^On\s.+\swrote:/m,                 // Gmail/Apple: On <date>, <name> wrote:
+              /^El\s.+escribió:/m,                // Thunderbird ES
+              /^Am\s.+schrieb:/m,                 // Thunderbird DE
+              /^Le\s.+a écrit\s*:/m,              // Thunderbird FR
+            ];
+            let cutAt = bodyText.length;
+            for (const sep of separators) {
+              const m = bodyText.match(sep);
+              if (m?.index !== undefined && m.index < cutAt) cutAt = m.index;
+            }
+            bodyText = bodyText.slice(0, cutAt).trim();
+
+            // Quitar líneas de cita estilo "> " (Gmail inline quotes residuales)
             bodyText = bodyText
               .split('\n')
               .filter((line: string) => !line.trimStart().startsWith('>'))
               .join('\n')
               .replace(/\n{3,}/g, '\n\n')
               .trim();
+
             if (bodyText.length > 2000) bodyText = bodyText.slice(0, 2000) + '…';
           } catch (_) { /* si falla el parse, solo usamos asunto */ }
         }
