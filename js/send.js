@@ -305,11 +305,22 @@ function filterRecip() {
   updateSelCount();
 }
 
+// Auto-populate CC with all secondary emails for a record
+function _initEmailMap(r) {
+  const contacts = getRecordContacts(r);
+  return { to: r.email, cc: contacts.slice(1).map(c => c.email) };
+}
+
 function toggleFolderSel(fid) {
   const inFolder = records.filter(r => r.email && r.folder_id === fid);
   const allSel   = inFolder.every(r => sendRecipIds.includes(r.id));
   if (allSel) sendRecipIds = sendRecipIds.filter(id => !inFolder.find(r => r.id === id));
-  else inFolder.forEach(r => { if (!sendRecipIds.includes(r.id)) sendRecipIds.push(r.id); });
+  else inFolder.forEach(r => {
+    if (!sendRecipIds.includes(r.id)) {
+      sendRecipIds.push(r.id);
+      if (!sendEmailMap[r.id]) sendEmailMap[r.id] = _initEmailMap(r);
+    }
+  });
   filterRecip();
   populateRecipList();
 }
@@ -321,10 +332,9 @@ function toggleRecip(id, e) {
     sendRecipIds.splice(i, 1);
   } else {
     sendRecipIds.push(id);
-    // Initialize sendEmailMap with default Para: = primary email
     if (!sendEmailMap[id]) {
       const r = records.find(x => x.id === id);
-      if (r) sendEmailMap[id] = { to: r.email, cc: [] };
+      if (r) sendEmailMap[id] = _initEmailMap(r);
     }
   }
   filterRecip();
@@ -336,7 +346,7 @@ function toggleRecipChk(chk) {
     sendRecipIds.push(id);
     if (!sendEmailMap[id]) {
       const r = records.find(x => x.id === id);
-      if (r) sendEmailMap[id] = { to: r.email, cc: [] };
+      if (r) sendEmailMap[id] = _initEmailMap(r);
     }
   } else if (!chk.checked && i >= 0) {
     sendRecipIds.splice(i, 1);
@@ -344,7 +354,12 @@ function toggleRecipChk(chk) {
   updateSelChips(); updateSelCount();
 }
 function toggleSelAllRecip(chk) {
-  if (chk.checked) sFilteredList.forEach(r => { if (!sendRecipIds.includes(r.id)) sendRecipIds.push(r.id); });
+  if (chk.checked) sFilteredList.forEach(r => {
+    if (!sendRecipIds.includes(r.id)) {
+      sendRecipIds.push(r.id);
+      if (!sendEmailMap[r.id]) sendEmailMap[r.id] = _initEmailMap(r);
+    }
+  });
   else sFilteredList.forEach(r => { sendRecipIds = sendRecipIds.filter(x => x !== r.id); });
   filterRecip();
 }
@@ -383,23 +398,20 @@ function ccToggleCc(input) {
 }
 
 function setEmailTo(recId, email) {
-  // Set the "Para:" email for a record
   if (!sendEmailMap[recId]) {
     const r = records.find(x => x.id === recId);
-    sendEmailMap[recId] = { to: email, cc: [] };
-  } else {
-    // Remove from CC if it was there
-    sendEmailMap[recId].cc = sendEmailMap[recId].cc.filter(e => e !== email);
-    sendEmailMap[recId].to = email;
+    sendEmailMap[recId] = r ? _initEmailMap(r) : { to: email, cc: [] };
   }
-  // Re-render to update disabled states
+  // Move selected email to Para:, remove from CC
+  sendEmailMap[recId].cc = sendEmailMap[recId].cc.filter(e => e !== email);
+  sendEmailMap[recId].to = email;
   filterRecip();
 }
 
 function toggleEmailCc(recId, email, chk) {
   if (!sendEmailMap[recId]) {
     const r = records.find(x => x.id === recId);
-    sendEmailMap[recId] = { to: r?.email || email, cc: [] };
+    sendEmailMap[recId] = r ? _initEmailMap(r) : { to: email, cc: [] };
   }
   if (chk.checked) {
     if (!sendEmailMap[recId].cc.includes(email)) sendEmailMap[recId].cc.push(email);
@@ -475,10 +487,10 @@ async function doSend() {
     let pBody = personalise(body, r);
     if (useSig && sigTxt) pBody += '\n\n-- \n' + sigTxt.replace(/<[^>]*>/g, '');
     const pSubj = personalise(subj, r);
-    // Build mailto using sendEmailMap (Para + CC selection)
-    const em = sendEmailMap[r.id];
-    const toEmail  = em?.to  || r.email;
-    const ccEmails = (em?.cc || []).filter(e => e !== toEmail);
+    // Build mailto using sendEmailMap (Para + CC selection); fallback auto-populates CC
+    const em = sendEmailMap[r.id] || _initEmailMap(r);
+    const toEmail  = em.to  || r.email;
+    const ccEmails = em.cc.filter(e => e !== toEmail);
     let mailtoUrl = 'mailto:' + encodeURIComponent(toEmail)
       + '?subject=' + encodeURIComponent(pSubj)
       + '&body='    + encodeURIComponent(pBody);
