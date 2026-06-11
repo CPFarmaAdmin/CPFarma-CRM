@@ -102,8 +102,11 @@ async function showApp() {
 
   await initApp();
   applyRoleRestrictions();
-  // Load org name from DB (overrides config.js value if set)
   loadOrgName();
+  // Show bell and load notifications
+  const notifWrap = document.getElementById('notifWrap');
+  if (notifWrap) notifWrap.style.display = '';
+  initNotifications();
   appInitialized = true;
 }
 
