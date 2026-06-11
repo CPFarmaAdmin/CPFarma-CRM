@@ -125,6 +125,7 @@ async function openPanel(id) {
   document.getElementById('noteDate').value = today();
   renderTags();
   renderHistory();
+  _populateAssigneeDropdown(r?.assigned_to || null);
   document.getElementById('overlay').classList.add('open');
   document.getElementById('sidePanel').classList.add('open');
 }
@@ -177,6 +178,7 @@ function switchPanelTab(tab, btn) {
   document.getElementById('tab-' + tab)?.classList.add('active');
   if (btn) btn.classList.add('active');
   else document.querySelector(`.ptab[data-tab="${tab}"]`)?.classList.add('active');
+  if (tab === 'files') loadFilesTab();
 }
 
 // ── STATUS ────────────────────────────────────────────────────
@@ -378,6 +380,7 @@ async function saveRecord() {
     deal_prob:        parseInt(getVal('f-dealProb'))      || null,
     deal_close:       getVal('f-dealClose')       || null,
     user_id:          currentUser?.id,
+    assigned_to:      getVal('f-assignedTo') || null,
   };
 
   try {
@@ -475,6 +478,110 @@ function sendFromPanel() {
   openSendModal([editId], true); // skip to step 2 (contact selection)
 }
 function quickSend(id) { openSendModal([id], true); }
+
+// ── ASSIGNEE DROPDOWN ─────────────────────────────────────────
+async function _populateAssigneeDropdown(assignedTo) {
+  const sel = document.getElementById('f-assignedTo');
+  if (!sel) return;
+  if (!allUserProfiles.length) {
+    try { await _loadAllUsers(); } catch(e) {}
+  }
+  const users = allUserProfiles.filter(p => p.is_active && ['admin','comercial'].includes(p.role));
+  sel.innerHTML = '<option value="">— Sin asignar —</option>' +
+    users.map(u => `<option value="${u.user_id}" ${u.user_id === assignedTo ? 'selected' : ''}>${escH(u.name || u.email)}</option>`).join('');
+  sel.disabled = !isAdmin();
+}
+
+// ── FILES TAB ─────────────────────────────────────────────────
+let _filesCache = [];
+
+async function loadFilesTab() {
+  const wrap = document.getElementById('files-wrap');
+  if (!wrap) return;
+  if (!editId) {
+    wrap.innerHTML = '<div class="files-empty">Guarda el registro primero para poder adjuntar archivos.</div>';
+    return;
+  }
+  wrap.innerHTML = '<div style="color:var(--ink3);font-size:.82rem;padding:8px 0">Cargando archivos…</div>';
+  try {
+    _filesCache = await dbGetContactFiles(editId);
+    renderFilesList(_filesCache);
+  } catch(e) {
+    wrap.innerHTML = `<div style="color:var(--err);font-size:.82rem">Error: ${escH(e.message)}</div>`;
+  }
+}
+
+function renderFilesList(files) {
+  const wrap = document.getElementById('files-wrap');
+  if (!wrap) return;
+  if (!files.length) {
+    wrap.innerHTML = '<div class="files-empty">Sin archivos adjuntos. Sube el primero con el botón de abajo.</div>';
+    return;
+  }
+  const fmtSz = b => b > 1048576 ? (b/1048576).toFixed(1)+' MB' : b > 1024 ? Math.round(b/1024)+' KB' : b+' B';
+  const fmtDt = iso => new Date(iso).toLocaleDateString('es-ES', {day:'2-digit',month:'short',year:'numeric'});
+  const upName = uid => { const u = allUserProfiles.find(p => p.user_id === uid); return u ? (u.name||u.email) : '—'; };
+  wrap.innerHTML = files.map((f, i) => `
+    <div class="file-row">
+      <span class="file-ico">${_fileIcon(f.file_name)}</span>
+      <div class="file-info">
+        <div class="file-name">${escH(f.file_name)}</div>
+        <div class="file-meta">${f.file_size ? fmtSz(f.file_size)+' · ':''} ${fmtDt(f.created_at)} · ${escH(upName(f.uploaded_by))}</div>
+      </div>
+      <div class="file-btns">
+        <button class="btn btn-ghost btn-sm" onclick="downloadFile(${i})" title="Descargar">⬇️</button>
+        ${canEdit() ? `<button class="btn btn-ghost btn-sm" onclick="deleteFile(${i})">🗑</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function _fileIcon(name) {
+  const ext = (name||'').split('.').pop().toLowerCase();
+  if (ext === 'pdf') return '📄';
+  if (['doc','docx'].includes(ext)) return '📝';
+  if (['xls','xlsx'].includes(ext)) return '📊';
+  if (['jpg','jpeg','png','gif','webp'].includes(ext)) return '🖼️';
+  if (['zip','rar','7z'].includes(ext)) return '🗜️';
+  return '📎';
+}
+
+async function downloadFile(idx) {
+  const f = _filesCache[idx];
+  if (!f) return;
+  try {
+    const url = await dbGetContactFileUrl(f.file_path);
+    window.open(url, '_blank');
+  } catch(e) { toast('Error al descargar: ' + e.message, 'er'); }
+}
+
+async function deleteFile(idx) {
+  const f = _filesCache[idx];
+  if (!f || !confirm('¿Eliminar este archivo?')) return;
+  try {
+    await dbDeleteContactFile(f.id, f.file_path);
+    _filesCache.splice(idx, 1);
+    renderFilesList(_filesCache);
+    toast('Archivo eliminado', '');
+  } catch(e) { toast('Error: ' + e.message, 'er'); }
+}
+
+async function uploadFiles(input) {
+  if (!editId) { toast('Guarda el registro primero', 'er'); input.value = ''; return; }
+  if (!input.files.length) return;
+  const label = input.closest('label');
+  if (label) { label.style.opacity = '0.5'; label.style.pointerEvents = 'none'; }
+  try {
+    for (const file of input.files) await dbUploadContactFile(editId, file);
+    const n = input.files.length;
+    toast(n > 1 ? `✅ ${n} archivos subidos` : '✅ Archivo subido', 'ok');
+    input.value = '';
+    await loadFilesTab();
+  } catch(e) {
+    toast('Error al subir: ' + e.message, 'er');
+  } finally {
+    if (label) { label.style.opacity = ''; label.style.pointerEvents = ''; }
+  }
+}
 
 // ── HELPERS ───────────────────────────────────────────────────
 function today() { return new Date().toISOString().split('T')[0]; }

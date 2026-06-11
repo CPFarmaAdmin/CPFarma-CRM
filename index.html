@@ -222,6 +222,7 @@
     <button class="ptab" data-tab="email" onclick="switchPanelTab('email',this)">📤 Email</button>
     <button class="ptab" data-tab="followup" onclick="switchPanelTab('followup',this)">🔔 Seguimiento</button>
     <button class="ptab" data-tab="history" onclick="switchPanelTab('history',this)">💬 Historial</button>
+    <button class="ptab" data-tab="files" onclick="switchPanelTab('files',this)">📎 Archivos</button>
   </div>
   <div class="panel-body">
 
@@ -324,6 +325,7 @@
             </select>
           </div>
           <div><label>Carpeta</label><select id="f-folder"></select></div>
+          <div class="prospect-only"><label>👤 Asignado a</label><select id="f-assignedTo"><option value="">— Sin asignar —</option></select></div>
         </div>
       </div>
 
@@ -550,6 +552,21 @@
       </div>
       <div class="history-thread" id="historyThread">
         <div style="color:var(--ink3);font-size:.82rem;font-style:italic;padding:12px 0">Abre un contacto para ver su historial.</div>
+      </div>
+    </div>
+
+    <!-- TAB ARCHIVOS -->
+    <div class="ptab-content" id="tab-files">
+      <div class="form-section">
+        <div class="form-section-title">📎 Archivos adjuntos</div>
+        <div id="files-wrap"></div>
+        <div class="role-edit" style="margin-top:14px">
+          <label class="btn btn-ghost file-upload-label">
+            📎 Subir archivos
+            <input type="file" multiple style="display:none" onchange="uploadFiles(this)">
+          </label>
+          <div style="font-size:.69rem;color:var(--ink3);margin-top:5px">PDF, Word, Excel, imágenes… máx. 50 MB por archivo</div>
+        </div>
       </div>
     </div>
 
