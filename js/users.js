@@ -559,6 +559,8 @@ function _loadConfigTab() {
   if (errEl) errEl.style.display = 'none';
   _renderStatusEditor('prospect');
   _renderStatusEditor('client');
+  _renderFieldLabelsEditor('prospect');
+  _renderFieldLabelsEditor('client');
   _renderCustomFieldEditor('prospect');
   _renderCustomFieldEditor('client');
 }
@@ -570,19 +572,25 @@ function _renderStatusEditor(type) {
   const statuses = type === 'prospect'
     ? orgConfig.prospect_statuses
     : orgConfig.client_statuses;
-  wrap.innerHTML = statuses.map((s, i) => `
-    <div class="cfg-status-row" data-i="${i}" data-type="${type}">
+  const header = `<div class="cfg-status-hdr">
+    <span>Emoji</span><span>Nombre visible</span><span>Clave interna</span><span></span>
+  </div>`;
+  const rows = statuses.map((s, i) => `
+    <div class="cfg-status-row" data-i="${i}">
       <input class="cfg-status-emoji" type="text" value="${escH(s.emoji)}" maxlength="4"
         oninput="_statusFieldChange('${type}',${i},'emoji',this.value)" placeholder="🔔">
       <input class="cfg-status-label" type="text" value="${escH(s.label)}"
-        oninput="_statusFieldChange('${type}',${i},'label',this.value)" placeholder="Nombre">
+        oninput="_statusFieldChange('${type}',${i},'label',this.value)" placeholder="Ej: Primer contacto">
       <input class="cfg-status-value" type="text" value="${escH(s.value)}"
-        oninput="_statusFieldChange('${type}',${i},'value',this.value)" placeholder="clave_interna"
-        ${['won','rejected','lost','churned'].includes(s.value)?'title="Estado reservado del sistema"':''}>
+        oninput="_statusFieldChange('${type}',${i},'value',this.value)" placeholder="primer_contacto"
+        title="${['won','rejected','lost','churned'].includes(s.value)?'Estado reservado del sistema':'Clave única sin espacios'}">
       <button class="cfg-btn-del" onclick="_deleteStatus('${type}',${i})" title="Eliminar">✕</button>
-    </div>`).join('') +
-    `<button class="cfg-btn-add" onclick="_addStatus('${type}')">+ Añadir estado</button>
-     <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="_saveStatuses('${type}')">💾 Guardar estados</button>`;
+    </div>`).join('');
+  wrap.innerHTML = header + rows +
+    `<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+       <button class="cfg-btn-add" onclick="_addStatus('${type}')">+ Añadir estado</button>
+       <button class="btn btn-primary btn-sm" onclick="_saveStatuses('${type}')">💾 Guardar estados</button>
+     </div>`;
 }
 
 function _statusFieldChange(type, idx, field, val) {
@@ -627,6 +635,66 @@ async function _saveStatuses(type) {
     else                     orgConfig.client_statuses   = list;
     renderProspectFilterTabs();
     toast('✅ Estados guardados', 'ok');
+  } catch(e) {
+    toast('Error: ' + e.message, 'er');
+  }
+}
+
+// ── FIELD LABELS EDITOR (system fields) ──────────────────────
+const SYSTEM_FIELDS = {
+  prospect: [
+    { key: 'company',  default: 'Nombre del prospecto' },
+    { key: 'contact',  default: 'Persona de contacto' },
+    { key: 'role',     default: 'Cargo' },
+    { key: 'phone',    default: 'Teléfono' },
+    { key: 'country',  default: 'País' },
+    { key: 'city',     default: 'Ciudad' },
+    { key: 'program',  default: 'Programa / Solución' },
+    { key: 'priority', default: 'Prioridad' },
+    { key: 'notes',    default: 'Notas generales' },
+  ],
+  client: [
+    { key: 'company',  default: 'Nombre del cliente' },
+    { key: 'contact',  default: 'Persona de contacto' },
+    { key: 'role',     default: 'Cargo' },
+    { key: 'phone',    default: 'Teléfono' },
+    { key: 'country',  default: 'País' },
+    { key: 'city',     default: 'Ciudad' },
+    { key: 'program',  default: 'Programa / Solución' },
+    { key: 'version',  default: 'Versión instalada' },
+    { key: 'notes',    default: 'Notas generales' },
+  ],
+};
+
+function _renderFieldLabelsEditor(type) {
+  const wrap = document.getElementById(`flEditor-${type}`);
+  if (!wrap) return;
+  const saved = orgConfig.field_labels?.[type] || {};
+  const fields = SYSTEM_FIELDS[type] || [];
+  wrap.innerHTML = `<div class="form-grid" style="margin-bottom:10px">` +
+    fields.map(f => {
+      const current = saved[f.key] || f.default;
+      return `<div>
+        <label style="font-size:.72rem;color:var(--ink3)">${escH(f.default)}</label>
+        <input type="text" id="fl-${type}-${f.key}" value="${escH(current)}" placeholder="${escH(f.default)}">
+      </div>`;
+    }).join('') +
+    `</div>
+    <button class="btn btn-primary btn-sm" onclick="_saveFieldLabels('${type}')">💾 Guardar etiquetas</button>`;
+}
+
+async function _saveFieldLabels(type) {
+  const fields = SYSTEM_FIELDS[type] || [];
+  const labels = {};
+  fields.forEach(f => {
+    const el = document.getElementById(`fl-${type}-${f.key}`);
+    if (el) labels[f.key] = el.value.trim() || f.default;
+  });
+  const updated = { ...orgConfig.field_labels, [type]: labels };
+  try {
+    await dbSaveOrgConfig({ field_labels: updated });
+    orgConfig.field_labels = updated;
+    toast('✅ Etiquetas guardadas', 'ok');
   } catch(e) {
     toast('Error: ' + e.message, 'er');
   }

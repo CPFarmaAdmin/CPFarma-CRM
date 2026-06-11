@@ -6,7 +6,7 @@
 <title>CP Farma — CRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Lato:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=2.7">
+<link rel="stylesheet" href="css/styles.css?v=2.8">
 </head>
 <body>
 
@@ -248,8 +248,8 @@
         <div class="form-section-title" id="infoSectionTitle">🎯 Datos del prospecto</div>
         <div class="form-grid">
           <div class="fg-full"><label id="labelCompany">Nombre del prospecto <span class="req">*</span></label><input type="text" id="f-company" placeholder="Nombre del cliente o empresa…"></div>
-          <div><label>Teléfono</label><input type="text" id="f-phone" placeholder="+34 600 000 000"></div>
-          <div><label>País</label>
+          <div><label id="labelPhone">Teléfono</label><input type="text" id="f-phone" placeholder="+34 600 000 000"></div>
+          <div><label id="labelCountry">País</label>
             <select id="f-country">
               <option value="">— Seleccionar —</option>
               <option>España</option>
@@ -320,10 +320,10 @@
               <option>Turquía</option>
             </select>
           </div>
-          <div><label>Ciudad</label><input type="text" id="f-city" placeholder="Madrid, Miami…"></div>
+          <div><label id="labelCity">Ciudad</label><input type="text" id="f-city" placeholder="Madrid, Miami…"></div>
           <div class="fg-full"><label>🌐 Página web</label><input type="url" id="f-website" placeholder="https://www.hospital.es" autocomplete="off"></div>
-          <div><label>Programa</label><input type="text" id="f-program" placeholder="Galenic Plus, Citostáticos…"></div>
-          <div class="client-only" style="display:none"><label>Versión instalada</label><input type="text" id="f-version" placeholder="v2.1, 3.3.1…"></div>
+          <div><label id="labelProgram">Programa</label><input type="text" id="f-program" placeholder="Galenic Plus, Citostáticos…"></div>
+          <div class="client-only" style="display:none"><label id="labelVersion">Versión instalada</label><input type="text" id="f-version" placeholder="v2.1, 3.3.1…"></div>
           <div><label>Tipo de cliente</label>
             <select id="f-client-type"><option value="public">🏛️ Público</option><option value="private">🏢 Privado</option></select>
           </div>
@@ -333,7 +333,7 @@
               <option value="client">💼 Cliente</option>
             </select>
           </div>
-          <div class="prospect-only"><label>Prioridad</label>
+          <div class="prospect-only"><label id="labelPriority">Prioridad</label>
             <select id="f-priority">
               <option value="Alta">🔴 Alta</option>
               <option value="Media" selected>🟡 Media</option>
@@ -349,8 +349,8 @@
       <div class="form-section">
         <div class="form-section-title">👤 Contacto Farmacia (principal)</div>
         <div class="form-grid">
-          <div><label>Nombre</label><input type="text" id="f-contact" placeholder="Nombre y apellidos"></div>
-          <div><label>Cargo</label><input type="text" id="f-role" placeholder="Jefe de Farmacia, FEA…"></div>
+          <div><label id="labelContact">Nombre</label><input type="text" id="f-contact" placeholder="Nombre y apellidos"></div>
+          <div><label id="labelRole">Cargo</label><input type="text" id="f-role" placeholder="Jefe de Farmacia, FEA…"></div>
           <div><label>Correo electrónico <span class="req">*</span></label><input type="email" id="f-email" placeholder="principal@hospital.es"></div>
           <div><label>Teléfono directo</label><input type="text" id="f-contact-phone" placeholder="+34 600…"></div>
           <div><label>Correo 2</label><input type="email" id="f-email2" placeholder="alternativo@hospital.es"></div>
@@ -931,6 +931,24 @@
           <div id="statusEditor-client"></div>
         </div>
 
+        <!-- Etiquetas campos sistema prospectos -->
+        <div class="form-section">
+          <div class="form-section-title">🏷️ Renombrar campos — Prospectos</div>
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:10px">
+            Cambia cómo se llaman los campos existentes en las fichas de prospectos.
+          </div>
+          <div id="flEditor-prospect"></div>
+        </div>
+
+        <!-- Etiquetas campos sistema clientes -->
+        <div class="form-section">
+          <div class="form-section-title">🏷️ Renombrar campos — Clientes</div>
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:10px">
+            Cambia cómo se llaman los campos existentes en las fichas de clientes.
+          </div>
+          <div id="flEditor-client"></div>
+        </div>
+
         <!-- Campos extra prospectos -->
         <div class="form-section">
           <div class="form-section-title">✨ Campos adicionales — Prospectos</div>
@@ -1064,14 +1082,14 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=2.7"></script>
-<script src="js/db.js?v=2.7"></script>
-<script src="js/users.js?v=2.7"></script>
-<script src="js/notifications.js?v=2.7"></script>
-<script src="js/auth.js?v=2.7"></script>
-<script src="js/app.js?v=2.7"></script>
-<script src="js/ui.js?v=2.7"></script>
-<script src="js/send.js?v=2.7"></script>
-<script src="js/import.js?v=2.7"></script>
+<script src="js/config.js?v=2.8"></script>
+<script src="js/db.js?v=2.8"></script>
+<script src="js/users.js?v=2.8"></script>
+<script src="js/notifications.js?v=2.8"></script>
+<script src="js/auth.js?v=2.8"></script>
+<script src="js/app.js?v=2.8"></script>
+<script src="js/ui.js?v=2.8"></script>
+<script src="js/send.js?v=2.8"></script>
+<script src="js/import.js?v=2.8"></script>
 </body>
 </html>

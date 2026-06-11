@@ -161,6 +161,9 @@ function _applyTypeUI(isClient) {
   // Render custom fields for this type
   _renderCustomFields(isClient);
 
+  // Apply renamed system field labels
+  _applyFieldLabels(isClient);
+
   // Show the correct email type select
   const etP = document.getElementById('f-emailType');
   const etC = document.getElementById('f-emailTypeClient');
@@ -216,6 +219,40 @@ function _readCustomFieldValues() {
     else if (el.value !== '') out[d.field_key] = d.field_type === 'number' ? Number(el.value) : el.value;
   });
   return out;
+}
+
+function _applyFieldLabels(isClient) {
+  const type   = isClient ? 'client' : 'prospect';
+  const saved  = orgConfig?.field_labels?.[type] || {};
+  const map = {
+    labelCompany:  isClient ? 'Nombre del cliente' : 'Nombre del prospecto',
+    labelPhone:    'Teléfono',
+    labelCountry:  'País',
+    labelCity:     'Ciudad',
+    labelProgram:  'Programa / Solución',
+    labelVersion:  'Versión instalada',
+    labelPriority: 'Prioridad',
+    labelContact:  'Persona de contacto',
+    labelRole:     'Cargo',
+  };
+  const fieldKey = {
+    labelCompany: 'company', labelPhone: 'phone', labelCountry: 'country',
+    labelCity: 'city', labelProgram: 'program', labelVersion: 'version',
+    labelPriority: 'priority', labelContact: 'contact', labelRole: 'role',
+  };
+  Object.entries(map).forEach(([elId, defaultText]) => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const key  = fieldKey[elId];
+    const text = (key && saved[key]) ? saved[key] : defaultText;
+    // Preserve required marker if present
+    const req = el.querySelector('.req');
+    el.textContent = text;
+    if (elId === 'labelCompany') {
+      el.innerHTML = `${escH(text)} <span class="req">*</span>`;
+    }
+    if (req && elId !== 'labelCompany') el.appendChild(req);
+  });
 }
 
 // When user changes type in the select
