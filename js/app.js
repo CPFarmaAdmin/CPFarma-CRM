@@ -210,6 +210,7 @@ function renderSidebar() {
 function setFolder(id) {
   activeFolder = id;
   renderSidebar();
+  renderBothTables();
 }
 
 function showFollowups() {

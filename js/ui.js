@@ -205,6 +205,9 @@ function autoFollowupDate(status) {
 
 function selStatus(v) {
   cStatus = v;
+  // Keep the Datos-tab select in sync for clients
+  const cs = document.getElementById('f-client-status');
+  if (cs) cs.value = v;
   // Auto-set next follow-up date when status changes (if field is empty)
   const nextFu = document.getElementById('f-nextFollowup');
   if (nextFu && !nextFu.value) {

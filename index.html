@@ -6,7 +6,7 @@
 <title>CP Farma — CRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Lato:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=2.5">
+<link rel="stylesheet" href="css/styles.css?v=2.6">
 </head>
 <body>
 
@@ -383,7 +383,7 @@
         <div class="form-section-title">📋 Estado del cliente</div>
         <div class="form-grid">
           <div><label>Estado del cliente</label>
-            <select id="f-client-status">
+            <select id="f-client-status" onchange="selStatus(this.value)">
               <option value="ok">✅ Sin incidencias</option>
               <option value="incident">⚠️ Incidencia activa</option>
               <option value="renewal">🔄 Renovación</option>
@@ -1022,14 +1022,14 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=2.5"></script>
-<script src="js/db.js?v=2.5"></script>
-<script src="js/users.js?v=2.5"></script>
-<script src="js/notifications.js?v=2.5"></script>
-<script src="js/auth.js?v=2.5"></script>
-<script src="js/app.js?v=2.5"></script>
-<script src="js/ui.js?v=2.5"></script>
-<script src="js/send.js?v=2.5"></script>
-<script src="js/import.js?v=2.5"></script>
+<script src="js/config.js?v=2.6"></script>
+<script src="js/db.js?v=2.6"></script>
+<script src="js/users.js?v=2.6"></script>
+<script src="js/notifications.js?v=2.6"></script>
+<script src="js/auth.js?v=2.6"></script>
+<script src="js/app.js?v=2.6"></script>
+<script src="js/ui.js?v=2.6"></script>
+<script src="js/send.js?v=2.6"></script>
+<script src="js/import.js?v=2.6"></script>
 </body>
 </html>
