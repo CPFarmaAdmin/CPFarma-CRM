@@ -1,21 +1,11 @@
 // deno-lint-ignore-file no-explicit-any
 /**
  * check-inbox — Edge Function para captura automática de respuestas IMAP
- *
- * Invocada cada 10 minutos vía pg_cron + pg_net.
- * Para cada cuenta activa en email_accounts:
- *   1. Conecta por IMAP y busca emails recientes
- *   2. Si el remitente coincide con un contacto del CRM, crea una interacción tipo 'reply'
- *   3. Usa message_id para evitar duplicados
- *   4. Actualiza last_check_at y last_uid_checked
- *
- * Secrets necesarios (supabase secrets set ...):
- *   SUPABASE_URL              — automático en Edge Functions
- *   SUPABASE_SERVICE_ROLE_KEY — automático en Edge Functions
- *   CRON_SECRET               — opcional, token adicional para pg_cron
+ * v2: incluye cuerpo del email + deduplicación robusta sin Message-ID
  */
-import { createClient } from 'npm:@supabase/supabase-js@2';
-import { ImapFlow }     from 'npm:imapflow@1';
+import { createClient }  from 'npm:@supabase/supabase-js@2';
+import { ImapFlow }      from 'npm:imapflow@1';
+import { simpleParser } from 'npm:mailparser@3';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -23,7 +13,6 @@ const supabase = createClient(
 );
 
 Deno.serve(async (req: Request) => {
-  // ── Auth: acepta service role key o CRON_SECRET ──────────────
   const auth    = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
   const svcKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   const cronSec = Deno.env.get('CRON_SECRET') ?? '';
@@ -47,15 +36,12 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-// ── Main orchestrator ─────────────────────────────────────────
-
 async function checkAllInboxes(): Promise<any[]> {
   const { data: accounts, error } = await supabase
     .from('email_accounts').select('*').eq('is_active', true);
   if (error) throw new Error('DB accounts: ' + error.message);
   if (!accounts?.length) return [];
 
-  // Build email → contact_id map once (shared across all IMAP accounts)
   const { data: contacts } = await supabase
     .from('contacts').select('id, email, email2, email3, it_email, mgmt_email');
 
@@ -79,8 +65,6 @@ async function checkAllInboxes(): Promise<any[]> {
   return results;
 }
 
-// ── Per-account IMAP processor ────────────────────────────────
-
 async function processAccount(
   account: any,
   emailMap: Map<string, string>,
@@ -95,7 +79,6 @@ async function processAccount(
     tls:    { rejectUnauthorized: false },
   });
 
-  // ── Connect ───────────────────────────────────────────────────
   try {
     await imap.connect();
   } catch (err: any) {
@@ -113,18 +96,15 @@ async function processAccount(
   try {
     const lock = await imap.getMailboxLock('INBOX');
     try {
-      // ── Determine search window ─────────────────────────────
       const since = new Date();
       if (account.last_check_at) {
-        // Go back to start of day before last check (catches emails in transit)
         since.setTime(new Date(account.last_check_at).getTime());
         since.setDate(since.getDate() - 1);
       } else {
-        since.setDate(since.getDate() - 7); // First run: last 7 days
+        since.setDate(since.getDate() - 7);
       }
       since.setHours(0, 0, 0, 0);
 
-      // ── Search for UIDs in window ───────────────────────────
       const uids = (await imap.search({ since }, { uid: true })) as number[];
       if (!uids?.length) {
         await supabase.from('email_accounts').update({
@@ -134,16 +114,15 @@ async function processAccount(
         return { processed: 0, matched: 0 };
       }
 
-      // Process at most 200 per run to stay within Edge Function timeout
       const batch = uids.slice(-200);
 
-      // ── Fetch envelopes ─────────────────────────────────────
-      for await (const msg of imap.fetch(batch, { uid: true, envelope: true }, { uid: true })) {
+      // Fetch envelope + raw source for body extraction
+      for await (const msg of imap.fetch(batch, { uid: true, envelope: true, source: true }, { uid: true })) {
         processed++;
         if ((msg.uid as number) > maxUid) maxUid = msg.uid as number;
 
-        const env  = msg.envelope as any;
-        const from = env?.from?.[0];
+        const env      = msg.envelope as any;
+        const from     = env?.from?.[0];
         const fromAddr = from?.address?.toLowerCase()?.trim();
         if (!fromAddr) continue;
 
@@ -151,27 +130,55 @@ async function processAccount(
         if (!contactId) continue;
 
         const msgId: string | null = env?.messageId ?? null;
+        const subject  = env?.subject ?? '(sin asunto)';
+        const fromName = from?.name as string | undefined;
+        const label    = fromName ? `${fromName} <${fromAddr}>` : fromAddr;
+        const date     = env?.date
+          ? new Date(env.date).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0];
 
-        // ── Deduplicate by Message-ID ─────────────────────────
+        // ── Deduplicación primaria: por Message-ID ───────────────
         if (msgId) {
           const { data: dup } = await supabase
             .from('interactions').select('id').eq('message_id', msgId).maybeSingle();
           if (dup) continue;
+        } else {
+          // ── Deduplicación secundaria: mismo contacto+fecha+remitente ──
+          const { data: dup } = await supabase
+            .from('interactions').select('id')
+            .eq('contact_id', contactId)
+            .eq('date', date)
+            .ilike('text', `%${fromAddr}%`)
+            .limit(1).maybeSingle();
+          if (dup) continue;
         }
 
-        // ── Create interaction ────────────────────────────────
-        const subject = env?.subject ?? '(sin asunto)';
-        const name    = from?.name as string | undefined;
-        const label   = name ? `${name} <${fromAddr}>` : fromAddr;
-        const date    = env?.date
-          ? new Date(env.date).toISOString().split('T')[0]
-          : new Date().toISOString().split('T')[0];
+        // ── Extraer cuerpo del email ─────────────────────────────
+        let bodyText = '';
+        if (msg.source) {
+          try {
+            const parsed = await simpleParser(msg.source as any);
+            bodyText = (parsed.text ?? '').trim();
+            // Quitar líneas de cita ("> ") para quedarnos con el mensaje nuevo
+            bodyText = bodyText
+              .split('\n')
+              .filter((line: string) => !line.trimStart().startsWith('>'))
+              .join('\n')
+              .replace(/\n{3,}/g, '\n\n')
+              .trim();
+            if (bodyText.length > 2000) bodyText = bodyText.slice(0, 2000) + '…';
+          } catch (_) { /* si falla el parse, solo usamos asunto */ }
+        }
+
+        const text = bodyText
+          ? `De: ${label}\nAsunto: ${subject}\n\n${bodyText}`
+          : `Respuesta de ${label}\nAsunto: ${subject}`;
 
         const { error: insErr } = await supabase.from('interactions').insert({
           contact_id:    contactId,
           type:          'reply',
           date,
-          text:          `Respuesta de ${label}\nAsunto: ${subject}`,
+          text,
           message_id:    msgId,
           auto_detected: true,
         });
@@ -179,7 +186,6 @@ async function processAccount(
         if (!insErr) matched++;
       }
 
-      // ── Update watermark ────────────────────────────────────
       await supabase.from('email_accounts').update({
         last_uid_checked: maxUid,
         last_check_at:    new Date().toISOString(),
