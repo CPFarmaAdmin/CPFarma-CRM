@@ -76,6 +76,11 @@ function openSendModal(preselectedIds, skipToStep2 = false) {
   sendStep     = 1;
   sendRecipIds = preselectedIds ? [...preselectedIds] : [];
   sendEmailMap = {}; // reset Para+CC selections
+  // Pre-init email maps so secondary emails appear in CC immediately
+  sendRecipIds.forEach(id => {
+    const r = records.find(x => x.id === id);
+    if (r) sendEmailMap[id] = _initEmailMap(r);
+  });
   sPrevIdx     = 0;
 
   loadSavedAttach();
@@ -245,7 +250,8 @@ function filterRecip() {
     // ALWAYS show Para+CC panel when record has multiple emails
     // User sees all contacts immediately, no need to check the box first
     const showCcPanel = hasMulti;
-    const em = sendEmailMap[r.id] || { to: r.email, cc: [] };
+    if (!sendEmailMap[r.id]) sendEmailMap[r.id] = _initEmailMap(r);
+    const em = sendEmailMap[r.id];
 
     // Build CC panel rows (avoid nested template literals which can fail in some browsers)
     let ccPanelHtml = '';
