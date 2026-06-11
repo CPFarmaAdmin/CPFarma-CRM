@@ -36,13 +36,11 @@ async function dbGetContact(id) {
 }
 
 async function dbSaveContact(record) {
-  // Strip computed/joined fields and columns that may not exist in older DB schemas
-  // Run SQL_UPDATE.md v19 to add demo_date and demo_time columns
-  const { id, interactions, _noteCount, demo_date, demo_time, assigned_to, ...fields } = record;
-  // Only include these fields if they have a value (avoids schema cache error on old DBs)
+  const { id, interactions, _noteCount, demo_date, demo_time, assigned_to, custom_fields, ...fields } = record;
   if (record.demo_date)    fields.demo_date    = record.demo_date;
   if (record.demo_time)    fields.demo_time    = record.demo_time;
-  if ('assigned_to' in record) fields.assigned_to = record.assigned_to || null;
+  if ('assigned_to'    in record) fields.assigned_to    = record.assigned_to    || null;
+  if ('custom_fields'  in record) fields.custom_fields  = record.custom_fields  || {};
   if (id) {
     const { data, error } = await db
       .from('contacts')
@@ -224,6 +222,45 @@ async function dbSaveOrgSettings(name) {
   const { error } = await db
     .from('org_settings')
     .upsert({ id: 1, name, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
+async function dbSaveOrgConfig(patch) {
+  const { error } = await db
+    .from('org_settings')
+    .upsert({ id: 1, ...patch, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
+// ── CUSTOM FIELD DEFS ─────────────────────────────────────────
+
+async function dbGetCustomFieldDefs() {
+  const { data, error } = await db
+    .from('custom_field_defs')
+    .select('*')
+    .eq('is_active', true)
+    .order('position', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+async function dbSaveCustomFieldDef(def) {
+  const { id, ...fields } = def;
+  if (id) {
+    const { data, error } = await db
+      .from('custom_field_defs').update(fields).eq('id', id).select().single();
+    if (error) throw error;
+    return data;
+  } else {
+    const { data, error } = await db
+      .from('custom_field_defs').insert(fields).select().single();
+    if (error) throw error;
+    return data;
+  }
+}
+
+async function dbDeleteCustomFieldDef(id) {
+  const { error } = await db.from('custom_field_defs').update({ is_active: false }).eq('id', id);
   if (error) throw error;
 }
 

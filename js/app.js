@@ -15,40 +15,80 @@ let cSortDir      = 'desc';
 let selectedIds   = new Set();
 let realtimeSub   = null;  // track subscription to avoid duplicates
 
-// ── PROSPECT STATUS DEFINITIONS ───────────────────────────────
-const PROSPECT_STATUS_LABELS = {
-  new:              '🆕 Sin contactar',
-  first_contact:    '📤 Primer contacto',
-  no_response:      '📭 Sin respuesta',
-  contact_obtained: '📞 Datos obtenidos',
-  info_sent:        '📋 Información enviada',
-  demo_scheduled:   '📅 Demo agendada',
-  demo_done:        '🎬 Demo realizada',
-  budget_sent:      '💰 Presupuesto enviado',
-  followup:         '🔔 En seguimiento',
-  waiting_approval: '⏳ Esperando aprobación',
-  won:              '🏆 Ganado',
-  rejected:         '🚫 Rechazado',
-  // Legacy mappings (keep for backward compat)
-  sent:             '📤 Enviado',
-  replied:          '✅ Respondido',
-  waiting:          '⏳ Sin respuesta',
-  negotiation:      '🤝 Negociando',
+// ── ORG CONFIG (loaded from DB, falls back to defaults) ───────
+const DEFAULT_PROSPECT_STATUSES = [
+  { value: 'new',              label: 'Sin contactar',        emoji: '🆕' },
+  { value: 'no_response',      label: 'Sin respuesta',        emoji: '📭' },
+  { value: 'first_contact',    label: 'Primer contacto',      emoji: '📤' },
+  { value: 'contact_obtained', label: 'Datos obtenidos',      emoji: '📞' },
+  { value: 'info_sent',        label: 'Info enviada',         emoji: '📋' },
+  { value: 'demo_scheduled',   label: 'Demo agendada',        emoji: '📅' },
+  { value: 'demo_done',        label: 'Demo realizada',       emoji: '🎬' },
+  { value: 'budget_sent',      label: 'Presupuesto enviado',  emoji: '💰' },
+  { value: 'followup',         label: 'En seguimiento',       emoji: '🔔' },
+  { value: 'waiting_approval', label: 'Esperando aprobación', emoji: '⏳' },
+  { value: 'won',              label: 'Ganado',               emoji: '🏆' },
+  { value: 'rejected',         label: 'Rechazado',            emoji: '🚫' },
+];
+const DEFAULT_CLIENT_STATUSES = [
+  { value: 'ok',       label: 'Sin incidencias',  emoji: '✅' },
+  { value: 'incident', label: 'Incidencia activa', emoji: '⚠️' },
+  { value: 'renewal',  label: 'Renovación',        emoji: '🔄' },
+  { value: 'churned',  label: 'Baja',              emoji: '❌' },
+  { value: 'lost',     label: 'Inactivo',           emoji: '⬜' },
+];
+// Legacy value aliases kept for backward-compat (old data in DB)
+const LEGACY_STATUS_MAP = {
+  sent: 'first_contact', replied: 'contact_obtained',
+  waiting: 'no_response', negotiation: 'followup',
 };
 
-const CLIENT_STATUS_LABELS = {
-  ok:       '✅ Sin incidencias',
-  incident: '⚠️ Incidencia activa',
-  renewal:  '🔄 Renovación',
-  churned:  '❌ Baja',
-  lost:     '⬜ Inactivo',
+let orgConfig = {
+  prospect_statuses: [...DEFAULT_PROSPECT_STATUSES],
+  client_statuses:   [...DEFAULT_CLIENT_STATUSES],
+  field_labels:      {},
+  custom_field_defs: [],
 };
+
+async function loadOrgConfig() {
+  try {
+    const settings = await dbGetOrgSettings();
+    if (settings?.prospect_statuses) orgConfig.prospect_statuses = settings.prospect_statuses;
+    if (settings?.client_statuses)   orgConfig.client_statuses   = settings.client_statuses;
+    if (settings?.field_labels)      orgConfig.field_labels      = settings.field_labels;
+    orgConfig.custom_field_defs = await dbGetCustomFieldDefs();
+  } catch(e) {
+    console.warn('loadOrgConfig:', e.message);
+  }
+  renderProspectFilterTabs();
+}
+
+function getStatusLabel(value, type) {
+  const list = type === 'client' ? orgConfig.client_statuses : orgConfig.prospect_statuses;
+  const resolved = LEGACY_STATUS_MAP[value] || value;
+  const def = list.find(x => x.value === resolved) || list.find(x => x.value === value);
+  if (def) return `${def.emoji} ${def.label}`;
+  // Ultimate fallback for truly unknown values
+  return value || '—';
+}
+
+function renderProspectFilterTabs() {
+  const wrap = document.getElementById('filtersProspects');
+  if (!wrap) return;
+  const statuses = orgConfig.prospect_statuses;
+  wrap.innerHTML =
+    `<button class="ftab ${cFilterP==='all'?'active':''}" data-filter="all" onclick="setFilter('all',this)">Todos</button>` +
+    statuses.map(s =>
+      `<button class="ftab ${cFilterP===s.value?'active':''}" data-filter="${s.value}" onclick="setFilter('${s.value}',this)">${s.emoji} ${s.label}</button>`
+    ).join('') +
+    `<button class="ftab ${cFilterP==='followup_today'?'active':''}" data-filter="followup_today" onclick="setFilter('followup_today',this)">🔔 Follow-up hoy</button>`;
+}
 
 // ── INIT ──────────────────────────────────────────────────────
 async function initApp() {
   showLoading(true);
   try {
-    await Promise.all([loadFolders(), loadTemplates()]);
+    await Promise.all([loadFolders(), loadTemplates(), loadOrgConfig()]);
     await loadContacts();
     setView('prospects');
     renderSidebar();
@@ -487,8 +527,8 @@ function escH(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 function renderProspectBadge(status) {
-  const s = status || 'new';
-  const label = PROSPECT_STATUS_LABELS[s] || s;
+  const s = LEGACY_STATUS_MAP[status] || status || 'new';
+  const label = getStatusLabel(s, 'prospect');
   return `<span class="badge badge-${s}">${label}</span>`;
 }
 
@@ -497,8 +537,9 @@ function renderBadge(status, isClient) {
   return renderProspectBadge(status);
 }
 function renderClientStatusBadge(s) {
-  const label = CLIENT_STATUS_LABELS[s] || '✅ Sin incidencias';
-  return `<span class="badge badge-c-${s||'ok'}">${label}</span>`;
+  const val = s || 'ok';
+  const label = getStatusLabel(val, 'client');
+  return `<span class="badge badge-c-${val}">${label}</span>`;
 }
 function renderPrio(p) {
   const cls = p==='Alta'?'alta':p==='Baja'?'baja':'media';
@@ -558,11 +599,7 @@ function exportCSV(){
   const fn   = id => folders.find(f=>f.id===id)?.name || '';
   const isP  = activeView === 'prospects';
 
-  // Human-readable labels for status values
-  const statusLabel = s => {
-    const all = {...PROSPECT_STATUS_LABELS, ...CLIENT_STATUS_LABELS};
-    return all[s] || s || '';
-  };
+  const statusLabel = s => getStatusLabel(s, isP ? 'prospect' : 'client');
 
   // Build rows matching the visible table columns
   let headers, data;

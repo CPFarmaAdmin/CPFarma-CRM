@@ -116,6 +116,7 @@ async function openPanel(id) {
       : (r.status === 'lost' ? 'rejected' : r.status || 'new');
     selStatus(statusToShow);
 
+    _loadCustomFieldValues(r.custom_fields);
     try { cNotes = await dbGetInteractions(id); }
     catch(e) { cNotes = []; }
   } else {
@@ -141,17 +142,80 @@ function _applyTypeUI(isClient) {
   document.querySelectorAll('.client-only').forEach(el => el.style.display = isClient ? '' : 'none');
   document.querySelectorAll('.prospect-only').forEach(el => el.style.display = !isClient ? '' : 'none');
 
-  // Show the correct status selector block
+  // Render dynamic status buttons from orgConfig
   const sp = document.getElementById('statusSelProspect');
   const sc = document.getElementById('statusSelClient');
-  if (sp) sp.style.display = isClient ? 'none' : '';
-  if (sc) sc.style.display = isClient ? '' : 'none';
+  if (sp) {
+    sp.style.display = isClient ? 'none' : '';
+    sp.innerHTML = (orgConfig?.prospect_statuses || []).map(s =>
+      `<div class="status-opt" data-v="${s.value}" onclick="selStatus('${s.value}')">${s.emoji}<span>${s.label}</span></div>`
+    ).join('');
+  }
+  if (sc) {
+    sc.style.display = isClient ? '' : 'none';
+    sc.innerHTML = (orgConfig?.client_statuses || []).map(s =>
+      `<div class="status-opt" data-v="${s.value}" onclick="selStatus('${s.value}')">${s.emoji}<span>${s.label}</span></div>`
+    ).join('');
+  }
+
+  // Render custom fields for this type
+  _renderCustomFields(isClient);
 
   // Show the correct email type select
   const etP = document.getElementById('f-emailType');
   const etC = document.getElementById('f-emailTypeClient');
   if (etP) etP.style.display = isClient ? 'none' : '';
   if (etC) etC.style.display = isClient ? '' : 'none';
+}
+
+function _renderCustomFields(isClient) {
+  const type = isClient ? 'client' : 'prospect';
+  const wrap = document.getElementById('customFieldsSection');
+  if (!wrap) return;
+  const defs = (orgConfig?.custom_field_defs || [])
+    .filter(d => d.applies_to === type || d.applies_to === 'both');
+  if (!defs.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  wrap.innerHTML = `<div class="form-section-title">✨ Campos adicionales</div><div class="form-grid">` +
+    defs.map(d => {
+      const fid = `cf-${d.field_key}`;
+      let input;
+      if (d.field_type === 'select') {
+        const opts = (d.options || []).map(o => `<option value="${escH(o)}">${escH(o)}</option>`).join('');
+        input = `<select id="${fid}"><option value="">— Selecciona —</option>${opts}</select>`;
+      } else if (d.field_type === 'textarea') {
+        input = `<textarea id="${fid}" rows="2" style="width:100%"></textarea>`;
+      } else if (d.field_type === 'checkbox') {
+        input = `<label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="${fid}"> ${escH(d.label)}</label>`;
+      } else {
+        input = `<input type="${d.field_type === 'number' ? 'number' : d.field_type === 'date' ? 'date' : 'text'}" id="${fid}">`;
+      }
+      const label = d.field_type === 'checkbox' ? '' : `<label>${escH(d.label)}</label>`;
+      const wrap = d.field_type === 'textarea' ? 'fg-full' : '';
+      return `<div class="${wrap}">${label}${input}</div>`;
+    }).join('') + '</div>';
+}
+
+function _loadCustomFieldValues(customFields) {
+  const vals = customFields || {};
+  (orgConfig?.custom_field_defs || []).forEach(d => {
+    const el = document.getElementById(`cf-${d.field_key}`);
+    if (!el) return;
+    if (d.field_type === 'checkbox') el.checked = !!vals[d.field_key];
+    else el.value = vals[d.field_key] ?? '';
+  });
+}
+
+function _readCustomFieldValues() {
+  const out = {};
+  (orgConfig?.custom_field_defs || []).forEach(d => {
+    const el = document.getElementById(`cf-${d.field_key}`);
+    if (!el) return;
+    if (d.field_type === 'checkbox') out[d.field_key] = el.checked;
+    else if (el.value !== '') out[d.field_key] = d.field_type === 'number' ? Number(el.value) : el.value;
+  });
+  return out;
 }
 
 // When user changes type in the select
@@ -387,6 +451,7 @@ async function saveRecord() {
     deal_close:       getVal('f-dealClose')       || null,
     user_id:          currentUser?.id,
     assigned_to:      getVal('f-assignedTo') || null,
+    custom_fields:    _readCustomFieldValues(),
   };
 
   try {

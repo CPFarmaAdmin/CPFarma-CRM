@@ -557,6 +557,223 @@ function _loadConfigTab() {
   if (input) input.value = _currentOrgName;
   const errEl = document.getElementById('orgNameError');
   if (errEl) errEl.style.display = 'none';
+  _renderStatusEditor('prospect');
+  _renderStatusEditor('client');
+  _renderCustomFieldEditor('prospect');
+  _renderCustomFieldEditor('client');
+}
+
+// ── STATUS EDITOR ─────────────────────────────────────────────
+function _renderStatusEditor(type) {
+  const wrap = document.getElementById(`statusEditor-${type}`);
+  if (!wrap) return;
+  const statuses = type === 'prospect'
+    ? orgConfig.prospect_statuses
+    : orgConfig.client_statuses;
+  wrap.innerHTML = statuses.map((s, i) => `
+    <div class="cfg-status-row" data-i="${i}" data-type="${type}">
+      <input class="cfg-status-emoji" type="text" value="${escH(s.emoji)}" maxlength="4"
+        oninput="_statusFieldChange('${type}',${i},'emoji',this.value)" placeholder="🔔">
+      <input class="cfg-status-label" type="text" value="${escH(s.label)}"
+        oninput="_statusFieldChange('${type}',${i},'label',this.value)" placeholder="Nombre">
+      <input class="cfg-status-value" type="text" value="${escH(s.value)}"
+        oninput="_statusFieldChange('${type}',${i},'value',this.value)" placeholder="clave_interna"
+        ${['won','rejected','lost','churned'].includes(s.value)?'title="Estado reservado del sistema"':''}>
+      <button class="cfg-btn-del" onclick="_deleteStatus('${type}',${i})" title="Eliminar">✕</button>
+    </div>`).join('') +
+    `<button class="cfg-btn-add" onclick="_addStatus('${type}')">+ Añadir estado</button>
+     <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="_saveStatuses('${type}')">💾 Guardar estados</button>`;
+}
+
+function _statusFieldChange(type, idx, field, val) {
+  const list = type === 'prospect' ? orgConfig.prospect_statuses : orgConfig.client_statuses;
+  if (list[idx]) list[idx][field] = val;
+}
+
+function _addStatus(type) {
+  const list = type === 'prospect' ? orgConfig.prospect_statuses : orgConfig.client_statuses;
+  list.push({ value: 'nuevo_estado_' + Date.now(), label: 'Nuevo estado', emoji: '🔵' });
+  _renderStatusEditor(type);
+}
+
+function _deleteStatus(type, idx) {
+  const list = type === 'prospect' ? orgConfig.prospect_statuses : orgConfig.client_statuses;
+  const s = list[idx];
+  if (['won','rejected','lost','churned'].includes(s?.value)) {
+    toast('Este estado es reservado y no puede eliminarse.', 'er'); return;
+  }
+  if (!confirm(`¿Eliminar estado "${s?.label}"? Los contactos con ese estado mantendrán el valor en BD pero no se mostrará la etiqueta.`)) return;
+  list.splice(idx, 1);
+  _renderStatusEditor(type);
+}
+
+async function _saveStatuses(type) {
+  const list = type === 'prospect' ? orgConfig.prospect_statuses : orgConfig.client_statuses;
+  // Validate: all must have value and label
+  if (list.some(s => !s.value.trim() || !s.label.trim())) {
+    toast('Todos los estados deben tener clave y nombre.', 'er'); return;
+  }
+  // Ensure unique values
+  const values = list.map(s => s.value.trim());
+  if (new Set(values).size !== values.length) {
+    toast('Las claves internas deben ser únicas.', 'er'); return;
+  }
+  try {
+    const patch = type === 'prospect'
+      ? { prospect_statuses: list }
+      : { client_statuses: list };
+    await dbSaveOrgConfig(patch);
+    if (type === 'prospect') orgConfig.prospect_statuses = list;
+    else                     orgConfig.client_statuses   = list;
+    renderProspectFilterTabs();
+    toast('✅ Estados guardados', 'ok');
+  } catch(e) {
+    toast('Error: ' + e.message, 'er');
+  }
+}
+
+// ── CUSTOM FIELD EDITOR ───────────────────────────────────────
+let _cfEditId = null;
+
+function _renderCustomFieldEditor(type) {
+  const wrap = document.getElementById(`cfEditor-${type}`);
+  if (!wrap) return;
+  const defs = (orgConfig.custom_field_defs || []).filter(d => d.applies_to === type || d.applies_to === 'both');
+
+  const typeLabel = { text:'Texto', number:'Número', date:'Fecha', select:'Selección', textarea:'Texto largo', checkbox:'Sí/No' };
+
+  wrap.innerHTML = (defs.length ? defs.map(d => `
+    <div class="cfg-cf-row">
+      <span class="cfg-cf-label">${escH(d.label)}</span>
+      <span class="cfg-cf-type">${typeLabel[d.field_type]||d.field_type}</span>
+      <div class="cfg-cf-btns">
+        <button class="cfg-btn-sm" onclick="_cfOpenForm('${type}','${d.id}')">✏️</button>
+        <button class="cfg-btn-sm cfg-btn-del" onclick="_cfDelete('${d.id}','${type}')">✕</button>
+      </div>
+    </div>`).join('') : '<div class="cfg-empty">Sin campos adicionales</div>') +
+    `<button class="cfg-btn-add" onclick="_cfOpenForm('${type}',null)">+ Añadir campo</button>`;
+
+  // Form (hidden by default)
+  const formId = `cfForm-${type}`;
+  if (!document.getElementById(formId)) {
+    const form = document.createElement('div');
+    form.id = formId;
+    form.style.display = 'none';
+    form.className = 'cfg-cf-form';
+    form.innerHTML = `
+      <div class="form-grid">
+        <div><label>Etiqueta <span class="req">*</span></label>
+          <input type="text" id="cfF-label-${type}" placeholder="Nombre del campo"></div>
+        <div><label>Tipo <span class="req">*</span></label>
+          <select id="cfF-type-${type}" onchange="_cfTypeChange('${type}')">
+            <option value="text">Texto</option>
+            <option value="number">Número</option>
+            <option value="date">Fecha</option>
+            <option value="select">Selección</option>
+            <option value="textarea">Texto largo</option>
+            <option value="checkbox">Sí/No</option>
+          </select></div>
+        <div id="cfF-opts-wrap-${type}" class="fg-full" style="display:none">
+          <label>Opciones (una por línea)</label>
+          <textarea id="cfF-opts-${type}" rows="3" style="width:100%" placeholder="Opción 1&#10;Opción 2&#10;Opción 3"></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-primary btn-sm" onclick="_cfSave('${type}')">💾 Guardar campo</button>
+        <button class="btn btn-sm" onclick="_cfCloseForm('${type}')">Cancelar</button>
+      </div>`;
+    wrap.appendChild(form);
+  }
+}
+
+function _cfOpenForm(type, id) {
+  _cfEditId = id;
+  const form = document.getElementById(`cfForm-${type}`);
+  if (!form) return;
+  if (id) {
+    const d = orgConfig.custom_field_defs.find(x => x.id === id);
+    if (!d) return;
+    document.getElementById(`cfF-label-${type}`).value = d.label;
+    document.getElementById(`cfF-type-${type}`).value  = d.field_type;
+    const optsWrap = document.getElementById(`cfF-opts-wrap-${type}`);
+    const optsArea = document.getElementById(`cfF-opts-${type}`);
+    if (d.field_type === 'select') {
+      optsWrap.style.display = '';
+      optsArea.value = (d.options || []).join('\n');
+    } else {
+      optsWrap.style.display = 'none';
+    }
+  } else {
+    document.getElementById(`cfF-label-${type}`).value = '';
+    document.getElementById(`cfF-type-${type}`).value  = 'text';
+    document.getElementById(`cfF-opts-wrap-${type}`).style.display = 'none';
+    document.getElementById(`cfF-opts-${type}`).value  = '';
+  }
+  form.style.display = '';
+  document.getElementById(`cfF-label-${type}`).focus();
+}
+
+function _cfCloseForm(type) {
+  const form = document.getElementById(`cfForm-${type}`);
+  if (form) form.style.display = 'none';
+  _cfEditId = null;
+}
+
+function _cfTypeChange(type) {
+  const sel  = document.getElementById(`cfF-type-${type}`);
+  const wrap = document.getElementById(`cfF-opts-wrap-${type}`);
+  if (wrap) wrap.style.display = sel.value === 'select' ? '' : 'none';
+}
+
+async function _cfSave(type) {
+  const label = document.getElementById(`cfF-label-${type}`)?.value.trim();
+  const ftype = document.getElementById(`cfF-type-${type}`)?.value;
+  if (!label) { toast('El nombre del campo es obligatorio.', 'er'); return; }
+
+  const opts = ftype === 'select'
+    ? (document.getElementById(`cfF-opts-${type}`)?.value || '').split('\n').map(s => s.trim()).filter(Boolean)
+    : [];
+
+  // field_key: generate from label if new
+  const existing = _cfEditId ? orgConfig.custom_field_defs.find(x => x.id === _cfEditId) : null;
+  const field_key = existing?.field_key || label.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_');
+  const maxPos = orgConfig.custom_field_defs.length
+    ? Math.max(...orgConfig.custom_field_defs.map(d => d.position || 0)) + 1 : 0;
+
+  try {
+    const saved = await dbSaveCustomFieldDef({
+      id:         _cfEditId || undefined,
+      applies_to: type,
+      field_key,
+      label,
+      field_type: ftype,
+      options:    opts,
+      position:   existing?.position ?? maxPos,
+      is_active:  true,
+    });
+    // Update local config
+    orgConfig.custom_field_defs = orgConfig.custom_field_defs.filter(x => x.id !== saved.id);
+    orgConfig.custom_field_defs.push(saved);
+    orgConfig.custom_field_defs.sort((a, b) => (a.position || 0) - (b.position || 0));
+    _cfCloseForm(type);
+    _renderCustomFieldEditor(type);
+    toast('✅ Campo guardado', 'ok');
+  } catch(e) {
+    toast('Error: ' + e.message, 'er');
+  }
+}
+
+async function _cfDelete(id, type) {
+  const d = orgConfig.custom_field_defs.find(x => x.id === id);
+  if (!confirm(`¿Eliminar campo "${d?.label}"? Los datos existentes en contactos no se borran.`)) return;
+  try {
+    await dbDeleteCustomFieldDef(id);
+    orgConfig.custom_field_defs = orgConfig.custom_field_defs.filter(x => x.id !== id);
+    _renderCustomFieldEditor(type);
+    toast('🗑 Campo eliminado', 'er');
+  } catch(e) {
+    toast('Error: ' + e.message, 'er');
+  }
 }
 
 // ── INVITE / CREATE USER ──────────────────────────────────────

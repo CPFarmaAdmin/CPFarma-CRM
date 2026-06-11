@@ -6,7 +6,7 @@
 <title>CP Farma — CRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Lato:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=2.6">
+<link rel="stylesheet" href="css/styles.css?v=2.7">
 </head>
 <body>
 
@@ -401,6 +401,9 @@
           <div><label>Fecha inicio mantenimiento</label><input type="date" id="f-maintenanceDate"></div>
         </div>
       </div>
+
+      <!-- CAMPOS CUSTOM (renderizados dinámicamente desde orgConfig) -->
+      <div id="customFieldsSection" class="form-section" style="display:none"></div>
 
       <!-- NOTAS -->
       <div class="form-section">
@@ -893,6 +896,8 @@
 
       <!-- ── TAB CONFIGURACIÓN ── -->
       <div class="ctrl-tab-pane" data-pane="config" style="display:none">
+
+        <!-- Identidad -->
         <div class="form-section">
           <div class="form-section-title">🏢 Identidad de la empresa</div>
           <div class="form-grid" style="margin-top:12px">
@@ -907,6 +912,43 @@
             <button class="btn btn-primary btn-sm" id="orgNameBtn" onclick="saveOrgName()">💾 Guardar nombre</button>
           </div>
         </div>
+
+        <!-- Estados prospectos -->
+        <div class="form-section">
+          <div class="form-section-title">🎯 Estados del proceso — Prospectos</div>
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:10px">
+            Define las etapas del embudo de ventas. La clave interna debe ser única y sin espacios.
+          </div>
+          <div id="statusEditor-prospect"></div>
+        </div>
+
+        <!-- Estados clientes -->
+        <div class="form-section">
+          <div class="form-section-title">💼 Estados del proceso — Clientes</div>
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:10px">
+            Define los estados posibles de tus clientes activos.
+          </div>
+          <div id="statusEditor-client"></div>
+        </div>
+
+        <!-- Campos extra prospectos -->
+        <div class="form-section">
+          <div class="form-section-title">✨ Campos adicionales — Prospectos</div>
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:10px">
+            Campos extra que aparecerán en la ficha de cada prospecto.
+          </div>
+          <div id="cfEditor-prospect"></div>
+        </div>
+
+        <!-- Campos extra clientes -->
+        <div class="form-section">
+          <div class="form-section-title">✨ Campos adicionales — Clientes</div>
+          <div style="font-size:.75rem;color:var(--ink3);margin-bottom:10px">
+            Campos extra que aparecerán en la ficha de cada cliente.
+          </div>
+          <div id="cfEditor-client"></div>
+        </div>
+
       </div>
 
       <!-- ── TAB CORREOS (cuentas IMAP para captura automática de respuestas) ── -->
@@ -1022,14 +1064,14 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=2.6"></script>
-<script src="js/db.js?v=2.6"></script>
-<script src="js/users.js?v=2.6"></script>
-<script src="js/notifications.js?v=2.6"></script>
-<script src="js/auth.js?v=2.6"></script>
-<script src="js/app.js?v=2.6"></script>
-<script src="js/ui.js?v=2.6"></script>
-<script src="js/send.js?v=2.6"></script>
-<script src="js/import.js?v=2.6"></script>
+<script src="js/config.js?v=2.7"></script>
+<script src="js/db.js?v=2.7"></script>
+<script src="js/users.js?v=2.7"></script>
+<script src="js/notifications.js?v=2.7"></script>
+<script src="js/auth.js?v=2.7"></script>
+<script src="js/app.js?v=2.7"></script>
+<script src="js/ui.js?v=2.7"></script>
+<script src="js/send.js?v=2.7"></script>
+<script src="js/import.js?v=2.7"></script>
 </body>
 </html>
