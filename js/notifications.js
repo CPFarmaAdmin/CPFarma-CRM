@@ -132,12 +132,7 @@ async function _notifClick(idx) {
     return;
   }
   if (n.entity_id) {
-    // Try local records first, then fetch from DB
-    let r = (typeof records !== 'undefined' ? records : []).find(x => x.id === n.entity_id);
-    if (!r) {
-      try { r = await dbGetContact(n.entity_id); } catch (_) { return; }
-    }
-    if (r) openPanel(r);
+    openPanel(n.entity_id);
   }
 }
 
