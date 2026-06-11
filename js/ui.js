@@ -183,9 +183,6 @@ function switchPanelTab(tab, btn) {
 
 // Auto follow-up schedule (days from today) per prospect status
 const FOLLOWUP_CADENCE = {
-  first_contact:    14,   // sent first email → follow up in 2 weeks
-  no_response:      30,   // no reply to first followup → 1 month
-  contact_obtained: 7,    // got data → reach out in 1 week
   info_sent:        14,   // sent program info → follow up in 2 weeks
   demo_scheduled:   2,    // demo scheduled → remind 2 days before (manual)
   demo_done:        7,    // demo done → send proposal in 1 week

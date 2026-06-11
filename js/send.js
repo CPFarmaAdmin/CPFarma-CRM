@@ -7,8 +7,7 @@ let sendRecipIds  = [];
 let sendEmailMap  = {};   // { recordId: {to: email, cc: [email, ...]} } — Para+CC per record
 
 const SEND_FOLLOWUP_CADENCE = {
-  first_contact:14, no_response:30, contact_obtained:7, info_sent:14,
-  demo_scheduled:2, demo_done:7, budget_sent:21, followup:14, waiting_approval:30,
+  info_sent:14, demo_scheduled:2, demo_done:7, budget_sent:21, followup:14, waiting_approval:30,
 };
 function calcFollowupDate(status) {
   const days = SEND_FOLLOWUP_CADENCE[status];
@@ -489,7 +488,7 @@ async function doSend() {
     // Save to DB immediately (mark as sent, save date, add history)
     try {
       const newStatus = (r.type !== 'client' && (!r.status || r.status === 'new'))
-        ? 'no_response' : r.status;  // first send → 'Sin responder' (user sets manually when they reply)
+        ? 'no_response' : r.status;  // first send → 'Sin respuesta' (user advances manually when they reply)
       // Auto-set next_followup if not already set
       const autoNextFollowup = (!r.next_followup) ? calcFollowupDate(newStatus) : null;
       await dbSaveContact({

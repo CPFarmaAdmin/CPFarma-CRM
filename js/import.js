@@ -16,7 +16,7 @@ const PROSPECT_STATUS_MAP = {
   'enviado':'first_contact',         'sent':'first_contact',
   'primer email':'first_contact',    'primer email enviado':'first_contact',
 
-  // Sin responder — se envió y no respondieron
+  // Sin respuesta — se envió y no respondieron
   'sin responder':'no_response',     'no_response':'no_response',
   'sin respuesta':'no_response',     'no responde':'no_response',
   'waiting':'no_response',           'no reply':'no_response',

@@ -19,7 +19,7 @@ let realtimeSub   = null;  // track subscription to avoid duplicates
 const PROSPECT_STATUS_LABELS = {
   new:              '🆕 Sin contactar',
   first_contact:    '📤 Primer contacto',
-  no_response:      '📭 Sin responder',
+  no_response:      '📭 Sin respuesta',
   contact_obtained: '📞 Datos obtenidos',
   info_sent:        '📋 Información enviada',
   demo_scheduled:   '📅 Demo agendada',

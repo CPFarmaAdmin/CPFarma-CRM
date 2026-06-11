@@ -531,7 +531,7 @@ function _renderLogDetails(log) {
 function _statusLabel(s, type) {
   if (!s) return '—';
   const allLabels = {
-    new:'Sin contactar', first_contact:'Primer contacto', no_response:'Sin responder',
+    new:'Sin contactar', first_contact:'Primer contacto', no_response:'Sin respuesta',
     contact_obtained:'Datos obtenidos', info_sent:'Info enviada', demo_scheduled:'Demo agendada',
     demo_done:'Demo realizada', budget_sent:'Presupuesto enviado', followup:'Seguimiento',
     waiting_approval:'Esperando aprobación', won:'Ganado', rejected:'Rechazado',
