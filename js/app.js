@@ -604,16 +604,22 @@ function exportCSV(){
   // Build rows matching the visible table columns
   let headers, data;
   if (isP) {
-    headers = ['Prospecto','Contacto','Email','Email 2','Email 3','Ubicación','Programa',
+    headers = ['Prospecto','Complejo','Contacto','Email','Email 2','Email 3',
+               'Ciudad','Provincia','CCAA','País','Camas','Programa',
                'Etapa del proceso','Prioridad','Últ. contacto','Próx. follow-up',
                'Fecha demo','Hora demo','Asunto último email','Notas','Carpeta'];
     data = rows.map(r => [
       r.company       || '',
+      r.complejo      || '',
       r.contact       || '',
       r.email         || '',
       r.email2        || '',
       r.email3        || '',
-      [r.city,r.country].filter(Boolean).join(', '),
+      r.city          || '',
+      r.province      || '',
+      r.ccaa          || '',
+      r.country       || '',
+      r.beds          != null ? r.beds : '',
       r.program       || '',
       statusLabel(r.status),
       r.priority      || '',
@@ -626,15 +632,21 @@ function exportCSV(){
       fn(r.folder_id),
     ]);
   } else {
-    headers = ['Cliente','Contacto','Email','Email 2','Ubicación','Programa','Versión',
+    headers = ['Cliente','Complejo','Contacto','Email','Email 2',
+               'Ciudad','Provincia','CCAA','País','Camas','Programa','Versión',
                'Estado','Mantenim.','Últ. contacto','Próx. follow-up',
                'Contacto IT','Email IT','Contacto Gerencia','Email Gerencia','Notas','Carpeta'];
     data = rows.map(r => [
       r.company         || '',
+      r.complejo        || '',
       r.contact         || '',
       r.email           || '',
       r.email2          || '',
-      [r.city,r.country].filter(Boolean).join(', '),
+      r.city            || '',
+      r.province        || '',
+      r.ccaa            || '',
+      r.country         || '',
+      r.beds            != null ? r.beds : '',
       r.program         || '',
       r.version         || '',
       statusLabel(r.client_status||'ok'),
