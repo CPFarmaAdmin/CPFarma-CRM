@@ -6,7 +6,7 @@
 <title>CP Farma — CRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Lato:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=3.0">
+<link rel="stylesheet" href="css/styles.css?v=3.1">
 </head>
 <body>
 
@@ -247,7 +247,8 @@
       <div class="form-section">
         <div class="form-section-title" id="infoSectionTitle">🎯 Datos del prospecto</div>
         <div class="form-grid">
-          <div class="fg-full"><label id="labelCompany">Nombre del prospecto <span class="req">*</span></label><input type="text" id="f-company" placeholder="Nombre del cliente o empresa…"></div>
+          <div><label id="labelCompany">Nombre del prospecto <span class="req">*</span></label><input type="text" id="f-company" placeholder="Nombre del cliente o empresa…"></div>
+          <div><label>Complejo</label><input type="text" id="f-complejo" placeholder="Complejo hospitalario, Campus…"></div>
           <div><label id="labelPhone">Teléfono</label><input type="text" id="f-phone" placeholder="+34 600 000 000"></div>
           <div><label id="labelCountry">País</label>
             <select id="f-country">
@@ -321,8 +322,34 @@
             </select>
           </div>
           <div><label id="labelCity">Ciudad</label><input type="text" id="f-city" placeholder="Madrid, Miami…"></div>
+          <div><label>Provincia</label><input type="text" id="f-province" placeholder="Madrid, Barcelona…"></div>
+          <div><label>CCAA</label>
+            <select id="f-ccaa">
+              <option value="">— No aplica —</option>
+              <option>Andalucía</option>
+              <option>Aragón</option>
+              <option>Asturias</option>
+              <option>Baleares</option>
+              <option>Canarias</option>
+              <option>Cantabria</option>
+              <option>Castilla-La Mancha</option>
+              <option>Castilla y León</option>
+              <option>Cataluña</option>
+              <option>Ceuta</option>
+              <option>Comunidad de Madrid</option>
+              <option>Comunidad Valenciana</option>
+              <option>Extremadura</option>
+              <option>Galicia</option>
+              <option>La Rioja</option>
+              <option>Melilla</option>
+              <option>Navarra</option>
+              <option>País Vasco</option>
+              <option>Región de Murcia</option>
+            </select>
+          </div>
           <div class="fg-full"><label>🌐 Página web</label><input type="url" id="f-website" placeholder="https://www.hospital.es" autocomplete="off"></div>
           <div><label id="labelProgram">Programa</label><input type="text" id="f-program" placeholder="Galenic Plus, Citostáticos…"></div>
+          <div><label>Camas</label><input type="number" id="f-beds" placeholder="0" min="0"></div>
           <div class="client-only" style="display:none"><label id="labelVersion">Versión instalada</label><input type="text" id="f-version" placeholder="v2.1, 3.3.1…"></div>
           <div><label>Tipo de cliente</label>
             <select id="f-client-type"><option value="public">🏛️ Público</option><option value="private">🏢 Privado</option></select>
@@ -1082,14 +1109,14 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=3.0"></script>
-<script src="js/db.js?v=3.0"></script>
-<script src="js/users.js?v=3.0"></script>
-<script src="js/notifications.js?v=3.0"></script>
-<script src="js/auth.js?v=3.0"></script>
-<script src="js/app.js?v=3.0"></script>
-<script src="js/ui.js?v=3.0"></script>
-<script src="js/send.js?v=3.0"></script>
-<script src="js/import.js?v=3.0"></script>
+<script src="js/config.js?v=3.1"></script>
+<script src="js/db.js?v=3.1"></script>
+<script src="js/users.js?v=3.1"></script>
+<script src="js/notifications.js?v=3.1"></script>
+<script src="js/auth.js?v=3.1"></script>
+<script src="js/app.js?v=3.1"></script>
+<script src="js/ui.js?v=3.1"></script>
+<script src="js/send.js?v=3.1"></script>
+<script src="js/import.js?v=3.1"></script>
 </body>
 </html>

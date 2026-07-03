@@ -9,9 +9,13 @@ ALTER TABLE public.org_settings
   ADD COLUMN IF NOT EXISTS client_statuses   JSONB,
   ADD COLUMN IF NOT EXISTS field_labels      JSONB;
 
--- ── 2. Añadir custom_fields a contacts ────────────────────────
+-- ── 2. Añadir columnas nuevas a contacts ──────────────────────
 ALTER TABLE public.contacts
-  ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}';
+  ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS complejo  TEXT,
+  ADD COLUMN IF NOT EXISTS province  TEXT,
+  ADD COLUMN IF NOT EXISTS ccaa      TEXT,
+  ADD COLUMN IF NOT EXISTS beds      INTEGER;
 
 -- ── 3. Tabla de definiciones de campos custom ─────────────────
 CREATE TABLE IF NOT EXISTS public.custom_field_defs (

@@ -56,6 +56,10 @@ async function openPanel(id) {
     setVal('f-phone',           r.phone);
     setVal('f-country',         r.country);
     setVal('f-city',            r.city);
+    setVal('f-province',        r.province);
+    setVal('f-ccaa',            r.ccaa);
+    setVal('f-complejo',        r.complejo);
+    setVal('f-beds',            r.beds ?? '');
     setVal('f-website',         r.website);
     setVal('f-program',         r.program);
     setVal('f-version',         r.version);
@@ -450,6 +454,10 @@ async function saveRecord() {
     website:          getVal('f-website')         || null,
     country:          getVal('f-country'),
     city:             getVal('f-city'),
+    province:         getVal('f-province') || null,
+    ccaa:             getVal('f-ccaa')     || null,
+    complejo:         getVal('f-complejo') || null,
+    beds:             getVal('f-beds') ? parseInt(getVal('f-beds'), 10) : null,
     program:          getVal('f-program'),
     version:          getVal('f-version'),
     client_type:      getVal('f-client-type') || 'public',
@@ -702,14 +710,14 @@ function setVal(id, v) { const el = document.getElementById(id); if (el) el.valu
 function getVal(id)    { return (document.getElementById(id)?.value || '').trim(); }
 
 function clearForm() {
-  ['f-company','f-contact','f-role','f-email','f-email2','f-email3','f-phone',
-   'f-city','f-program','f-version','f-notes','f-sentTo','f-website',
+  ['f-company','f-complejo','f-contact','f-role','f-email','f-email2','f-email3','f-phone',
+   'f-city','f-province','f-beds','f-program','f-version','f-notes','f-sentTo','f-website',
    'f-it-contact','f-it-phone','f-it-email',
    'f-mgmt-contact','f-mgmt-phone','f-mgmt-email','f-maintenanceDate',
    'f-sentText','f-subject','f-attachments','f-replyDate','f-replyFrom','f-replyText',
    'f-followupNum','f-nextFollowup','f-meetingDate','f-followupNotes',
    'f-product','f-dealValue','f-dealProb','f-dealClose'].forEach(id => setVal(id, ''));
-  setVal('f-country', ''); setVal('f-client-type', 'public');
+  setVal('f-country', ''); setVal('f-ccaa', ''); setVal('f-client-type', 'public');
   setVal('f-priority', 'Media'); setVal('f-emailType', ''); setVal('f-emailTypeClient', '');
   setVal('f-meetingPlatform', ''); setVal('f-client-status', 'ok');
   cTags = []; cNotes = [];
