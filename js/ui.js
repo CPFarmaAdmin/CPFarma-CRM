@@ -388,6 +388,11 @@ async function deleteNote(noteId) {
     await dbDeleteInteraction(noteId);
     cNotes = cNotes.filter(n => n.id !== noteId);
     renderHistory();
+    const rIdx = records.findIndex(r => r.id === editId);
+    if (rIdx >= 0 && records[rIdx]._noteCount > 0) {
+      records[rIdx]._noteCount--;
+      renderBothTables();
+    }
     toast('Entrada eliminada', 'info');
   } catch(err) {
     toast('Error al eliminar: ' + err.message, 'er');

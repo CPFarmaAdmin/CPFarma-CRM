@@ -575,7 +575,7 @@ function updateBulkBar() {
 async function bulkDelete() {
   if (!canEdit()) { toast('No tienes permisos para eliminar.', 'er'); return; }
   if(!selectedIds.size)return;if(!confirm(`¿Eliminar ${selectedIds.size} contactos?`))return;
-  try{const _ids=[...selectedIds];const _count=_ids.length;await dbDeleteContacts(_ids);dbLogActivity('contacts_deleted','contact',null,null,{count:_count});await loadContacts();selectedIds.clear();renderSidebar();renderBothTables();renderFollowupBanner();toast('🗑 Eliminados','er');}
+  try{const _ids=[...selectedIds];const _count=_ids.length;await dbDeleteContacts(_ids);dbLogActivity('contacts_deleted','contact',null,null,{count:_count});await loadContacts();selectedIds.clear();renderSidebar();renderBothTables();renderFollowupBanner();updateBulkBar();toast('🗑 Eliminados','er');}
   catch(err){toast('Error: '+err.message,'er');}
 }
 function bulkSend(){openSendModal([...selectedIds]);}

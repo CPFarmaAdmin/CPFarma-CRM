@@ -40,7 +40,9 @@ async function dbSaveContact(record) {
   if (record.demo_date)    fields.demo_date    = record.demo_date;
   if (record.demo_time)    fields.demo_time    = record.demo_time;
   if ('assigned_to'    in record) fields.assigned_to    = record.assigned_to    || null;
-  if ('custom_fields'  in record) fields.custom_fields  = record.custom_fields  || {};
+  if ('custom_fields' in record && record.custom_fields && Object.keys(record.custom_fields).length > 0) {
+    fields.custom_fields = record.custom_fields;
+  }
   if (id) {
     const { data, error } = await db
       .from('contacts')
