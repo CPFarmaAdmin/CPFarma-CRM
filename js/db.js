@@ -69,8 +69,11 @@ async function dbDeleteContact(id) {
 }
 
 async function dbDeleteContacts(ids) {
-  const { error } = await db.from('contacts').delete().in('id', ids);
-  if (error) throw error;
+  const CHUNK = 100;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const { error } = await db.from('contacts').delete().in('id', ids.slice(i, i + CHUNK));
+    if (error) throw error;
+  }
 }
 
 async function dbMoveContacts(ids, folderId) {
