@@ -1915,3 +1915,18 @@ tr.row-inactive:hover { opacity: 1; }
 .cfg-btn-sm:hover { background:var(--bg); }
 .cfg-cf-form  { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:14px; margin-top:8px; }
 .cfg-empty    { color:var(--ink3); font-size:.8rem; font-style:italic; padding:10px 0; }
+
+/* ── Danger confirm modal ────────────────────────────────────── */
+.danger-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; display:flex; align-items:center; justify-content:center; animation:fadeIn .15s; }
+.danger-box { background:#fff; border-radius:14px; padding:28px 28px 24px; max-width:420px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+.danger-box-icon { font-size:2.2rem; margin-bottom:10px; }
+.danger-box h3 { font-family:var(--fh); font-size:1.1rem; margin:0 0 8px; color:#111; }
+.danger-box p { font-size:.87rem; color:var(--ink2); margin:0 0 14px; line-height:1.55; }
+.danger-box strong { color:#b91c1c; }
+.danger-box-keyword { background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:7px 10px; font-size:.82rem; color:#b91c1c; font-weight:600; letter-spacing:.03em; display:inline-block; margin-bottom:12px; }
+.danger-box input { width:100%; box-sizing:border-box; padding:9px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:.9rem; outline:none; transition:border-color .15s; }
+.danger-box input:focus { border-color:#b91c1c; }
+.danger-box-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+.btn-danger { background:#dc2626; color:#fff; border:none; border-radius:8px; padding:8px 20px; font-size:.85rem; font-weight:600; cursor:pointer; transition:background .15s; }
+.btn-danger:disabled { background:#fca5a5; cursor:not-allowed; }
+.btn-danger:not(:disabled):hover { background:#b91c1c; }

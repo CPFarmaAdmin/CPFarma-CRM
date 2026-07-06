@@ -597,11 +597,57 @@ function updateBulkBar() {
   bar.style.display=n>0?'':'none';
   document.getElementById('bulkCount').textContent=`${n} seleccionado${n!==1?'s':''}`;
 }
+function showDangerConfirm({ title, body, keyword, onConfirm }) {
+  const existing = document.getElementById('dangerOverlay');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'dangerOverlay';
+  el.className = 'danger-overlay';
+  el.innerHTML = `
+    <div class="danger-box" onclick="event.stopPropagation()">
+      <div class="danger-box-icon">⚠️</div>
+      <h3>${title}</h3>
+      <p>${body}</p>
+      <div class="danger-box-keyword">${keyword}</div>
+      <input type="text" id="dangerInput" placeholder="Escribe ${keyword} aquí…" autocomplete="off">
+      <div class="danger-box-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('dangerOverlay').remove()">Cancelar</button>
+        <button class="btn-danger" id="dangerBtn" disabled onclick="_dangerConfirm()">Confirmar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', () => el.remove());
+  const input = document.getElementById('dangerInput');
+  const btn   = document.getElementById('dangerBtn');
+  input.addEventListener('input', () => { btn.disabled = input.value.trim() !== keyword; });
+  input.focus();
+  window._dangerConfirm = () => { el.remove(); onConfirm(); };
+}
+
 async function bulkDelete() {
   if (!canEdit()) { toast('No tienes permisos para eliminar.', 'er'); return; }
-  if(!selectedIds.size)return;if(!confirm(`¿Eliminar ${selectedIds.size} contactos?`))return;
-  try{const _ids=[...selectedIds];const _count=_ids.length;await dbDeleteContacts(_ids);dbLogActivity('contacts_deleted','contact',null,null,{count:_count});await loadContacts();selectedIds.clear();renderSidebar();renderBothTables();renderFollowupBanner();updateBulkBar();toast('🗑 Eliminados','er');}
-  catch(err){toast('Error: '+err.message,'er');}
+  if (!selectedIds.size) return;
+  const count = selectedIds.size;
+  if (count >= 50) {
+    showDangerConfirm({
+      title: `Eliminar ${count} contactos`,
+      body:  `Esta acción eliminará <strong>${count} contactos</strong> de forma permanente. No se puede deshacer.`,
+      keyword: 'ELIMINAR',
+      onConfirm: _doBulkDelete,
+    });
+  } else {
+    if (!confirm(`¿Eliminar ${count} contactos?`)) return;
+    _doBulkDelete();
+  }
+}
+async function _doBulkDelete() {
+  try {
+    const _ids = [...selectedIds]; const _count = _ids.length;
+    await dbDeleteContacts(_ids);
+    dbLogActivity('contacts_deleted','contact',null,null,{count:_count});
+    await loadContacts(); selectedIds.clear(); renderSidebar(); renderBothTables(); renderFollowupBanner(); updateBulkBar();
+    toast('🗑 Eliminados','er');
+  } catch(err) { toast('Error: '+err.message,'er'); }
 }
 function bulkSend(){openSendModal([...selectedIds]);}
 

@@ -387,6 +387,29 @@ function setIMode(m) {
 async function doImport() {
   if (!iRows.length) { toast('Sin datos','er'); return; }
 
+  // Warn before replace mode
+  if (iMode === 'replace') {
+    const folderId = document.getElementById('impFolder').value || null;
+    const toDelete = folderId
+      ? records.filter(r => r.folder_id === folderId)
+      : records;
+    const delCount = toDelete.length;
+    if (delCount > 0) {
+      showDangerConfirm({
+        title: 'Reemplazar datos existentes',
+        body:  `Se eliminarán <strong>${delCount} contactos</strong> ${folderId ? 'de esta carpeta' : 'en total'} antes de importar los nuevos. Esta acción no se puede deshacer.`,
+        keyword: 'REEMPLAZAR',
+        onConfirm: _runImport,
+      });
+      return;
+    }
+  }
+  _runImport();
+}
+
+async function _runImport() {
+  if (!iRows.length) { toast('Sin datos','er'); return; }
+
   const mapping = {};
   iCols.forEach((col, i) => {
     const v = document.getElementById(`map-${i}`)?.value;
