@@ -271,13 +271,21 @@ function setFilter(f, btn) {
 }
 
 function populateCountryFilter() {
-  const countries = [...new Set(records.map(r => r.country).filter(Boolean))].sort();
-  ['filterCountry','filterCountryC'].forEach(id => {
-    const sel = document.getElementById(id);
-    if (!sel) return;
-    const prev = sel.value;
-    sel.innerHTML = '<option value="">País</option>' + countries.map(c => `<option value="${c}">${c}</option>`).join('');
-    if (prev) sel.value = prev;
+  const countries  = [...new Set(records.map(r => r.country).filter(Boolean))].sort();
+  const provincias = [...new Set(records.map(r => r.province).filter(Boolean))].sort();
+  const ccaas      = [...new Set(records.map(r => r.ccaa).filter(Boolean))].sort();
+
+  [['filterCountry','filterCountryC','País'],
+   ['filterProvincia','filterProvinciaC','Provincia'],
+   ['filterCCAA','filterCCAAC','CCAA']].forEach(([idP, idC, label]) => {
+    const vals = label === 'País' ? countries : label === 'Provincia' ? provincias : ccaas;
+    [idP, idC].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const prev = sel.value;
+      sel.innerHTML = `<option value="">${label}</option>` + vals.map(v => `<option value="${v}">${escH(v)}</option>`).join('');
+      if (prev) sel.value = prev;
+    });
   });
   const versions = [...new Set(records.filter(r=>r.type==='client').map(r=>r.version).filter(Boolean))].sort();
   const vsel = document.getElementById('filterVersionC');
@@ -292,7 +300,7 @@ function populateCountryFilter() {
 function setSort(col) {
   cSortDir = cSort === col ? (cSortDir==='asc'?'desc':'asc') : 'asc';
   cSort = col;
-  ['name','country','date','prio','followup','program','demo_date','version'].forEach(c => {
+  ['name','city','country','date','prio','followup','program','demo_date','version'].forEach(c => {
     const el = document.getElementById('si-'+c);
     if (!el) return;
     el.textContent = cSort===c ? (cSortDir==='asc'?'↑':'↓') : '';
@@ -307,11 +315,13 @@ function getFilteredFor(viewType) {
   const today    = new Date(); today.setHours(0,0,0,0);
   const isClient = viewType === 'clients';
 
-  const country   = !isClient ? (document.getElementById('filterCountry')?.value||'')   : (document.getElementById('filterCountryC')?.value||'');
-  const program   = !isClient ? (document.getElementById('filterProgram')?.value||'')   : (document.getElementById('filterProgramC')?.value||'');
-  const prio      = !isClient ? (document.getElementById('filterPriority')?.value||'')  : '';
-  const dateRange = !isClient ? (document.getElementById('filterDateRange')?.value||'') : '';
-  const versionF  = isClient  ? (document.getElementById('filterVersionC')?.value||'')  : '';
+  const country   = !isClient ? (document.getElementById('filterCountry')?.value||'')    : (document.getElementById('filterCountryC')?.value||'');
+  const provincia = !isClient ? (document.getElementById('filterProvincia')?.value||'')  : (document.getElementById('filterProvinciaC')?.value||'');
+  const ccaaF     = !isClient ? (document.getElementById('filterCCAA')?.value||'')       : (document.getElementById('filterCCAAC')?.value||'');
+  const program   = !isClient ? (document.getElementById('filterProgram')?.value||'')    : (document.getElementById('filterProgramC')?.value||'');
+  const prio      = !isClient ? (document.getElementById('filterPriority')?.value||'')   : '';
+  const dateRange = !isClient ? (document.getElementById('filterDateRange')?.value||'')  : '';
+  const versionF  = isClient  ? (document.getElementById('filterVersionC')?.value||'')   : '';
   const activeFilter = isClient ? cFilter : cFilterP;
 
   return records.filter(r => {
@@ -330,8 +340,10 @@ function getFilteredFor(viewType) {
     }
 
     // ── 4. DROPDOWN FILTERS (always applied, regardless of tab) ──
-    if (country  && r.country   !== country)  return false;
-    if (program  && r.program   !== program)  return false;
+    if (country   && r.country   !== country)   return false;
+    if (provincia && r.province  !== provincia) return false;
+    if (ccaaF     && r.ccaa      !== ccaaF)     return false;
+    if (program   && r.program   !== program)   return false;
     if (prio     && r.priority  !== prio)     return false;
     if (versionF && r.version   !== versionF) return false;
 
@@ -373,6 +385,7 @@ function getFilteredFor(viewType) {
     if (cSort==='name')      { vA=a.company||''; vB=b.company||''; }
     else if (cSort==='prio')      { vA=pm[a.priority]??1; vB=pm[b.priority]??1; }
     else if (cSort==='followup')  { vA=a.next_followup||'9999'; vB=b.next_followup||'9999'; }
+    else if (cSort==='city')      { vA=(a.city||'');     vB=(b.city||''); }
     else if (cSort==='country')   { vA=(a.country||'')+(a.city||''); vB=(b.country||'')+(b.city||''); }
     else if (cSort==='program')   { vA=a.program||''; vB=b.program||''; }
     else if (cSort==='date')      { vA=a.sent_date||a.created_at||''; vB=b.sent_date||b.created_at||''; }
@@ -428,7 +441,6 @@ function renderProspectsTable(rows) {
   tbody.innerHTML = rows.map(r => {
     const n = r._noteCount || 0;
     const sel = selectedIds.has(r.id);
-    const loc = [r.city, r.country].filter(Boolean).join(', ') || '—';
     return `
     <tr onclick="openEdit('${r.id}')" class="${sel?'selected-row':''}">
       <td onclick="event.stopPropagation()"><input type="checkbox" class="chk rchk" data-id="${r.id}" ${sel?'checked':''} onchange="toggleRowSel(this)"></td>
@@ -441,7 +453,9 @@ function renderProspectsTable(rows) {
         <div style="font-size:.82rem;color:var(--ink2)">${r.contact||'<span style="color:var(--ink3);font-style:italic">—</span>'}</div>
         ${renderEmails(r)}
       </td>
-      <td><div style="font-size:.82rem">${escH(loc)}</div></td>
+      <td style="font-size:.82rem">${escH(r.city||'—')}</td>
+      <td style="font-size:.82rem;color:var(--ink2)">${escH(r.province||'—')}</td>
+      <td style="font-size:.82rem;color:var(--ink2)">${escH(r.ccaa||'—')}</td>
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.program||'—')}</td>
       <td class="tc-date">${r.sent_date?fmtDate(r.sent_date):'<span style="font-style:italic;color:var(--ink3)">—</span>'}</td>
       <td>${renderProspectBadge(r.status)}</td>
@@ -466,7 +480,6 @@ function renderClientsTable(rows) {
   tbody.innerHTML = rows.map(r => {
     const n = r._noteCount || 0;
     const sel = selectedIds.has(r.id);
-    const loc = [r.city, r.country].filter(Boolean).join(', ') || '—';
     const isLost = r.status === 'lost';
     return `
     <tr onclick="openEdit('${r.id}')" class="${sel?'selected-row':''}${isLost?' row-inactive':''}">
@@ -480,7 +493,9 @@ function renderClientsTable(rows) {
         <div style="font-size:.82rem;color:var(--ink2)">${r.contact||'<span style="color:var(--ink3);font-style:italic">—</span>'}</div>
         ${renderEmails(r)}
       </td>
-      <td><div style="font-size:.82rem">${escH(loc)}</div></td>
+      <td style="font-size:.82rem">${escH(r.city||'—')}</td>
+      <td style="font-size:.82rem;color:var(--ink2)">${escH(r.province||'—')}</td>
+      <td style="font-size:.82rem;color:var(--ink2)">${escH(r.ccaa||'—')}</td>
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.program||'—')}</td>
       <td style="font-size:.82rem;color:var(--ink3);font-family:var(--fm)">${escH(r.version||'—')}</td>
       <td>${renderClientStatusBadge(r.client_status||'ok')}</td>

@@ -6,7 +6,7 @@
 <title>CP Farma — CRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Lato:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=3.3">
+<link rel="stylesheet" href="css/styles.css?v=3.4">
 </head>
 <body>
 
@@ -125,6 +125,8 @@
       </div><!-- end filterbar-tabs-row -->
       <div class="filterbar-dropdowns-row filter-right">
         <div id="extraFiltersP" style="display:contents">
+          <select class="filter-select" id="filterCCAA" onchange="renderBothTables()"><option value="">CCAA</option></select>
+          <select class="filter-select" id="filterProvincia" onchange="renderBothTables()"><option value="">Provincia</option></select>
           <select class="filter-select" id="filterCountry" onchange="renderBothTables()"><option value="">País</option></select>
           <select class="filter-select" id="filterProgram" onchange="renderBothTables()">
             <option value="">Programa</option>
@@ -146,6 +148,8 @@
           </select>
         </div>
         <div id="extraFiltersC" style="display:none">
+          <select class="filter-select" id="filterCCAAC" onchange="renderBothTables()"><option value="">CCAA</option></select>
+          <select class="filter-select" id="filterProvinciaC" onchange="renderBothTables()"><option value="">Provincia</option></select>
           <select class="filter-select" id="filterCountryC" onchange="renderBothTables()"><option value="">País</option></select>
           <select class="filter-select" id="filterProgramC" onchange="renderBothTables()">
             <option value="">Programa</option>
@@ -171,7 +175,9 @@
             <th style="width:36px"><input type="checkbox" id="selAllP" onchange="toggleSelAll(this)" class="chk"></th>
             <th class="sortable" onclick="setSort('name')"><span>Prospecto</span><span class="sort-icon" id="si-name"></span></th>
             <th>Contacto · Email</th>
-            <th class="sortable" onclick="setSort('country')"><span>Ubicación</span><span class="sort-icon" id="si-country"></span></th>
+            <th class="sortable" onclick="setSort('city')"><span>Ciudad</span><span class="sort-icon" id="si-city"></span></th>
+            <th>Provincia</th>
+            <th>CCAA</th>
             <th class="sortable" onclick="setSort('program')"><span>Programa</span><span class="sort-icon" id="si-program"></span></th>
             <th class="sortable" onclick="setSort('date')"><span>Últ. contacto</span><span class="sort-icon" id="si-date"></span></th>
             <th>Etapa del proceso</th>
@@ -189,7 +195,9 @@
             <th style="width:36px"><input type="checkbox" id="selAllC" onchange="toggleSelAll(this)" class="chk"></th>
             <th class="sortable" onclick="setSort('name')"><span>Cliente</span></th>
             <th>Contacto · Email</th>
-            <th class="sortable" onclick="setSort('country')"><span>Ubicación</span></th>
+            <th class="sortable" onclick="setSort('city')"><span>Ciudad</span></th>
+            <th>Provincia</th>
+            <th>CCAA</th>
             <th class="sortable" onclick="setSort('program')"><span>Programa</span></th>
             <th>Versión</th>
             <th>Estado</th>
@@ -1109,14 +1117,14 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=3.3"></script>
-<script src="js/db.js?v=3.3"></script>
-<script src="js/users.js?v=3.3"></script>
-<script src="js/notifications.js?v=3.3"></script>
-<script src="js/auth.js?v=3.3"></script>
-<script src="js/app.js?v=3.3"></script>
-<script src="js/ui.js?v=3.3"></script>
-<script src="js/send.js?v=3.3"></script>
-<script src="js/import.js?v=3.3"></script>
+<script src="js/config.js?v=3.4"></script>
+<script src="js/db.js?v=3.4"></script>
+<script src="js/users.js?v=3.4"></script>
+<script src="js/notifications.js?v=3.4"></script>
+<script src="js/auth.js?v=3.4"></script>
+<script src="js/app.js?v=3.4"></script>
+<script src="js/ui.js?v=3.4"></script>
+<script src="js/send.js?v=3.4"></script>
+<script src="js/import.js?v=3.4"></script>
 </body>
 </html>
