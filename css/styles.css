@@ -1462,6 +1462,8 @@ tr.row-inactive:hover { opacity: 1; }
 }
 .demo-sched { background: #faf5ff; color: #7c3aed; }
 .demo-done  { background: #f3e8ff; color: #5b21b6; }
+.col-demo   { display: none; }
+#prospectsSection.show-demo .col-demo { display: table-cell; }
 
 /* ═══ v22: CC contact selector — radio+checkbox ═══════════════ */
 .recip-cc-panel {

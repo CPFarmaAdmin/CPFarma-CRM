@@ -409,6 +409,14 @@ function legacyStatusMatch(status, filter) {
 }
 
 // ── RENDER ────────────────────────────────────────────────────
+const DEMO_FILTERS = new Set(['demo_scheduled','demo_done','budget_sent']);
+
+function updateDemoCol() {
+  const sec = document.getElementById('prospectsSection');
+  if (!sec) return;
+  sec.classList.toggle('show-demo', DEMO_FILTERS.has(cFilterP));
+}
+
 function renderBothTables() {
   const prospects = getFilteredFor('prospects');
   const clients   = getFilteredFor('clients');
@@ -420,6 +428,7 @@ function renderBothTables() {
   const cSec = document.getElementById('clientsSection');
   if (pSec) pSec.style.display = activeView==='prospects' ? '' : 'none';
   if (cSec) cSec.style.display = activeView==='clients'   ? '' : 'none';
+  updateDemoCol();
   const empty = document.getElementById('emptyState');
   if (empty) {
     empty.style.display = totalShown === 0 ? '' : 'none';
@@ -457,9 +466,10 @@ function renderProspectsTable(rows) {
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.province||'—')}</td>
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.ccaa||'—')}</td>
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.program||'—')}</td>
+      <td style="font-size:.82rem;color:var(--ink2)">${r.beds != null ? r.beds : '—'}</td>
       <td class="tc-date">${r.sent_date?fmtDate(r.sent_date):'<span style="font-style:italic;color:var(--ink3)">—</span>'}</td>
       <td>${renderProspectBadge(r.status)}</td>
-      <td>${r.demo_date
+      <td class="col-demo">${r.demo_date
         ? `<div class="demo-cell ${r.status==='demo_done'?'demo-done':'demo-sched'}">📅 ${fmtDate(r.demo_date)}${r.demo_time?' '+r.demo_time:''}</div>`
         : '<span style="color:var(--ink3);font-size:.72rem">—</span>'
       }</td>
