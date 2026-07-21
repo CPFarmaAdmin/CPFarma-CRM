@@ -8,6 +8,7 @@ let cStatus   = 'new';
 let cNotes    = [];
 let origReply = { text: '', from: '', date: '' }; // snapshot of reply when panel opens
 let activeTab = 'info';
+let panelDirty = false;
 
 // ── PANEL ─────────────────────────────────────────────────────
 async function openPanel(id) {
@@ -132,6 +133,7 @@ async function openPanel(id) {
   renderTags();
   renderHistory();
   _populateAssigneeDropdown(r?.assigned_to || null);
+  panelDirty = false;
   document.getElementById('overlay').classList.add('open');
   document.getElementById('sidePanel').classList.add('open');
 }
@@ -274,7 +276,24 @@ function closePanel() {
   document.getElementById('overlay').classList.remove('open');
   document.getElementById('sidePanel').classList.remove('open');
   editId = null;
+  panelDirty = false;
 }
+
+function requestClosePanel() {
+  if (panelDirty) {
+    if (!confirm('Tienes cambios sin guardar. ¿Deseas salir sin guardarlos?')) return;
+  }
+  closePanel();
+}
+
+// Mark panel dirty on any input/change within it (set up once)
+document.addEventListener('DOMContentLoaded', function() {
+  const sp = document.getElementById('sidePanel');
+  if (sp) {
+    sp.addEventListener('input',  function() { panelDirty = true; });
+    sp.addEventListener('change', function() { panelDirty = true; });
+  }
+});
 
 // ── TABS ──────────────────────────────────────────────────────
 function switchPanelTab(tab, btn) {
@@ -571,6 +590,7 @@ async function saveRecord() {
     }).catch(() => {});
 
     await loadFolders();
+    panelDirty = false;
     closePanel();
     toast(`✅ ${company} guardado`, 'ok');
   } catch(err) {

@@ -6,7 +6,7 @@
 <title>CP Farma — CRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Lato:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=3.9">
+<link rel="stylesheet" href="css/styles.css?v=4.0">
 </head>
 <body>
 
@@ -236,11 +236,11 @@
 </div>
 
 <!-- ══════ SIDE PANEL ══════ -->
-<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="overlay" id="overlay" onclick="requestClosePanel()"></div>
 <div class="side-panel" id="sidePanel">
   <div class="panel-header">
     <div class="panel-header-info"><h2 id="panelTitle">Nuevo prospecto</h2><div class="panel-sub" id="panelSub"></div></div>
-    <button class="close-btn" onclick="closePanel()">✕</button>
+    <button class="close-btn" onclick="requestClosePanel()">✕</button>
   </div>
   <div class="panel-tabs">
     <button class="ptab active" data-tab="info" onclick="switchPanelTab('info',this)">📋 Datos</button>
@@ -629,7 +629,7 @@
   <div class="panel-footer">
     <button class="btn btn-danger btn-sm" id="panelDelBtn" onclick="delFromPanel()" style="display:none">🗑 Eliminar</button>
     <div style="flex:1"></div>
-    <button class="btn btn-ghost" onclick="closePanel()">Cancelar</button>
+    <button class="btn btn-ghost" onclick="requestClosePanel()">Cancelar</button>
     <button class="btn btn-send btn-sm" id="panelSendBtn" onclick="sendFromPanel()" style="display:none">✉️ Enviar email</button>
     <button class="btn btn-primary" onclick="saveRecord()" id="saveBtn">💾 Guardar</button>
   </div>
@@ -1118,14 +1118,14 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=3.9"></script>
-<script src="js/db.js?v=3.9"></script>
-<script src="js/users.js?v=3.9"></script>
-<script src="js/notifications.js?v=3.9"></script>
-<script src="js/auth.js?v=3.9"></script>
-<script src="js/app.js?v=3.9"></script>
-<script src="js/ui.js?v=3.9"></script>
-<script src="js/send.js?v=3.9"></script>
-<script src="js/import.js?v=3.9"></script>
+<script src="js/config.js?v=4.0"></script>
+<script src="js/db.js?v=4.0"></script>
+<script src="js/users.js?v=4.0"></script>
+<script src="js/notifications.js?v=4.0"></script>
+<script src="js/auth.js?v=4.0"></script>
+<script src="js/app.js?v=4.0"></script>
+<script src="js/ui.js?v=4.0"></script>
+<script src="js/send.js?v=4.0"></script>
+<script src="js/import.js?v=4.0"></script>
 </body>
 </html>
