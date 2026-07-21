@@ -64,6 +64,7 @@ async function openPanel(id) {
     setVal('f-program',         r.program);
     setVal('f-version',         r.version);
     setVal('f-client-status',   r.client_status || 'ok');
+    setVal('f-contact-phone', r.contact_phone);
     // Client contact fields (HTML uses it-contact, mgmt-contact)
     setVal('f-it-contact',   r.it_name);   setVal('f-it-phone',  r.it_phone);  setVal('f-it-email',  r.it_email);
     setVal('f-mgmt-contact', r.mgmt_name); setVal('f-mgmt-phone',r.mgmt_phone);setVal('f-mgmt-email',r.mgmt_email);
@@ -451,6 +452,7 @@ async function saveRecord() {
     email2:           getVal('f-email2') || null,
     email3:           getVal('f-email3') || null,
     phone:            getVal('f-phone'),
+    contact_phone:    getVal('f-contact-phone') || null,
     website:          getVal('f-website')         || null,
     country:          getVal('f-country'),
     city:             getVal('f-city'),
@@ -710,7 +712,8 @@ function setVal(id, v) { const el = document.getElementById(id); if (el) el.valu
 function getVal(id)    { return (document.getElementById(id)?.value || '').trim(); }
 
 function clearForm() {
-  ['f-company','f-complejo','f-contact','f-role','f-email','f-email2','f-email3','f-phone',
+  ['f-company','f-complejo','f-contact','f-role','f-contact-phone',
+   'f-email','f-email2','f-email3','f-phone',
    'f-city','f-province','f-beds','f-program','f-version','f-notes','f-sentTo','f-website',
    'f-it-contact','f-it-phone','f-it-email',
    'f-mgmt-contact','f-mgmt-phone','f-mgmt-email','f-maintenanceDate',
