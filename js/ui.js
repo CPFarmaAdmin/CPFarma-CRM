@@ -716,9 +716,9 @@ function clearForm() {
    'f-email','f-email2','f-email3','f-phone',
    'f-city','f-province','f-beds','f-program','f-version','f-notes','f-sentTo','f-website',
    'f-it-contact','f-it-phone','f-it-email',
-   'f-mgmt-contact','f-mgmt-phone','f-mgmt-email','f-maintenanceDate',
+   'f-mgmt-contact','f-mgmt-phone','f-mgmt-email','f-maintenance','f-maintenanceDate',
    'f-sentText','f-subject','f-attachments','f-replyDate','f-replyFrom','f-replyText',
-   'f-followupNum','f-nextFollowup','f-meetingDate','f-followupNotes',
+   'f-followupNum','f-nextFollowup','f-meetingDate','f-demoDate','f-demoTime','f-followupNotes',
    'f-product','f-dealValue','f-dealProb','f-dealClose'].forEach(id => setVal(id, ''));
   setVal('f-country', ''); setVal('f-ccaa', ''); setVal('f-client-type', 'public');
   setVal('f-priority', 'Media'); setVal('f-emailType', ''); setVal('f-emailTypeClient', '');
