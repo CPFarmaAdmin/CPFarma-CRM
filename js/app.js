@@ -462,6 +462,7 @@ function renderProspectsTable(rows) {
         <div style="font-size:.82rem;color:var(--ink2)">${r.contact||'<span style="color:var(--ink3);font-style:italic">—</span>'}</div>
         ${renderEmails(r)}
       </td>
+      <td style="font-size:.82rem;color:var(--ink2);white-space:nowrap">${r.contact_phone?`<a href="tel:${escH(r.contact_phone)}" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none">${escH(r.contact_phone)}</a>`:'<span style="color:var(--ink3)">—</span>'}</td>
       <td style="font-size:.82rem">${escH(r.city||'—')}</td>
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.province||'—')}</td>
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.ccaa||'—')}</td>
@@ -503,6 +504,7 @@ function renderClientsTable(rows) {
         <div style="font-size:.82rem;color:var(--ink2)">${r.contact||'<span style="color:var(--ink3);font-style:italic">—</span>'}</div>
         ${renderEmails(r)}
       </td>
+      <td style="font-size:.82rem;color:var(--ink2);white-space:nowrap">${r.contact_phone?`<a href="tel:${escH(r.contact_phone)}" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none">${escH(r.contact_phone)}</a>`:'<span style="color:var(--ink3)">—</span>'}</td>
       <td style="font-size:.82rem">${escH(r.city||'—')}</td>
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.province||'—')}</td>
       <td style="font-size:.82rem;color:var(--ink2)">${escH(r.ccaa||'—')}</td>
